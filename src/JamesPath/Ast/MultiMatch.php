@@ -54,7 +54,7 @@ class MultiMatch implements \ArrayAccess
             }
         }
 
-        return new self($results);
+        return $results;
     }
 
     public function offsetSet($offset, $value)

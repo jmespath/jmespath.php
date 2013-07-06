@@ -24,4 +24,9 @@ abstract class AbstractNode
      * @return string
      */
     abstract public function prettyPrint($indent = '');
+
+    public function __toString()
+    {
+        return $this->prettyPrint();
+    }
 }

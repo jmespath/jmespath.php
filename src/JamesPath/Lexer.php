@@ -15,7 +15,8 @@ class Lexer implements \Iterator
     const T_NUMBER = 5;
     const T_OR = 6;
     const T_IGNORE = 7;
-    const T_EOF = -1;
+    const T_EOF = 8;
+    const T_UNKNOWN = 9;
 
     protected $input;
     protected $tokens;
@@ -32,7 +33,8 @@ class Lexer implements \Iterator
         array('T_NUMBER',     '/^\-?\d+/'),
         array('T_OR',         '/^\|\|/'),
         array('T_IGNORE',     '/^\s+/'),
-        array('T_EOF',        null)
+        array('T_EOF',        null),
+        array('T_UNKNOWN',    null),
     );
 
     /**
@@ -122,7 +124,8 @@ class Lexer implements \Iterator
                     continue 2;
                 }
             }
-            throw new IllegalTokenException(sprintf('Illegal token "%s" at %d', substr($this->input, $pos), $pos));
+            $this->tokens[] = new Token(self::T_UNKNOWN, $remainder, $pos);
+            break;
         }
     }
 

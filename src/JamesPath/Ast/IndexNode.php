@@ -21,7 +21,10 @@ class IndexNode extends AbstractNode
             return null;
         }
 
-        return isset($value[$this->index]) ? $value[$this->index] : null;
+        // Allow negative indices
+        $index = $this->index >= 0 ? $this->index : count($value) + $this->index;
+
+        return isset($value[$index]) ? $value[$index] : null;
     }
 
     public function prettyPrint($indent = '')

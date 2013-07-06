@@ -6,6 +6,7 @@ use JamesPath\Ast\AbstractNode;
 use JamesPath\Ast\ElementsBranchNode;
 use JamesPath\Ast\IndexNode;
 use JamesPath\Ast\MultiMatch;
+use JamesPath\Ast\OrExpressionNode;
 use JamesPath\Ast\SubExpressionNode;
 use JamesPath\Ast\ValuesBranchNode;
 
@@ -88,39 +89,23 @@ class Parser
         return self::$cache[$path] = $ast;
     }
 
+    /**
+     * Free a random sample from the AST cache
+     */
     protected function freeCache()
     {
         shuffle(self::$cache);
         self::$cache = array_slice(self::$cache, self::$maxSize / 2);
     }
 
-    protected function checkType($actual, array $types)
-    {
-        if (in_array($actual, $types)) {
-            return $actual;
-        }
-
-        $lexer = $this->lexer;
-        throw new \RuntimeException(sprintf(
-            'Expected %s; found %s',
-            implode('|', array_map(function ($t) use ($lexer) {
-                return $lexer->getTokenName($t);
-            }, $types)),
-            $this->lexer->getTokenName($actual)
-        ));
-    }
-
-    protected function peek($type)
-    {
-        return $this->checkType($this->lexer->peek()->type, (array) $type);
-    }
-
     protected function match($type)
     {
-        $result = $this->checkType($this->lexer->current()->type, (array) $type);
         $this->lexer->next();
+        if (in_array($this->lexer->current()->type, (array) $type)) {
+            return $this->lexer->current();
+        }
 
-        return $result;
+        $this->syntaxError($type, $this->lexer->current());
     }
 
     protected function parseNext(AbstractNode $current = null)
@@ -128,65 +113,87 @@ class Parser
         switch ($this->lexer->current()->type) {
             case Lexer::T_IDENTIFIER:
             case Lexer::T_NUMBER:
-                return $this->parseIdentifier($current);
+                return $this->parseIdentifier();
+            case Lexer::T_DOT:
+                return $this->parseDot($current);
             case Lexer::T_STAR:
                 return $this->parseWildcard($current);
             case Lexer::T_LBRACKET:
                 return $this->parseIndex($current);
             case Lexer::T_OR:
                 return $this->parseOr($current);
-            default:
-                throw new \RuntimeException('JamesPath expression syntax error: ' . $this->lexer->getInput());
+            case Lexer::T_EOF:
+                return $current;
         }
+
+        $this->syntaxError(
+            array(Lexer::T_IDENTIFIER, Lexer::T_NUMBER, Lexer::T_STAR, Lexer::T_LBRACKET, Lexer::T_OR),
+            $this->lexer->current()
+        );
     }
 
-    protected function parseIdentifier(AbstractNode $current = null)
+    protected function parseIdentifier()
     {
         $field = new Ast\FieldNode($this->lexer->current()->value);
         // expression '.' expression | expression '[' (number|star) ']'
-        $peekType = $this->peek(array(Lexer::T_DOT, Lexer::T_LBRACKET, Lexer::T_EOF));
-        $this->lexer->next();
+        $this->match(array(Lexer::T_DOT, Lexer::T_LBRACKET, Lexer::T_EOF, Lexer::T_OR));
 
-        switch ($peekType) {
-            case Lexer::T_EOF:
-                return $field;
-            case Lexer::T_DOT:
-                $this->match(Lexer::T_DOT);
-                // Last expression or is there more?
-                return $this->lexer->peek()->type == Lexer::T_EOF
-                    ? $this->parseNext($field)
-                    : new SubExpressionNode($field, $this->parseNext($field));
-            case Lexer::T_LBRACKET:
-                // Index after expression field
-                $index = $this->parseIndex($field);
-                if (!($index instanceof ElementsBranchNode)) {
-                    return new SubExpressionNode($field, $index);
-                } elseif ($this->lexer->peek()->type == Lexer::T_EOF) {
-                    return $index;
-                } else {
-                    return new SubExpressionNode($index, $this->parseNext($field));
-                }
-        }
+        return $this->parseNext($field);
+    }
+
+    protected function parseDot(AbstractNode $current)
+    {
+        $token = $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_NUMBER));
+        $result = $this->parseNext($current);
+
+        return $token->type == Lexer::T_STAR ? $result : new SubExpressionNode($current, $result);
     }
 
     protected function parseWildcard(AbstractNode $current = null)
     {
-        return new ValuesBranchNode($current);
+        $this->lexer->next();
+
+        return $this->parseNext(new ValuesBranchNode($current));
     }
 
     protected function parseIndex(AbstractNode $current = null)
     {
-        // expression '[' (number|star) ']'
-        $this->lexer->next();
-        $index = $this->lexer->current()->value;
-        $type = $this->match(array(Lexer::T_NUMBER, Lexer::T_STAR));
+        $value = $this->match(array(Lexer::T_NUMBER, Lexer::T_STAR))->value;
         $this->match(Lexer::T_RBRACKET);
+        $this->lexer->next();
 
-        return $type == Lexer::T_NUMBER ? new IndexNode($index) : new ElementsBranchNode($current);
+        if ($value == '*') {
+            // Parsing a wildcard index
+            return $this->parseNext(new ElementsBranchNode($current));
+        } elseif ($current) {
+            // At a specific index: "Foo[0]"
+            return $this->parseNext(new SubExpressionNode($current, new IndexNode($value)));
+        } else {
+            // At root: "[0]"
+            return $this->parseNext(new IndexNode($value));
+        }
     }
 
     protected function parseOr(AbstractNode $current = null)
     {
+        $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_LBRACKET));
 
+        return new OrExpressionNode($current, $this->parseNext());
+    }
+
+    protected function syntaxError($expected, Token $token)
+    {
+        $lexer = $this->lexer;
+        $message = $lexer->getInput() . "\n" . str_repeat(' ', $token->position) . "^\n";
+        $message .= sprintf(
+            'Expected %s; found %s "%s"',
+            implode(' or ', array_map(function ($t) use ($lexer) {
+                return $lexer->getTokenName($t);
+            }, (array) $expected)),
+            $lexer->getTokenName($token->type),
+            $token->value
+        );
+
+        throw new SyntaxErrorException("Syntax error at character {$token->position}\n{$message}");
     }
 }

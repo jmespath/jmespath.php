@@ -22,15 +22,13 @@ class OrExpressionNode extends AbstractNode
 
     public function search($value)
     {
-        if (null !== ($matched = $this->first->search($value))) {
-            return $matched;
-        } else {
-            return $this->remaining->search($value);
-        }
+        $matched = $this->first->search($value);
+
+        return null !== $matched ? $matched : $this->remaining->search($value);
     }
 
     public function prettyPrint($indent = '')
     {
-        return sprintf("%s%sOR %s", $indent, $this->first, $this->remaining);
+        return sprintf("%s%s OR %s", $indent, $this->first->prettyPrint(), $this->remaining->prettyPrint());
     }
 }
