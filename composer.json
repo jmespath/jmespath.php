@@ -1,5 +1,5 @@
 {
-  "name": "mtdowling/jamespath",
+  "name": "mtdowling/jamespath.php",
   "description": "Declaratively specify how to extract elements from a JSON document",
   "keywords": ["json", "jsonpath"],
   "license": "MIT",
