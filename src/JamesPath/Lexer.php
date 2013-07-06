@@ -97,13 +97,11 @@ class Lexer implements \Iterator
     /**
      * Get the name of a token
      *
-     * @param int|array $token Token integer
+     * @param int $token Token integer
      * @return string|null
      */
     public function getTokenName($token)
     {
-        $token = is_object($token) ? $token->type : $token;
-
         return isset($this->tokenDefinitions[$token]) ? $this->tokenDefinitions[$token][0] : null;
     }
 
