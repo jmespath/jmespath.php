@@ -23,11 +23,6 @@ class Lexer implements \Iterator
     private $pos;
     private $tokens;
 
-    private $tokenNames = array(
-        'T_IDENTIFIER', 'T_DOT', 'T_STAR', 'T_LBRACKET', 'T_RBRACKET',
-        'T_NUMBER', 'T_OR', 'T_IGNORE', 'T_EOF', 'T_UNKNOWN'
-    );
-
     private $regex = '/
         (\w+)     # T_IDENTIFIER
         |\s+      # Ignore whitespace
@@ -68,6 +63,19 @@ class Lexer implements \Iterator
         return $this->input;
     }
 
+    /**
+     * Get the name of a token
+     *
+     * @param int $token Token integer
+     * @return string|bool
+     */
+    public function getTokenName($token)
+    {
+        $ref = new \ReflectionClass($this);
+
+        return array_search($token, $ref->getConstants());
+    }
+
     public function current()
     {
         return $this->token;
@@ -93,17 +101,6 @@ class Lexer implements \Iterator
     public function next()
     {
         $this->token = isset($this->tokens[++$this->pos]) ? $this->tokens[$this->pos] : Token::getEof();
-    }
-
-    /**
-     * Get the name of a token
-     *
-     * @param int $token Token integer
-     * @return string|bool
-     */
-    public function getTokenName($token)
-    {
-        return isset($this->tokenNames[$token]) ? $this->tokenNames[$token] : false;
     }
 
     private function tokenize()
