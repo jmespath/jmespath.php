@@ -18,23 +18,34 @@ class Lexer implements \Iterator
     const T_EOF = 8;
     const T_UNKNOWN = 9;
 
-    protected $input;
-    protected $tokens;
-    protected $token;
-    protected $pos;
+    private $input;
+    private $token;
+    private $pos;
+    private $tokens;
 
-    /** @var array Token names and regexps */
-    protected $tokenDefinitions = array(
-        array('T_IDENTIFIER', '/^[a-zA-Z_]([a-zA-Z_0-9]|\\\.)*/'),
-        array('T_DOT',        '/^\./'),
-        array('T_STAR',       '/^\*/'),
-        array('T_LBRACKET',   '/^\[/'),
-        array('T_RBRACKET',   '/^\]/'),
-        array('T_NUMBER',     '/^\-?\d+/'),
-        array('T_OR',         '/^\|\|/'),
-        array('T_IGNORE',     '/^\s+/'),
-        array('T_EOF',        null),
-        array('T_UNKNOWN',    null),
+    private $tokenNames = array(
+        'T_IDENTIFIER', 'T_DOT', 'T_STAR', 'T_LBRACKET', 'T_RBRACKET',
+        'T_NUMBER', 'T_OR', 'T_IGNORE', 'T_EOF', 'T_UNKNOWN'
+    );
+
+    private $regex = '/
+        (\w+)     # T_IDENTIFIER
+        |\s+      # Ignore whitespace
+        |(\.)     # T_DOT
+        |(\*)     # T_STAR
+        |(\[)     # T_LBRACKET
+        |(\])     # T_RBRACKET
+        |(\-?\d+) # T_NUMBER
+        |(\|\|)   # T_OR
+        |(.)      # T_UNKNOWN
+    /x';
+
+    private $simpleTokens = array(
+        '.'  => self::T_DOT,
+        '*'  => self::T_STAR,
+        '['  => self::T_LBRACKET,
+        ']'  => self::T_RBRACKET,
+        '||' => self::T_OR
     );
 
     /**
@@ -85,54 +96,36 @@ class Lexer implements \Iterator
     }
 
     /**
-     * Get the next token
-     *
-     * @return Token
-     */
-    public function peek()
-    {
-        return isset($this->tokens[$this->pos + 1]) ? $this->tokens[$this->pos + 1] : Token::getEof();
-    }
-
-    /**
      * Get the name of a token
      *
      * @param int $token Token integer
-     * @return string|null
+     * @return string|bool
      */
     public function getTokenName($token)
     {
-        return isset($this->tokenDefinitions[$token]) ? $this->tokenDefinitions[$token][0] : null;
+        return isset($this->tokenNames[$token]) ? $this->tokenNames[$token] : false;
     }
 
-    protected function tokenize()
+    private function tokenize()
     {
         $this->tokens = array();
-        $length = strlen($this->input);
-        $pos = 0;
+        $tokens = preg_split(
+            $this->regex,
+            $this->input,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY | PREG_SPLIT_OFFSET_CAPTURE
+        );
 
-        while ($pos < $length) {
-            $remainder = substr($this->input, $pos);
-            foreach ($this->tokenDefinitions as $token => $def) {
-                if (null !== ($result = $this->scan($def[1], $remainder, $pos))) {
-                    if ($token !== self::T_IGNORE) {
-                        $this->tokens[] = new Token($token, $result, $pos);
-                    }
-                    $pos += strlen($result);
-                    continue 2;
-                }
+        foreach ($tokens as $token) {
+            if (isset($this->simpleTokens[$token[0]])) {
+                $this->tokens[] = new Token($this->simpleTokens[$token[0]], $token[0], $token[1]);
+            } elseif (is_numeric($token[0])) {
+                $this->tokens[] = new Token(self::T_NUMBER, (int) $token[0], $token[1]);
+            } elseif (ctype_alnum(($token[0]))) {
+                $this->tokens[] = new Token(self::T_IDENTIFIER, $token[0], $token[1]);
+            } else {
+                $this->tokens[] = new Token(self::T_UNKNOWN, $token[0], $token[1]);
             }
-            $this->tokens[] = new Token(self::T_UNKNOWN, $remainder, $pos);
-            break;
         }
-    }
-
-    protected function scan($regexp, $path)
-    {
-        if ($regexp && preg_match($regexp, $path, $matches)) {
-            return $matches[0];
-        }
-
-        return null;
     }
 }
