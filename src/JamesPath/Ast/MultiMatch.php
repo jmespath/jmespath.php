@@ -17,21 +17,6 @@ class MultiMatch implements \ArrayAccess
         $this->elements = $elements;
     }
 
-    /**
-     * Convert the MultiMatch object to an array
-     *
-     * @return array
-     */
-    public function toArray()
-    {
-        $results = array();
-        foreach ($this->elements as $element) {
-            $results[] = $element instanceof self ? $element->toArray() : $element;
-        }
-
-        return $results;
-    }
-
     public function offsetExists($offset)
     {
         foreach ($this->elements as $element) {
@@ -57,13 +42,7 @@ class MultiMatch implements \ArrayAccess
         return $results;
     }
 
-    public function offsetSet($offset, $value)
-    {
-        $this->elements[$offset] = $value;
-    }
+    public function offsetSet($offset, $value) {}
 
-    public function offsetUnset($offset)
-    {
-        unset($this->elements[$offset]);
-    }
+    public function offsetUnset($offset) {}
 }
