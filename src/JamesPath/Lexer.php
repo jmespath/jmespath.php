@@ -19,8 +19,6 @@ class Lexer implements \Iterator
     const T_UNKNOWN = 9;
 
     private $input;
-    private $token;
-    private $pos;
     private $tokens;
 
     private $regex = '/
@@ -78,29 +76,27 @@ class Lexer implements \Iterator
 
     public function current()
     {
-        return $this->token;
+        return current($this->tokens) ?: Token::getEof();
     }
 
     public function key()
     {
-        return $this->pos;
+        return key($this->tokens);
     }
 
     public function rewind()
     {
-        $this->pos = -1;
-        $this->token = null;
-        $this->next();
+        reset($this->tokens);
     }
 
     public function valid()
     {
-        return $this->token !== null && $this->token->type != self::T_EOF;
+        return (bool) current($this->tokens);
     }
 
     public function next()
     {
-        $this->token = isset($this->tokens[++$this->pos]) ? $this->tokens[$this->pos] : Token::getEof();
+        next($this->tokens);
     }
 
     private function tokenize()
