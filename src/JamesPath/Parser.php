@@ -172,7 +172,7 @@ class Parser
         $this->match(Lexer::T_RBRACKET);
         $this->lexer->next();
 
-        if ($value == '*') {
+        if ($value === '*') {
             // Parsing a wildcard index
             return $this->parseNext(new ElementsBranchNode($current));
         } elseif ($current) {
