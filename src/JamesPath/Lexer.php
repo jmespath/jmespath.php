@@ -7,15 +7,15 @@ namespace JamesPath;
  */
 class Lexer implements \Iterator
 {
-    const T_IDENTIFIER = 0;
-    const T_DOT = 1;
-    const T_STAR = 2;
-    const T_LBRACKET = 3;
-    const T_RBRACKET = 4;
-    const T_NUMBER = 5;
-    const T_OR = 6;
-    const T_IGNORE = 7;
-    const T_EOF = 8;
+    const T_EOF = 0;
+    const T_IDENTIFIER = 1;
+    const T_DOT = 2;
+    const T_STAR = 3;
+    const T_NUMBER = 4;
+    const T_OR = 5;
+    const T_LBRACKET = 6;
+    const T_RBRACKET = 7;
+    const T_IGNORE = 8;
     const T_UNKNOWN = 9;
 
     private $input;

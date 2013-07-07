@@ -102,14 +102,14 @@ class Parser
      * Match the next token against one or more types
      *
      * @param int|array $type Type to match
-     *
      * @return Token
+     * @throws SyntaxErrorException
      */
     protected function match($type)
     {
         $this->lexer->next();
         if (!in_array($this->lexer->current()->type, (array) $type)) {
-            $this->syntaxError($type, $this->lexer->current());
+            throw new SyntaxErrorException($type, $this->lexer->current(), $this->lexer);
         }
 
         return $this->lexer->current();
@@ -133,10 +133,7 @@ class Parser
                 return $current;
         }
 
-        $this->syntaxError(
-            array(Lexer::T_IDENTIFIER, Lexer::T_NUMBER, Lexer::T_STAR, Lexer::T_LBRACKET, Lexer::T_OR),
-            $this->lexer->current()
-        );
+        throw new SyntaxErrorException(range(0, 6), $this->lexer->current(), $this->lexer);
     }
 
     protected function parseIdentifier()
@@ -190,28 +187,5 @@ class Parser
         $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_LBRACKET));
 
         return new OrExpressionNode($current, $this->parseNext());
-    }
-
-    /**
-     * Throw a well-formatted syntax error
-     *
-     * @param array|int $expected Expected token types
-     * @param Token     $token    Actual token encountered
-     * @throws SyntaxErrorException
-     */
-    protected function syntaxError($expected, Token $token)
-    {
-        $lexer = $this->lexer;
-        throw new SyntaxErrorException(
-            "Syntax error at character {$token->position}\n"
-            . $lexer->getInput() . "\n" . str_repeat(' ', $token->position) . "^\n"
-            . sprintf('Expected %s; found %s "%s"',
-                implode(' or ', array_map(function ($t) use ($lexer) {
-                    return $lexer->getTokenName($t);
-                }, (array) $expected)),
-                $lexer->getTokenName($token->type),
-                $token->value
-            )
-        );
     }
 }
