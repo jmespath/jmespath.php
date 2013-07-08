@@ -35,7 +35,11 @@ class MultiMatch implements \ArrayAccess
     public function offsetExists($offset)
     {
         foreach ($this->elements as $element) {
-            if (!is_scalar($element) && isset($element[$offset])) {
+            if ($offset < 0 && is_array($element)) {
+                if (isset($element[count($element) + $offset])) {
+                    return true;
+                }
+            } elseif (!is_scalar($element) && isset($element[$offset])) {
                 return true;
             }
         }
@@ -45,21 +49,14 @@ class MultiMatch implements \ArrayAccess
 
     public function offsetGet($offset)
     {
-        $fromEnd = $offset < 0;
         $results = array();
 
         foreach ($this->elements as $element) {
-            if ($fromEnd) {
+            if ($offset < 0 && is_array($element)) {
                 // Handle negative offsets
-                if (is_array($element)) {
-                    $index = count($element) + $offset;
-                    if (isset($element[$index])) {
-                        $results[] = $element[$index];
-                    }
-                } elseif ($element instanceof self) {
-                    if ($result = $element[$offset]) {
-                        $results[] = $result;
-                    }
+                $index = count($element) + $offset;
+                if (isset($element[$index])) {
+                    $results[] = $element[$index];
                 }
             } elseif (!is_scalar($element) && isset($element[$offset])) {
                 $results[] = $element[$offset];

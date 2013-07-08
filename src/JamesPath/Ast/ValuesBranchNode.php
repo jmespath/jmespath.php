@@ -19,7 +19,21 @@ class ValuesBranchNode extends AbstractNode
     {
         $response = $this->node ? $this->node->search($value) : $value;
 
-        return is_array($response) ? new MultiMatch(array_values($response)) : null;
+        if (is_array($response)) {
+            return new MultiMatch(array_values($response));
+        } elseif ($response instanceof MultiMatch) {
+            $result = array();
+            foreach ($response->toArray() as $value) {
+                if (is_array($value)) {
+                    foreach ($value as $v) {
+                        $result[] = $v;
+                    }
+                }
+            }
+            if ($result) {
+                return new MultiMatch($result);
+            }
+        }
     }
 
     public function prettyPrint($indent = '')
