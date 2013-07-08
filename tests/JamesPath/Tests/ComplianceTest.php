@@ -2,7 +2,6 @@
 
 namespace JamesPath\Tests;
 
-use JamesPath\Lexer;
 use JamesPath\Parser;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
