@@ -17,14 +17,15 @@ class IndexNode extends AbstractNode
 
     public function search($value)
     {
-        if (is_scalar($value)) {
-            return null;
+        if (is_array($value)) {
+            // Allow negative indices
+            $index = $this->index >= 0 ? $this->index : count($value) + $this->index;
+            return isset($value[$index]) ? $value[$index] : null;
+        } elseif ($value instanceof MultiMatch) {
+            return $value[$this->index];
         }
 
-        // Allow negative indices
-        $index = $this->index >= 0 ? $this->index : count($value) + $this->index;
-
-        return isset($value[$index]) ? $value[$index] : null;
+        return null;
     }
 
     public function prettyPrint($indent = '')
