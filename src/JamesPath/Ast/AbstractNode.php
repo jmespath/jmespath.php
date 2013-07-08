@@ -10,7 +10,7 @@ abstract class AbstractNode
     /**
      * Search the AST node for a given value
      *
-     * @param string $value Value to search
+     * @param array|\ArrayAccess $value Data to search
      *
      * @return mixed
      */

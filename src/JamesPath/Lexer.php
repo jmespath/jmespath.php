@@ -5,7 +5,7 @@ namespace JamesPath;
 /**
  * JamesPath recursive descent lexer
  */
-class Lexer implements \Iterator
+class Lexer implements \SeekableIterator
 {
     const T_EOF = 0;
     const T_IDENTIFIER = 1;
@@ -72,6 +72,16 @@ class Lexer implements \Iterator
         $ref = new \ReflectionClass($this);
 
         return array_search($token, $ref->getConstants());
+    }
+
+    public function seek($position)
+    {
+        if ($position < $this->key()) {
+            $this->rewind();
+        }
+        while ($this->valid() && $this->key() < $position) {
+            $this->next();
+        }
     }
 
     public function current()

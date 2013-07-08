@@ -51,12 +51,12 @@ class Parser
     /**
      * Searches an array of data using a JamesPath expression
      *
-     * @param string $expression JamesPath expression
-     * @param array  $data       Data to traverse
+     * @param string              $expression JamesPath expression
+     * @param array|\ArrayAccess  $data       Data to traverse
      *
      * @return array|string|int|null
      */
-    public static function search($expression, array $data)
+    public static function search($expression, $data)
     {
         $result = self::compile($expression)->search($data);
 
