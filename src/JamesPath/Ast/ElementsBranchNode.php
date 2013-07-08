@@ -18,7 +18,7 @@ class ElementsBranchNode extends AbstractNode
     public function search($value)
     {
         if ($result = $this->node->search($value)) {
-            return new MultiMatch((array) $result);
+            return $result instanceof MultiMatch ? $result : new MultiMatch((array) $result);
         }
     }
 
