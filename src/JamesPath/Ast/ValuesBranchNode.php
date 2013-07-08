@@ -17,7 +17,7 @@ class ValuesBranchNode extends AbstractNode
 
     public function search($value)
     {
-        $response = $this->node ? $this->node->search($value) : array_values($value);
+        $response = $this->node ? $this->node->search($value) : $value;
 
         return is_array($response) ? new MultiMatch(array_values($response)) : null;
     }

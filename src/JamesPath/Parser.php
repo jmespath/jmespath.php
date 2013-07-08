@@ -59,9 +59,6 @@ class Parser
     public static function search($expression, array $data)
     {
         $result = self::compile($expression)->search($data);
-        if (is_array($result)) {
-            $result = new MultiMatch($result);
-        }
 
         return $result instanceof MultiMatch ? $result->toArray() : $result;
     }
@@ -164,7 +161,7 @@ class Parser
         // Allows: "*.", "*[X]", "*", "* || ..."
         $this->match(array(Lexer::T_DOT, Lexer::T_LBRACKET, Lexer::T_EOF, Lexer::T_OR));
 
-        return $this->parseNext(new ElementsBranchNode($current));
+        return $this->parseNext(new ValuesBranchNode($current));
     }
 
     protected function parseIndex(AbstractNode $current = null)
@@ -176,7 +173,7 @@ class Parser
 
         if ($value === '*') {
             // Parsing a wildcard index
-            return $this->parseNext(new ValuesBranchNode($current));
+            return $this->parseNext(new ElementsBranchNode($current));
         } elseif ($current) {
             // At a specific index: "Foo[0]"
             return $this->parseNext(new SubExpressionNode($current, new IndexNode($value)));
