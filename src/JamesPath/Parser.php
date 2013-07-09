@@ -126,7 +126,7 @@ class Parser
             case Lexer::T_DOT:
                 return $this->parseDot($current);
             case Lexer::T_STAR:
-                return $this->parseWildcard($current);
+                return $this->parseWildcard();
             case Lexer::T_LBRACKET:
                 return $this->parseIndex($current);
             case Lexer::T_OR:
@@ -155,7 +155,7 @@ class Parser
         return new SubExpressionNode($current, $this->parseNext($current));
     }
 
-    protected function parseWildcard(AbstractNode $current = null)
+    protected function parseWildcard()
     {
         // Allows: "*.", "*[X]", "*", "* || ..."
         $this->match(array(Lexer::T_DOT, Lexer::T_LBRACKET, Lexer::T_EOF, Lexer::T_OR));
