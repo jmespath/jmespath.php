@@ -29,6 +29,6 @@ class OrExpressionNode extends AbstractNode
 
     public function prettyPrint($indent = '')
     {
-        return sprintf("%s%s OR %s", $indent, $this->first->prettyPrint(), $this->remaining->prettyPrint());
+        return sprintf("%sORExpression(%s, %s)", $indent, $this->first, $this->remaining);
     }
 }
