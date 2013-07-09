@@ -3,12 +3,12 @@
 namespace JamesPath;
 
 use JamesPath\Ast\AbstractNode;
-use JamesPath\Ast\ElementsBranchNode;
 use JamesPath\Ast\IndexNode;
 use JamesPath\Ast\MultiMatch;
 use JamesPath\Ast\OrExpressionNode;
 use JamesPath\Ast\SubExpressionNode;
-use JamesPath\Ast\ValuesBranchNode;
+use JamesPath\Ast\WildcardValuesNode;
+use JamesPath\Ast\WildcardIndexNode;
 
 class Parser
 {
@@ -150,10 +150,9 @@ class Parser
     protected function parseDot(AbstractNode $current)
     {
         // Allows: "Foo.Bar", "Foo.*", or "Foo.123"
-        $token = $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_NUMBER));
-        $result = $this->parseNext($current);
+        $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_NUMBER));
 
-        return $token->type == Lexer::T_STAR ? $result : new SubExpressionNode($current, $result);
+        return new SubExpressionNode($current, $this->parseNext($current));
     }
 
     protected function parseWildcard(AbstractNode $current = null)
@@ -161,7 +160,7 @@ class Parser
         // Allows: "*.", "*[X]", "*", "* || ..."
         $this->match(array(Lexer::T_DOT, Lexer::T_LBRACKET, Lexer::T_EOF, Lexer::T_OR));
 
-        return $this->parseNext(new ValuesBranchNode($current));
+        return $this->parseNext(new WildcardValuesNode());
     }
 
     protected function parseIndex(AbstractNode $current = null)
@@ -170,17 +169,11 @@ class Parser
         $value = $this->match(array(Lexer::T_NUMBER, Lexer::T_STAR))->value;
         $this->match(Lexer::T_RBRACKET);
         $this->lexer->next();
+        $indexNode = $value === '*' ? new WildcardIndexNode() : new IndexNode($value);
 
-        if ($value === '*') {
-            // Parsing a wildcard index
-            return $this->parseNext(new ElementsBranchNode($current));
-        } elseif ($current) {
-            // At a specific index: "Foo[0]"
-            return $this->parseNext(new SubExpressionNode($current, new IndexNode($value)));
-        } else {
-            // At root: "[0]"
-            return $this->parseNext(new IndexNode($value));
-        }
+        return $current
+            ? $this->parseNext(new SubExpressionNode($current, $indexNode))
+            : $this->parseNext($indexNode);
     }
 
     protected function parseOr(AbstractNode $current = null)
