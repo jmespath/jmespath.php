@@ -14,9 +14,14 @@ class SubExpressionNode extends AbstractNode
      * @param AbstractNode $parent Parent node
      * @param AbstractNode $child  Child node
      */
-    public function __construct(AbstractNode $parent, AbstractNode $child)
+    public function __construct(AbstractNode $parent, AbstractNode $child = null)
     {
         $this->parent = $parent;
+        $this->child = $child;
+    }
+
+    public function setChild(AbstractNode $child)
+    {
         $this->child = $child;
     }
 
@@ -35,7 +40,7 @@ class SubExpressionNode extends AbstractNode
             $indent,
             $this->parent->prettyPrint($subIndent),
             $indent,
-            $this->child->prettyPrint($subIndent)
+            $this->child ? $this->child->prettyPrint($subIndent) : ''
         );
     }
 }

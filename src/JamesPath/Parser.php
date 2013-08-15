@@ -13,16 +13,15 @@ use JamesPath\Ast\WildcardIndexNode;
 class Parser
 {
     /** @var self */
-    protected static $instance;
-
+    private static $instance;
     /** @var array Cache of previously computed ASTs */
-    protected static $cache = array();
-
+    private static $cache = array();
     /** @var int Maximum number of cached expressions */
-    protected static $maxSize = 64;
-
+    private static $maxSize = 64;
     /** @var Lexer */
-    protected $lexer;
+    private $lexer;
+    /** @var AbstractNode */
+    private $rootNode;
 
     /**
      * @param Lexer $lexer Lexer used to tokenize paths
@@ -74,7 +73,7 @@ class Parser
     /**
      * Free a random sample from the AST cache
      */
-    protected static function freeCache()
+    private static function freeCache()
     {
         shuffle(self::$cache);
         self::$cache = array_slice(self::$cache, self::$maxSize / 2);
@@ -89,6 +88,7 @@ class Parser
      */
     public function parse($path)
     {
+        $this->rootNode = null;
         if (!isset(self::$cache[$path])) {
             if (count(self::$cache) >= self::$maxSize) {
                 self::freeCache();
@@ -107,7 +107,7 @@ class Parser
      * @return Token
      * @throws SyntaxErrorException
      */
-    protected function match($type)
+    private function match($type)
     {
         $this->lexer->next();
         if (!in_array($this->lexer->current()->type, (array) $type)) {
@@ -117,28 +117,43 @@ class Parser
         return $this->lexer->current();
     }
 
-    protected function parseNext(AbstractNode $current = null)
+    private function parseNext(AbstractNode $current = null)
     {
+        $root = !$this->rootNode;
+        $this->checkRoot($current);
+
         switch ($this->lexer->current()->type) {
             case Lexer::T_IDENTIFIER:
             case Lexer::T_NUMBER:
-                return $this->parseIdentifier();
+                $result = $this->parseIdentifier();
+                break;
             case Lexer::T_DOT:
-                return $this->parseDot($current);
+                $result = $this->parseDot($current);
+                break;
             case Lexer::T_STAR:
-                return $this->parseWildcard();
+                $result = $this->parseWildcard();
+                break;
             case Lexer::T_LBRACKET:
-                return $this->parseIndex($current);
+                $result = $this->parseIndex($current);
+                break;
             case Lexer::T_OR:
-                return $this->parseOr($current);
+                $result = $this->parseOr($current);
+                break;
             case Lexer::T_EOF:
-                return $current;
+                $result = $current;
+                break;
+            default:
+                throw new SyntaxErrorException(range(0, 6), $this->lexer->current(), $this->lexer);
         }
 
-        throw new SyntaxErrorException(range(0, 6), $this->lexer->current(), $this->lexer);
+        if ($root) {
+            return $this->rootNode;
+        } else {
+            return $result;
+        }
     }
 
-    protected function parseIdentifier()
+    private function parseIdentifier()
     {
         $field = new Ast\FieldNode($this->lexer->current()->value);
         // Allows: "Foo.Bar", "Foo[123]", "Foo", "Foo || ..."
@@ -147,15 +162,18 @@ class Parser
         return $this->parseNext($field);
     }
 
-    protected function parseDot(AbstractNode $current)
+    private function parseDot(AbstractNode $current)
     {
         // Allows: "Foo.Bar", "Foo.*", or "Foo.123"
         $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_NUMBER));
+        $sub = new SubExpressionNode($current);
+        $this->checkRoot($current, $sub);
+        $sub->setChild($this->parseNext($current));
 
-        return new SubExpressionNode($current, $this->parseNext($current));
+        return $sub;
     }
 
-    protected function parseWildcard()
+    private function parseWildcard()
     {
         // Allows: "*.", "*[X]", "*", "* || ..."
         $this->match(array(Lexer::T_DOT, Lexer::T_LBRACKET, Lexer::T_EOF, Lexer::T_OR));
@@ -163,24 +181,42 @@ class Parser
         return $this->parseNext(new WildcardValuesNode());
     }
 
-    protected function parseIndex(AbstractNode $current = null)
+    private function parseIndex(AbstractNode $current = null)
     {
         // Allows: "Foo[123]", "Foo[*]"
         $value = $this->match(array(Lexer::T_NUMBER, Lexer::T_STAR))->value;
         $this->match(Lexer::T_RBRACKET);
         $this->lexer->next();
         $indexNode = $value === '*' ? new WildcardIndexNode() : new IndexNode($value);
+        $sub = $current ? new SubExpressionNode($current, $indexNode) : $indexNode;
+        $this->checkRoot($current, $sub);
 
-        return $current
-            ? $this->parseNext(new SubExpressionNode($current, $indexNode))
-            : $this->parseNext($indexNode);
+        return $this->parseNext($sub);
     }
 
-    protected function parseOr(AbstractNode $current = null)
+    private function parseOr(AbstractNode $current = null)
     {
         // Allows "Foo || Bar", "Foo || *", "Foo || [123]"
         $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_LBRACKET));
+        // Change the root node but return the existing $current value for recursive descent
+        $this->rootNode = new OrExpressionNode($this->rootNode, $this->parseNext($current));
 
-        return new OrExpressionNode($current, $this->parseNext());
+        return $current;
+    }
+
+    private function checkRoot(AbstractNode $current = null, AbstractNode $nextNode = null)
+    {
+        if (!$current) {
+            return;
+        }
+
+        // Sub expressions can wrap a root node, making it the new root
+        if ($nextNode instanceof SubExpressionNode && $current === $this->rootNode) {
+            $this->rootNode = $nextNode;
+        }
+
+        if (!$this->rootNode) {
+            $this->rootNode = $current;
+        }
     }
 }
