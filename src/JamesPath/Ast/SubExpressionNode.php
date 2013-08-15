@@ -27,6 +27,10 @@ class SubExpressionNode extends AbstractNode
 
     public function search($value)
     {
+        if (!$this->child) {
+            throw new \RuntimeException('Incomplete ' . __CLASS__);
+        }
+
         return $this->child->search($this->parent->search($value));
     }
 
