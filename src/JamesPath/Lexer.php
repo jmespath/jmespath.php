@@ -84,15 +84,6 @@ class Lexer implements \SeekableIterator
         }
     }
 
-    public function peek()
-    {
-        if ($this->key() < count($this->tokens) - 1) {
-            return $this->tokens[$this->key() + 1];
-        } else {
-            return Token::getEof();
-        }
-    }
-
     public function current()
     {
         return current($this->tokens) ?: Token::getEof();
