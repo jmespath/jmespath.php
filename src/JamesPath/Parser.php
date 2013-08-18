@@ -162,7 +162,7 @@ class Parser
         $this->match(array(Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_NUMBER));
         $sub = new SubExpressionNode($current);
         $this->checkRoot($current, $root, $sub);
-        $sub->setChild($this->parseNext($current, $root));
+        $sub->setRight($this->parseNext($current, $root));
 
         return $sub;
     }

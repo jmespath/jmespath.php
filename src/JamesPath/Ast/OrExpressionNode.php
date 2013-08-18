@@ -5,30 +5,29 @@ namespace JamesPath\Ast;
 class OrExpressionNode extends AbstractNode
 {
     /** @var AbstractNode */
-    protected $first;
-
+    protected $left;
     /** @var AbstractNode */
-    protected $remaining;
+    protected $right;
 
     /**
-     * @param AbstractNode $first     First option
-     * @param AbstractNode $remaining Second option
+     * @param AbstractNode $left     left option
+     * @param AbstractNode $right Second option
      */
-    public function __construct(AbstractNode $first, AbstractNode $remaining)
+    public function __construct(AbstractNode $left, AbstractNode $right)
     {
-        $this->first = $first;
-        $this->remaining = $remaining;
+        $this->left = $left;
+        $this->right = $right;
     }
 
     public function search($value)
     {
-        $matched = $this->first->search($value);
+        $matched = $this->left->search($value);
 
-        return null !== $matched ? $matched : $this->remaining->search($value);
+        return null !== $matched ? $matched : $this->right->search($value);
     }
 
     public function prettyPrint($indent = '')
     {
-        return sprintf("%sORExpression(%s, %s)", $indent, $this->first, $this->remaining);
+        return sprintf("%sORExpression(%s, %s)", $indent, $this->left, $this->right);
     }
 }

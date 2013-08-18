@@ -5,33 +5,32 @@ namespace JamesPath\Ast;
 class SubExpressionNode extends AbstractNode
 {
     /** @var AbstractNode */
-    protected $parent;
-
+    protected $left;
     /** @var AbstractNode */
-    protected $child;
+    protected $right;
 
     /**
-     * @param AbstractNode $parent Parent node
-     * @param AbstractNode $child  Child node
+     * @param AbstractNode $left left node
+     * @param AbstractNode $right  right node
      */
-    public function __construct(AbstractNode $parent, AbstractNode $child = null)
+    public function __construct(AbstractNode $left, AbstractNode $right = null)
     {
-        $this->parent = $parent;
-        $this->child = $child;
+        $this->left = $left;
+        $this->right = $right;
     }
 
-    public function setChild(AbstractNode $child)
+    public function setRight(AbstractNode $right)
     {
-        $this->child = $child;
+        $this->right = $right;
     }
 
     public function search($value)
     {
-        if (!$this->child) {
+        if (!$this->right) {
             throw new \RuntimeException('Incomplete ' . __CLASS__);
         }
 
-        return $this->child->search($this->parent->search($value));
+        return $this->right->search($this->left->search($value));
     }
 
     public function prettyPrint($indent = '')
@@ -42,9 +41,9 @@ class SubExpressionNode extends AbstractNode
             "%sSubExpression(\n%s%s,\n%s%s)",
             $indent,
             $indent,
-            $this->parent->prettyPrint($subIndent),
+            $this->left->prettyPrint($subIndent),
             $indent,
-            $this->child ? $this->child->prettyPrint($subIndent) : ''
+            $this->right ? $this->right->prettyPrint($subIndent) : ''
         );
     }
 }
