@@ -18,6 +18,22 @@ class MultiMatch implements \ArrayAccess
     }
 
     /**
+     * Resolve a multimatch array or object
+     *
+     * @param $element
+     */
+    public static function resolve(&$element)
+    {
+        if ($element instanceof self) {
+            $element = $element->toArray();
+        } elseif (is_array($element)) {
+            foreach ($element as &$value) {
+                self::resolve($value);
+            }
+        }
+    }
+
+    /**
      * Convert the MultiMatch object to an array
      *
      * @return array
@@ -26,7 +42,8 @@ class MultiMatch implements \ArrayAccess
     {
         $results = array();
         foreach ($this->elements as $key => $element) {
-            $results[$key] = $element instanceof self ? $element->toArray() : $element;
+            self::resolve($element);
+            $results[$key] = $element;
         }
 
         return $results;

@@ -56,8 +56,9 @@ class Parser
     public static function search($expression, $data)
     {
         $result = self::compile($expression)->search($data);
+        MultiMatch::resolve($result);
 
-        return $result instanceof MultiMatch ? $result->toArray() : $result;
+        return $result;
     }
 
     /**
