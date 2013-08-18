@@ -19,9 +19,9 @@ class Token
      */
     public function __construct($type, $value, $position)
     {
-        // Remove escape characters
+        // Remove escape characters from quotes
         if ($type == Lexer::T_IDENTIFIER) {
-            $value = str_replace('\\', '', $value);
+            $value = str_replace('\\"', '"', $value);
         }
 
         $this->type = $type;

@@ -22,15 +22,16 @@ class Lexer implements \SeekableIterator
     private $tokens;
 
     private $regex = '/
-        (\w+)     # T_IDENTIFIER
-        |\s+      # Ignore whitespace
-        |(\.)     # T_DOT
-        |(\*)     # T_STAR
-        |(\[)     # T_LBRACKET
-        |(\])     # T_RBRACKET
-        |(\-?\d+) # T_NUMBER
-        |(\|\|)   # T_OR
-        |(.)      # T_UNKNOWN
+        (\w+)               # T_IDENTIFIER
+        |("(?:\\\"|[^"])*") # T_IDENTIFIER
+        |\s+                # Ignore whitespace
+        |(\.)               # T_DOT
+        |(\*)               # T_STAR
+        |(\[)               # T_LBRACKET
+        |(\])               # T_RBRACKET
+        |(\-?\d+)           # T_NUMBER
+        |(\|\|)             # T_OR
+        |(.)                # T_UNKNOWN
     /x';
 
     private $simpleTokens = array(
@@ -124,10 +125,16 @@ class Lexer implements \SeekableIterator
                 $this->tokens[] = new Token($this->simpleTokens[$token[0]], $token[0], $token[1]);
             } elseif (is_numeric($token[0])) {
                 $this->tokens[] = new Token(self::T_NUMBER, (int) $token[0], $token[1]);
-            } elseif (ctype_alnum(($token[0]))) {
+            } elseif (ctype_alnum($token[0])) {
                 $this->tokens[] = new Token(self::T_IDENTIFIER, $token[0], $token[1]);
+            } elseif ($token[0] != '"' && substr($token[0], 0, 1) == '"' && substr($token[0], -1, 1) == '"') {
+                $this->tokens[] = new Token(self::T_IDENTIFIER, substr($token[0], 1, -1), $token[1]);
             } else {
-                $this->tokens[] = new Token(self::T_UNKNOWN, $token[0], $token[1]);
+                $this->tokens[] = $t = new Token(self::T_UNKNOWN, $token[0], $token[1]);
+                // Check for an unclosed quote character
+                if ($token[0] == '"') {
+                    throw new SyntaxErrorException('Unclosed quote character', $t, $this);
+                }
             }
         }
     }
