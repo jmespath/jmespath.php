@@ -5,7 +5,7 @@ namespace JamesPath;
 /**
  * Uses a Lexer to generate an array of bytecode
  */
-class BytecodeParser
+class Parser
 {
     /** @var Lexer */
     private $lexer;

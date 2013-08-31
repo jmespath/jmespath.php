@@ -5,7 +5,7 @@ namespace JamesPath;
 /**
  * Executes JamesPath bytecode
  */
-class BytecodeInterpreter
+class Interpreter
 {
     /** @var array Initial input data */
     private $data;
