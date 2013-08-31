@@ -7,16 +7,16 @@ namespace JamesPath;
  */
 class Lexer implements \SeekableIterator
 {
-    const T_EOF = 0;
-    const T_IDENTIFIER = 1;
-    const T_DOT = 2;
-    const T_STAR = 3;
-    const T_NUMBER = 4;
-    const T_OR = 5;
-    const T_LBRACKET = 6;
-    const T_RBRACKET = 7;
-    const T_IGNORE = 8;
-    const T_UNKNOWN = 9;
+    const T_EOF = 'T_EOF';
+    const T_IDENTIFIER = 'T_IDENTIFIER';
+    const T_DOT = 'T_DOT';
+    const T_STAR = 'T_STAR';
+    const T_NUMBER = 'T_NUMBER';
+    const T_OR = 'T_OR';
+    const T_LBRACKET = 'T_LBRACKET';
+    const T_RBRACKET = 'T_RBRACKET';
+    const T_IGNORE = 'T_IGNORE';
+    const T_UNKNOWN = 'T_UNKNOWN';
 
     private $input;
     private $tokens;
@@ -63,16 +63,15 @@ class Lexer implements \SeekableIterator
     }
 
     /**
-     * Get the name of a token
+     * Look at the next token without consuming it
      *
-     * @param int $token Token integer
-     * @return string|bool
+     * @return Token
      */
-    public function getTokenName($token)
+    public function peek()
     {
-        $ref = new \ReflectionClass($this);
-
-        return array_search($token, $ref->getConstants());
+        return $this->key() < count($this->tokens) - 1
+            ? $this->tokens[$this->key() + 1]
+            : Token::getEof();
     }
 
     public function seek($position)

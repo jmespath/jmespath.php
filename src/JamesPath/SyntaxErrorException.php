@@ -2,6 +2,9 @@
 
 namespace JamesPath;
 
+/**
+ * Syntax errors raise this exception that gives context
+ */
 class SyntaxErrorException extends \InvalidArgumentException
 {
     public function __construct($expectedTypesOrMessage, Token $token, Lexer $lexer)
@@ -14,10 +17,8 @@ class SyntaxErrorException extends \InvalidArgumentException
         } else {
             $message .= sprintf(
                 'Expected %s; found %s "%s"',
-                implode(' or ', array_map(function ($t) use ($lexer) {
-                    return $lexer->getTokenName($t);
-                }, (array) $expectedTypesOrMessage)),
-                $lexer->getTokenName($token->type),
+                implode(' or ', (array) $expectedTypesOrMessage),
+                $token->type,
                 $token->value
             );
         }
