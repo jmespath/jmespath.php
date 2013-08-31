@@ -3,21 +3,34 @@
 namespace JamesPath;
 
 /**
- * Uses a Lexer to generate an array of bytecode
+ * Assembler that parses tokens from a lexer into opcodes
  */
 class Parser
 {
     /** @var Lexer */
     private $lexer;
 
-    /** @var array */
+    /** @var array opcode stack*/
     private $stack;
 
-    /** @var array */
-    private $nextExpr = [Lexer::T_DOT, Lexer::T_EOF, Lexer::T_LBRACKET, Lexer::T_OR];
-
-    /** @var array */
+    /** @var array Known opcodes of the parser */
     private $methods;
+
+    /** @var array Default lexical tokens to expect */
+    private static $nextExpr = [
+        Lexer::T_DOT => true,
+        Lexer::T_EOF => true,
+        Lexer::T_LBRACKET => true,
+        Lexer::T_OR => true
+    ];
+
+    /** @var array First acceptable token */
+    private static $firstTokens = [
+        Lexer::T_IDENTIFIER => true,
+        Lexer::T_STAR => true,
+        Lexer::T_LBRACKET => true,
+        Lexer::T_EOF => true
+    ];
 
     /**
      * @param Lexer $lexer Lexer used to tokenize paths
@@ -34,15 +47,18 @@ class Parser
      * @param string $path Path to parse
      *
      * @return array
+     * @throws SyntaxErrorException
      */
     public function parse($path)
     {
         $this->stack = [];
         $this->lexer->setInput($path);
-        $this->matchToken(
-            $this->lexer->current(),
-            [Lexer::T_IDENTIFIER, Lexer::T_STAR, Lexer::T_LBRACKET, Lexer::T_EOF]
-        );
+
+        // Ensure that the first token is valid
+        if (!isset(self::$firstTokens[$this->lexer->current()->type])) {
+            throw new SyntaxErrorException(self::$firstTokens, $this->lexer->current(), $this->lexer);
+        }
+
         $this->extractTokens();
 
         return $this->stack;
@@ -65,21 +81,24 @@ class Parser
         $this->stack[] = ['push', $token->value];
         $this->stack[] = ['op', 'field'];
 
-        return $this->match($this->nextExpr);
+        return $this->match(self::$nextExpr);
     }
 
     private function parse_T_LBRACKET(Token $token)
     {
-        $next = $this->match([Lexer::T_NUMBER, Lexer::T_STAR]);
+        static $expectedAfterOpenBracket = [Lexer::T_NUMBER => true, Lexer::T_STAR => true];
+        static $expectedClosingBracket = [Lexer::T_RBRACKET => true];
+
+        $next = $this->match($expectedAfterOpenBracket);
         if ($next->type == Lexer::T_STAR) {
             $this->stack[] = ['op', 'star'];
         } else {
             $this->stack[] = ['push', $next->value];
             $this->stack[] = ['op', 'index'];
         }
-        $this->match([Lexer::T_RBRACKET]);
+        $this->match($expectedClosingBracket);
 
-        return $this->match($this->nextExpr);
+        return $this->match(self::$nextExpr);
     }
 
     private function parse_T_NUMBER(Token $token)
@@ -87,41 +106,32 @@ class Parser
         $this->stack[] = ['push', $token->value];
         $this->stack[] = ['op', 'field'];
 
-        return $this->match($this->nextExpr);
+        return $this->match(self::$nextExpr);
     }
 
     private function parse_T_OR(Token $token)
     {
         $this->stack[] = ['op', 'or'];
-        $this->lexer->next();
 
-        return $this->lexer->current();
+        return $this->match(self::$firstTokens);
     }
 
     private function parse_T_STAR(Token $token)
     {
         $this->stack[] = ['op', 'star'];
 
-        return $this->match($this->nextExpr);
+        return $this->match(self::$nextExpr);
     }
 
     private function parse_T_DOT(Token $token)
     {
-        return $this->match([Lexer::T_IDENTIFIER, Lexer::T_NUMBER, Lexer::T_STAR]);
-    }
+        static $expectedAfterDot = [
+            Lexer::T_IDENTIFIER => true,
+            Lexer::T_NUMBER => true,
+            Lexer::T_STAR => true
+        ];
 
-    /**
-     * Match a token against a list of expected types
-     *
-     * @param Token $token to match
-     * @param array $types Value types
-     * @throws SyntaxErrorException
-     */
-    private function matchToken(Token $token, array $types)
-    {
-        if (!in_array($token->type, $types)) {
-            throw new SyntaxErrorException($types, $token, $this->lexer);
-        }
+        return $this->match($expectedAfterDot);
     }
 
     /**
@@ -135,7 +145,9 @@ class Parser
     {
         $this->lexer->next();
         $token = $this->lexer->current();
-        $this->matchToken($token, $types);
+        if (!isset($types[$token->type])) {
+            throw new SyntaxErrorException($types, $token, $this->lexer);
+        }
 
         return $token;
     }
