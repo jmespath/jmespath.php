@@ -94,7 +94,19 @@ class BytecodeInterpreter
 
     private function op_index($state)
     {
-        return $this->op_field($state);
+        $arg = array_pop($this->buffer);
+
+        if (!is_array($state)) {
+            return null;
+        }
+
+        $arg = $arg < 0 ? count($state) + $arg : $arg;
+
+        if (isset($state[$arg])) {
+            return $state[$arg];
+        } else {
+            return null;
+        }
     }
 
     private function op_star($state)

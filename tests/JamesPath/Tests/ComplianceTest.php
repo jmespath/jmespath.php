@@ -2,7 +2,9 @@
 
 namespace JamesPath\Tests;
 
-use JamesPath\Parser;
+use JamesPath\BytecodeParser;
+use JamesPath\BytecodeInterpreter;
+use JamesPath\Lexer;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
 {
@@ -14,12 +16,15 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         // Fix the old "or" syntax
         $expression = str_replace(' or ', ' || ', $expression);
 
-        $ast = Parser::compile($expression);
-        $parsed = Parser::search($expression, $data);
+        $parser = new BytecodeParser(new Lexer());
+        $opcodes = $parser->parse($expression);
+        $interpreter = new BytecodeInterpreter($opcodes);
+        $parsed = $interpreter->execute($data);
+
         $this->assertEquals(
             $result,
             $parsed,
-            $expression . "\n\n" . var_export($data, true) . "\n\n" . var_export($parsed, true) . "\n\n" . $ast
+            $expression . "\n\n" . var_export($data, true) . "\n\n" . var_export($parsed, true) . "\n\n" . var_export($opcodes, true)
         );
     }
 
