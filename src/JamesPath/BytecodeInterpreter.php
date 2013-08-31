@@ -2,21 +2,45 @@
 
 namespace JamesPath;
 
+/**
+ * Executes JamesPath bytecode
+ */
 class BytecodeInterpreter
 {
+    /** @var array Initial input data */
     private $data;
+
+    /** @var array Bytecode to execute */
     private $bytecode;
+
+    /** @var array Array of known opcodes */
     private $methods;
+
+    /** @var array Buffer of opcode arguments */
     private $buffer;
+
     /** @var \ArrayIterator */
     private $iterator;
 
+    /** @var string Process opcodes until this code */
+    private $breakpoint;
+
+    /**
+     * @param array $bytecode Array of JamesPath bytecode
+     */
     public function __construct(array $bytecode)
     {
         $this->bytecode = $bytecode;
         $this->methods = array_flip(get_class_methods($this));
     }
 
+    /**
+     * Get the bytecode execution result from an array of input data
+     *
+     * @param array $data Input array to process
+     *
+     * @return mixed
+     */
     public function execute($data)
     {
         $this->data = $state = $data;
@@ -30,32 +54,29 @@ class BytecodeInterpreter
     {
         while ($this->iterator->valid()) {
             $op = $this->iterator->current();
-            if ($op[0] == 'push') {
-                $this->push($op[1]);
-            } elseif ($op[0] == 'op') {
-                $state = $this->op($op[1], $state);
-            } else {
-                throw new \RuntimeException('Unknown opcode: ' . $op[0]);
+            switch ($op[0]) {
+                case 'push':
+                    $this->buffer[] = $op[1];
+                    break;
+                case 'op':
+                    // Break if a breakpoint has been set
+                    if ($this->breakpoint && $op[1] == $this->breakpoint) {
+                        $this->iterator->seek($this->iterator->key() - 1);
+                        return $state;
+                    }
+                    $arg = 'op_' . $op[1];
+                    if (!isset($this->methods[$arg])) {
+                        throw new \RuntimeException('Unknown method: ' . $arg);
+                    }
+                    $state = $this->{$arg}($state);
+                    break;
+                default:
+                    throw new \RuntimeException('Unknown opcode: ' . $op[0]);
             }
             $this->iterator->next();
         }
 
         return $state;
-    }
-
-    private function push($arg)
-    {
-        $this->buffer[] = $arg;
-    }
-
-    private function op($arg, $state)
-    {
-        $arg = 'op_' . $arg;
-        if (isset($this->methods[$arg])) {
-            return $this->{$arg}($state);
-        } else {
-            throw new \RuntimeException('Unknown opcode: ' . $arg);
-        }
     }
 
     private function op_field($state)
@@ -64,15 +85,11 @@ class BytecodeInterpreter
 
         if (!is_array($state)) {
             return null;
-        }
-
-        if (isset($state[$arg])) {
-            $state = $state[$arg];
+        } elseif (isset($state[$arg])) {
+            return $state[$arg];
         } else {
-            $state = null;
+            return null;
         }
-
-        return $state;
     }
 
     private function op_index($state)
@@ -87,49 +104,40 @@ class BytecodeInterpreter
         }
 
         $key = $this->iterator->key() + 1;
-        if ($key == count($this->iterator)) {
-            return $state;
+
+        // If the star is last in an expression, then it's irrelevant
+        if ($key == count($this->iterator)
+            || ($this->iterator[$key][0] == 'op' && $this->iterator[$key][1] == 'or')
+        ) {
+            return array_values($state);
         }
 
+        // Collect the result of each possibility until an OR opcode is hit
         $collected = [];
         foreach ($state as $value) {
             $this->iterator->seek($key);
+            $this->breakpoint = 'or';
             if (null !== ($result = $this->descend($value))) {
                 $collected[] = $result;
             }
         }
+        $this->breakpoint = null;
 
         return $collected ? $collected : null;
     }
 
-    private function op_star_i($state)
-    {
-        if (!is_array($state)) {
-            return null;
-        }
-
-        $collected = [];
-        $key = $this->iterator->key() + 1;
-        foreach ($state as $value) {
-            $this->iterator->seek($key);
-            if (null !== ($result = $this->descend($value))) {
-                $collected[] = $result;
-            }
-        }
-
-        return $collected;
-    }
-
     private function op_or($state)
     {
-        // The OR terminates the interpreter, so consume all tokens
-        if (null !== $state) {
-            $this->iterator->seek($this->iterator->count());
+        // Recursively descend into the or processing from the original data if left EXP is null
+        if ($state === null) {
             $this->iterator->next();
-            return $state;
+            return $this->descend($this->data);
         }
 
-        // Recursively descend into the or processing from the original data
-        return $this->descend($this->data);
+        // The left data is valid, so return it and consume any remaining bytecode
+        $this->iterator->seek($this->iterator->count() - 1);
+        $this->iterator->next();
+
+        return $state;
     }
 }

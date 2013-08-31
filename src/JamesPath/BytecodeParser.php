@@ -2,14 +2,20 @@
 
 namespace JamesPath;
 
+/**
+ * Uses a Lexer to generate an array of bytecode
+ */
 class BytecodeParser
 {
     /** @var Lexer */
     private $lexer;
+
     /** @var array */
     private $stack = [];
+
     /** @var array */
     private $nextExpr = [Lexer::T_DOT, Lexer::T_EOF, Lexer::T_LBRACKET, Lexer::T_OR];
+
     /** @var array */
     private $methods;
 
@@ -118,32 +124,17 @@ class BytecodeParser
     }
 
     /**
-     * Match the next token against one or more types without consuming it
-     *
-     * @param int|array $type Type to match
-     * @return Token
-     * @throws SyntaxErrorException
-     */
-    private function peek($type)
-    {
-        $peek = $this->lexer->peek();
-        $this->matchToken($peek, (array) $type);
-
-        return $peek;
-    }
-
-    /**
      * Match the next token against one or more types
      *
-     * @param int|array $type Type to match
+     * @param array $types Type to match
      * @return Token
      * @throws SyntaxErrorException
      */
-    private function match($type)
+    private function match(array $types)
     {
         $this->lexer->next();
         $token = $this->lexer->current();
-        $this->matchToken($token, (array) $type);
+        $this->matchToken($token, $types);
 
         return $token;
     }

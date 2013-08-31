@@ -62,18 +62,6 @@ class Lexer implements \SeekableIterator
         return $this->input;
     }
 
-    /**
-     * Look at the next token without consuming it
-     *
-     * @return Token
-     */
-    public function peek()
-    {
-        return $this->key() < count($this->tokens) - 1
-            ? $this->tokens[$this->key() + 1]
-            : Token::getEof();
-    }
-
     public function seek($position)
     {
         if ($position < $this->key()) {
