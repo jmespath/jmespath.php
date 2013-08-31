@@ -43,9 +43,10 @@ class Interpreter
      */
     public function execute($data)
     {
-        $this->data = $state = $data;
-        $this->buffer = [];
         $this->iterator = new \ArrayIterator($this->bytecode);
+        $this->data = $state = $data;
+        $this->breakpoint = null;
+        $this->buffer = [];
 
         return $this->descend($state);
     }

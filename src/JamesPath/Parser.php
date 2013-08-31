@@ -11,7 +11,7 @@ class Parser
     private $lexer;
 
     /** @var array */
-    private $stack = [];
+    private $stack;
 
     /** @var array */
     private $nextExpr = [Lexer::T_DOT, Lexer::T_EOF, Lexer::T_LBRACKET, Lexer::T_OR];
@@ -37,6 +37,7 @@ class Parser
      */
     public function parse($path)
     {
+        $this->stack = [];
         $this->lexer->setInput($path);
         $this->matchToken(
             $this->lexer->current(),
