@@ -12,15 +12,29 @@ namespace JmesPath;
  */
 function search($expression, array $data)
 {
-    static $cache, $parser, $interpreter, $cacheSize;
+    static $interpreter;
+
+    if (!$interpreter) {
+        $interpreter = new Interpreter();
+    }
+
+    return $interpreter->execute(compile($expression), $data);
+}
+
+/**
+ * Compile a JMESPath expression into opcodes
+ *
+ * @param string $expression Expression to compile
+ *
+ * @return array Returns an array of opcodes
+ */
+function compile($expression)
+{
+    static $cache, $cacheSize, $parser;
 
     if (!$cache) {
         $cache = [];
         $cacheSize = 0;
-    }
-
-    if (!$interpreter) {
-        $interpreter = new Interpreter();
     }
 
     if (!isset($cache[$expression])) {
@@ -37,5 +51,5 @@ function search($expression, array $data)
         $cache[$expression] = $parser->compile($expression);
     }
 
-    return $interpreter->execute($cache[$expression], $data);
+    return $cache[$expression];
 }
