@@ -1,6 +1,6 @@
 <?php
 
-namespace JamesPath;
+namespace JmesPath;
 
 /**
  * Assembler that parses tokens from a lexer into opcodes
@@ -42,7 +42,7 @@ class Parser
     }
 
     /**
-     * Compile a JamesPath expression into an array of opcodes
+     * Compile a JmesPath expression into an array of opcodes
      *
      * @param string $path Path to parse
      *

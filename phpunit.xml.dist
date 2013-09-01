@@ -11,13 +11,13 @@
 
     <testsuites>
         <testsuite>
-            <directory>./tests/JamesPath/Tests</directory>
+            <directory>./tests/JmesPath/Tests</directory>
         </testsuite>
     </testsuites>
 
     <filter>
         <whitelist>
-            <directory suffix=".php">./src/JamesPath</directory>
+            <directory suffix=".php">./src/JmesPath</directory>
         </whitelist>
     </filter>
 

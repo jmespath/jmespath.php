@@ -1,6 +1,6 @@
 <?php
 
-namespace JamesPath;
+namespace JmesPath;
 
 /**
  * Syntax errors raise this exception that gives context

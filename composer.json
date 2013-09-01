@@ -1,5 +1,5 @@
 {
-  "name": "mtdowling/jamespath.php",
+  "name": "mtdowling/jmespath.php",
   "description": "Declaratively specify how to extract elements from a JSON document",
   "keywords": ["json", "jsonpath"],
   "license": "MIT",
@@ -38,9 +38,9 @@
 
   "autoload": {
     "psr-0": {
-      "JamesPath": "src/"
+      "JmesPath": "src/"
     },
-    "files": ["src/JamesPath/functions.php"]
+    "files": ["src/JmesPath/functions.php"]
   },
 
   "extra": {

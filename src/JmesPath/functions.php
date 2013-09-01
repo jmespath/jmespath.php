@@ -1,6 +1,6 @@
 <?php
 
-namespace JamesPath;
+namespace JmesPath;
 
 /**
  * Returns data from the input data that matches a given JmesPath expression

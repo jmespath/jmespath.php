@@ -1,10 +1,10 @@
 <?php
 
-namespace JamesPath\Tests;
+namespace JmesPath\Tests;
 
-use JamesPath\Parser;
-use JamesPath\Interpreter;
-use JamesPath\Lexer;
+use JmesPath\Parser;
+use JmesPath\Interpreter;
+use JmesPath\Lexer;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
 {

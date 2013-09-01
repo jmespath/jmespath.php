@@ -1,9 +1,9 @@
 <?php
 
-namespace JamesPath;
+namespace JmesPath;
 
 /**
- * JamesPath recursive descent lexer
+ * JmesPath recursive descent lexer
  */
 class Lexer
 {

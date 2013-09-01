@@ -1,9 +1,9 @@
 <?php
 
-namespace JamesPath;
+namespace JmesPath;
 
 /**
- * Executes JamesPath opcodes:
+ * Executes JmesPath opcodes:
  *
  * - push <value>: Pushes a value onto the operand stack
  * - field: Descends into map data using a key
