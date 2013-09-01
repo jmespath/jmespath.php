@@ -5,7 +5,7 @@ namespace JmesPath;
 /**
  * Executes JmesPath opcodes:
  *
- * - push <value>: Pushes a value onto the operand stack
+ * - push <value>: Pushes a value onto the operand stack (used for multi-value opcodes)
  * - field: Descends into map data using a key
  * - index: Descends into array data using an index
  * - star: Diverges on a node and collects matching subexpressions
@@ -104,8 +104,6 @@ class Interpreter
      */
     private function op_field(array $state, $arg = null)
     {
-        $arg = array_pop($state['stack']);
-
         if (is_array($state['data']) && isset($state['data'][$arg])) {
             $state['data'] = $state['data'][$arg];
         } else {
@@ -125,8 +123,6 @@ class Interpreter
      */
     private function op_index(array $state, $arg = null)
     {
-        $arg = array_pop($state['stack']);
-
         if (!is_array($state['data'])) {
             $state['data'] = null;
         } else {

@@ -78,8 +78,7 @@ class Parser
 
     private function parse_T_IDENTIFIER(array $token)
     {
-        $this->stack[] = ['push', $token['value']];
-        $this->stack[] = ['field'];
+        $this->stack[] = ['field', $token['value']];
 
         return $this->match(self::$nextExpr);
     }
@@ -93,8 +92,7 @@ class Parser
         if ($nextToken['type'] == Lexer::T_STAR) {
             $this->stack[] = ['star'];
         } else {
-            $this->stack[] = ['push', $nextToken['value']];
-            $this->stack[] = ['index'];
+            $this->stack[] = ['index', $nextToken['value']];
         }
         $this->match($expectedClosingBracket);
 
@@ -103,8 +101,7 @@ class Parser
 
     private function parse_T_NUMBER(array $token)
     {
-        $this->stack[] = ['push', $token['value']];
-        $this->stack[] = ['field'];
+        $this->stack[] = ['field', $token['value']];
 
         return $this->match(self::$nextExpr);
     }
