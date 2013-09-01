@@ -24,6 +24,7 @@ class Parser
         Lexer::T_DOT => true,
         Lexer::T_EOF => true,
         Lexer::T_LBRACKET => true,
+        Lexer::T_LBRACE => true,
         Lexer::T_OR => true
     ];
 
@@ -32,6 +33,7 @@ class Parser
         Lexer::T_IDENTIFIER => true,
         Lexer::T_STAR => true,
         Lexer::T_LBRACKET => true,
+        Lexer::T_LBRACE => true,
         Lexer::T_EOF => true
     ];
 
@@ -93,16 +95,35 @@ class Parser
 
     private function parse_T_LBRACKET(array $token)
     {
-        static $expectedAfterOpenBracket = [Lexer::T_NUMBER => true, Lexer::T_STAR => true];
         static $expectedClosingBracket = [Lexer::T_RBRACKET => true];
+        static $expectedAfterNumber = [Lexer::T_RBRACKET => true, Lexer::T_COMMA => true];
+        static $expectedAfterOpenBracket = [
+            Lexer::T_NUMBER => true,
+            Lexer::T_STAR   => true,
+            Lexer::T_COMMA  => true
+        ];
 
         $nextToken = $this->match($expectedAfterOpenBracket);
-        if ($nextToken['type'] == Lexer::T_STAR) {
+        if ($nextToken['type'] == Lexer::T_NUMBER) {
+            $value = $nextToken['value'];
+            $nextToken = $this->match($expectedAfterNumber);
+            if ($nextToken['type'] == Lexer::T_RBRACKET) {
+                // A simple index extraction
+                $this->stack[] = ['index', $value];
+            } else {
+                // A multi index extraction
+                $this->stack[] = ['push', $value];
+                while ($nextToken['type'] == Lexer::T_COMMA) {
+                    $nextToken = $this->match([Lexer::T_NUMBER => true]);
+                    $this->stack[] = ['push', $nextToken['value']];
+                    $nextToken = $this->match([Lexer::T_COMMA => true, Lexer::T_RBRACKET => true]);
+                }
+                $this->stack[] = ['mindex'];
+            }
+        } elseif ($nextToken['type'] == Lexer::T_STAR) {
             $this->stack[] = ['star'];
-        } else {
-            $this->stack[] = ['index', $nextToken['value']];
+            $this->match($expectedClosingBracket);
         }
-        $this->match($expectedClosingBracket);
 
         return $this->match(self::$nextExpr);
     }
@@ -133,10 +154,40 @@ class Parser
         static $expectedAfterDot = [
             Lexer::T_IDENTIFIER => true,
             Lexer::T_NUMBER => true,
-            Lexer::T_STAR => true
+            Lexer::T_STAR => true,
+            Lexer::T_LBRACE => true
         ];
 
         return $this->match($expectedAfterDot);
+    }
+
+    private function parse_T_LBRACE(array $token)
+    {
+        static $expectedAfterField = [Lexer::T_RBRACE => true, Lexer::T_COMMA => true];
+        static $expectedAfterOpenBrace = [
+            Lexer::T_NUMBER     => true,
+            Lexer::T_IDENTIFIER => true
+        ];
+
+        $nextToken = $this->match($expectedAfterOpenBrace);
+        $value = $nextToken['value'];
+        $nextToken = $this->match($expectedAfterField);
+
+        if ($nextToken['type'] == Lexer::T_RBRACE) {
+            // A simple field extraction
+            $this->stack[] = ['field', $value];
+        } else {
+            // A multi field extraction
+            $this->stack[] = ['push', $value];
+            while ($nextToken['type'] == Lexer::T_COMMA) {
+                $nextToken = $this->match([Lexer::T_IDENTIFIER => true]);
+                $this->stack[] = ['push', $nextToken['value']];
+                $nextToken = $this->match([Lexer::T_COMMA => true, Lexer::T_RBRACE => true]);
+            }
+            $this->stack[] = ['mfield'];
+        }
+
+        return $this->match(self::$nextExpr);
     }
 
     /**

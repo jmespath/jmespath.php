@@ -138,6 +138,58 @@ class Interpreter
     }
 
     /**
+     * Filters an array with specific indices
+     *
+     * @param array $state VM state
+     * @param mixed $arg
+     *
+     * @return array
+     */
+    private function op_mindex(array $state, $arg = null)
+    {
+        if (!is_array($state['data'])) {
+            $state['data'] = null;
+        } else {
+            $result = [];
+            $total = count($state['data']);
+            while (null !== ($arg = array_shift($state['stack']))) {
+                $arg = $arg < 0 ? $total + $arg : $arg;
+                if (isset($state['data'][$arg])) {
+                    $result[] = $state['data'][$arg];
+                }
+            }
+            $state['data'] = $result ? $result : null;
+        }
+
+        return $state;
+    }
+
+    /**
+     * Filters an array with specific keys
+     *
+     * @param array $state VM state
+     * @param mixed $arg
+     *
+     * @return array
+     */
+    private function op_mfield(array $state, $arg = null)
+    {
+        if (!is_array($state['data'])) {
+            $state['data'] = null;
+        } else {
+            $result = [];
+            while (null !== ($arg = array_shift($state['stack']))) {
+                if (isset($state['data'][$arg])) {
+                    $result[$arg] = $state['data'][$arg];
+                }
+            }
+            $state['data'] = $result ? $result : null;
+        }
+
+        return $state;
+    }
+
+    /**
      * Descends into each key/index of the input data using the remaining opcodes
      *
      * @param array $state VM state
