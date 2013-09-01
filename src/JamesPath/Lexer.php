@@ -115,13 +115,13 @@ class Lexer
             } elseif (ctype_alnum($token[0])) {
                 $this->tokens[] = [
                     'type'  => self::T_IDENTIFIER,
-                    'value' => $token[0],
+                    'value' => str_replace('\\"', '"', $token[0]),
                     'pos'   => $token[1]
                 ];
             } elseif ($token[0] != '"' && substr($token[0], 0, 1) == '"' && substr($token[0], -1, 1) == '"') {
                 $this->tokens[] = [
                     'type'  => self::T_IDENTIFIER,
-                    'value' => substr($token[0], 1, -1),
+                    'value' => str_replace('\\"', '"', substr($token[0], 1, -1)),
                     'pos'   => $token[1]
                 ];
             } else {
