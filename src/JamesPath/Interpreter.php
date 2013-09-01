@@ -26,11 +26,12 @@ class Interpreter
     private $breakpoint;
 
     /**
-     * @param array $opcode Array of JamesPath opcode
+     * @param array $opcode Array of JamesPath opcodes
      */
     public function __construct(array $opcode)
     {
         $this->opcode = $opcode;
+        $this->iterator = new \ArrayIterator($this->opcode);
         $this->methods = array_flip(get_class_methods($this));
     }
 
@@ -43,12 +44,12 @@ class Interpreter
      */
     public function execute($data)
     {
-        $this->iterator = new \ArrayIterator($this->opcode);
-        $this->data = $state = $data;
+        $this->iterator->rewind();
+        $this->data = $data;
         $this->breakpoint = null;
         $this->buffer = [];
 
-        return $this->descend($state);
+        return $this->descend($data);
     }
 
     private function descend($state)
