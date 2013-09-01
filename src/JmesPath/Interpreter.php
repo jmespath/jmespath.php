@@ -17,6 +17,8 @@ namespace JmesPath;
  * - 'stack'        => Operand stack
  * - 'iterator'     => Opcode iterator
  * - 'breakpoint'   => Stop recursively executing when this opcode is encountered
+ * - 'mindex'       => Multi index filter
+ * - 'mfield'       => Multi field filter
  */
 class Interpreter
 {
