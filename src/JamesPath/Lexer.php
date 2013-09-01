@@ -5,7 +5,7 @@ namespace JamesPath;
 /**
  * JamesPath recursive descent lexer
  */
-class Lexer implements \SeekableIterator
+class Lexer
 {
     const T_EOF = 'T_EOF';
     const T_IDENTIFIER = 'T_IDENTIFIER';
@@ -60,16 +60,6 @@ class Lexer implements \SeekableIterator
     public function getInput()
     {
         return $this->input;
-    }
-
-    public function seek($position)
-    {
-        if ($position < $this->key()) {
-            $this->rewind();
-        }
-        while ($this->valid() && $this->key() < $position) {
-            $this->next();
-        }
     }
 
     public function current()
