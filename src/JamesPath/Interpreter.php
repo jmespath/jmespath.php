@@ -3,15 +3,15 @@
 namespace JamesPath;
 
 /**
- * Executes JamesPath bytecode
+ * Executes JamesPath opcodes
  */
 class Interpreter
 {
     /** @var array Initial input data */
     private $data;
 
-    /** @var array Bytecode to execute */
-    private $bytecode;
+    /** @var array Opcode to execute */
+    private $opcode;
 
     /** @var array Array of known opcodes */
     private $methods;
@@ -26,16 +26,16 @@ class Interpreter
     private $breakpoint;
 
     /**
-     * @param array $bytecode Array of JamesPath bytecode
+     * @param array $opcode Array of JamesPath opcode
      */
-    public function __construct(array $bytecode)
+    public function __construct(array $opcode)
     {
-        $this->bytecode = $bytecode;
+        $this->opcode = $opcode;
         $this->methods = array_flip(get_class_methods($this));
     }
 
     /**
-     * Get the bytecode execution result from an array of input data
+     * Get the opcode execution result from an array of input data
      *
      * @param array $data Input array to process
      *
@@ -43,7 +43,7 @@ class Interpreter
      */
     public function execute($data)
     {
-        $this->iterator = new \ArrayIterator($this->bytecode);
+        $this->iterator = new \ArrayIterator($this->opcode);
         $this->data = $state = $data;
         $this->breakpoint = null;
         $this->buffer = [];
@@ -147,7 +147,7 @@ class Interpreter
             return $this->descend($this->data);
         }
 
-        // The left data is valid, so return it and consume any remaining bytecode
+        // The left data is valid, so return it and consume any remaining opcode
         $this->iterator->seek($this->iterator->count() - 1);
         $this->iterator->next();
 

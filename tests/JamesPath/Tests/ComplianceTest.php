@@ -17,7 +17,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         $expression = str_replace(' or ', ' || ', $expression);
 
         $parser = new Parser(new Lexer());
-        $opcodes = $parser->parse($expression);
+        $opcodes = $parser->compile($expression);
         $interpreter = new Interpreter($opcodes);
         $parsed = $interpreter->execute($data);
 

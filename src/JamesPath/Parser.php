@@ -42,14 +42,14 @@ class Parser
     }
 
     /**
-     * Parse a JamesPath expression into an array of opcodes
+     * Compile a JamesPath expression into an array of opcodes
      *
      * @param string $path Path to parse
      *
      * @return array
      * @throws SyntaxErrorException
      */
-    public function parse($path)
+    public function compile($path)
     {
         $this->stack = [];
         $this->lexer->setInput($path);
