@@ -15,6 +15,9 @@ class Lexer implements \IteratorAggregate
     const T_OR = 'T_OR';
     const T_LBRACKET = 'T_LBRACKET';
     const T_RBRACKET = 'T_RBRACKET';
+    const T_COMMA = 'T_COMMA';
+    const T_LBRACE = 'T_LBRACE';
+    const T_RBRACE = 'T_RBRACE';
     const T_IGNORE = 'T_IGNORE';
     const T_UNKNOWN = 'T_UNKNOWN';
 
@@ -26,6 +29,9 @@ class Lexer implements \IteratorAggregate
         |("(?:\\\"|[^"])*") # T_IDENTIFIER
         |\s+                # Ignore whitespace
         |(\.)               # T_DOT
+        |(,)                # T_COMMA
+        |({)                # T_LBRACE
+        |(})                # T_RBRACE
         |(\*)               # T_STAR
         |(\[)               # T_LBRACKET
         |(\])               # T_RBRACKET
@@ -39,7 +45,10 @@ class Lexer implements \IteratorAggregate
         '*'  => self::T_STAR,
         '['  => self::T_LBRACKET,
         ']'  => self::T_RBRACKET,
-        '||' => self::T_OR
+        '||' => self::T_OR,
+        ','  => self::T_COMMA,
+        '{'  => self::T_LBRACE,
+        '}'  => self::T_RBRACE,
     );
 
     /**
