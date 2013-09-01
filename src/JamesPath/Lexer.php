@@ -64,7 +64,9 @@ class Lexer
 
     public function current()
     {
-        return current($this->tokens) ?: Token::getEof();
+        static $eof = ['type' => Lexer::T_EOF, 'value' => null, 'pos' => null];
+
+        return current($this->tokens) ?: $eof;
     }
 
     public function key()
@@ -99,15 +101,35 @@ class Lexer
 
         foreach ($tokens as $token) {
             if (isset($this->simpleTokens[$token[0]])) {
-                $this->tokens[] = new Token($this->simpleTokens[$token[0]], $token[0], $token[1]);
+                $this->tokens[] = [
+                    'type'  => $this->simpleTokens[$token[0]],
+                    'value' => $token[0],
+                    'pos'   => $token[1]
+                ];
             } elseif (is_numeric($token[0])) {
-                $this->tokens[] = new Token(self::T_NUMBER, (int) $token[0], $token[1]);
+                $this->tokens[] = [
+                    'type'  => self::T_NUMBER,
+                    'value' => (int) $token[0],
+                    'pos'   => $token[1]
+                ];
             } elseif (ctype_alnum($token[0])) {
-                $this->tokens[] = new Token(self::T_IDENTIFIER, $token[0], $token[1]);
+                $this->tokens[] = [
+                    'type'  => self::T_IDENTIFIER,
+                    'value' => $token[0],
+                    'pos'   => $token[1]
+                ];
             } elseif ($token[0] != '"' && substr($token[0], 0, 1) == '"' && substr($token[0], -1, 1) == '"') {
-                $this->tokens[] = new Token(self::T_IDENTIFIER, substr($token[0], 1, -1), $token[1]);
+                $this->tokens[] = [
+                    'type'  => self::T_IDENTIFIER,
+                    'value' => substr($token[0], 1, -1),
+                    'pos'   => $token[1]
+                ];
             } else {
-                $this->tokens[] = $t = new Token(self::T_UNKNOWN, $token[0], $token[1]);
+                $this->tokens[] = $t = [
+                    'type'  => self::T_UNKNOWN,
+                    'value' => $token[0],
+                    'pos'   => $token[1]
+                ];
                 // Check for an unclosed quote character
                 if ($token[0] == '"') {
                     throw new SyntaxErrorException('Unclosed quote character', $t, $this);

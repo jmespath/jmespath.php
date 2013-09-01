@@ -7,19 +7,19 @@ namespace JamesPath;
  */
 class SyntaxErrorException extends \InvalidArgumentException
 {
-    public function __construct($expectedTypesOrMessage, Token $token, Lexer $lexer)
+    public function __construct($expectedTypesOrMessage, array $token, Lexer $lexer)
     {
-        $message = "Syntax error at character {$token->position}\n"
-            . $lexer->getInput() . "\n" . str_repeat(' ', $token->position) . "^\n";
+        $message = "Syntax error at character {$token['pos']}\n"
+            . $lexer->getInput() . "\n" . str_repeat(' ', $token['pos']) . "^\n";
 
         if (!is_array($expectedTypesOrMessage)) {
             $message .= $expectedTypesOrMessage;
         } else {
             $message .= sprintf(
                 'Expected %s; found %s "%s"',
-                implode(' or ', (array) $expectedTypesOrMessage),
-                $token->type,
-                $token->value
+                implode(' or ', array_keys($expectedTypesOrMessage)),
+                $token['type'],
+                $token['value']
             );
         }
 
