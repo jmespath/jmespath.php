@@ -39,7 +39,8 @@
   "autoload": {
     "psr-0": {
       "JamesPath": "src/"
-    }
+    },
+    "files": ["src/JamesPath/functions.php"]
   },
 
   "extra": {

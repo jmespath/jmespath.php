@@ -5,64 +5,61 @@ namespace JamesPath;
 /**
  * Executes JamesPath opcodes:
  *
- * push <value>: Pushes a value onto the operand stack
- * field: Descends into map data using a key
- * index: Descends into array data using an index
- * star: Diverges on a node and collects matching subexpressions
- * or: Returns the current non-null state or the evaluation of further opcodes
+ * - push <value>: Pushes a value onto the operand stack
+ * - field: Descends into map data using a key
+ * - index: Descends into array data using an index
+ * - star: Diverges on a node and collects matching subexpressions
+ * - or: Returns the current non-null state or the evaluation of further opcodes
+ *
+ * Each function is passed a state context array that contains:
+ * - 'initial_data' => Initial data that was passed in
+ * - 'data'         => Current parsed data
+ * - 'stack'        => Operand stack
+ * - 'iterator'     => Opcode iterator
+ * - 'breakpoint'   => Stop recursively executing when this opcode is encountered
  */
 class Interpreter
 {
-    /** @var array Initial input data */
-    private $initialData;
-
-    /** @var array Opcode to execute */
-    private $opcode;
-
     /** @var array Array of known opcodes */
     private $methods;
 
-    /** @var array Operand stack holding temporary values */
-    private $operandStack;
-
-    /** @var \ArrayIterator */
-    private $iterator;
-
-    /** @var string Process opcodes until this code */
-    private $breakpoint;
-
-    /**
-     * @param array $opcode Array of JamesPath opcodes
-     */
-    public function __construct(array $opcode)
+    public function __construct()
     {
-        $this->opcode = $opcode;
-        $this->iterator = new \ArrayIterator($this->opcode);
         $this->methods = array_flip(get_class_methods($this));
     }
 
     /**
      * Get the opcode execution result from an array of input data
      *
-     * @param array $data Input array to process
+     * @param array $opcodes Array of opcodes
+     * @param array $data    Input array to process
      *
      * @return mixed
      */
-    public function execute($data)
+    public function execute(array $opcodes, array $data)
     {
-        $this->iterator->rewind();
-        $this->initialData = $data;
-        $this->breakpoint = null;
-        $this->operandStack = [];
-
-        return $this->descend($data);
+        return $this->descend([
+            'initial_data' => $data,
+            'data'         => $data,
+            'stack'        => [],
+            'iterator'     => new \ArrayIterator($opcodes),
+            'breakpoint'   => null
+        ])['data'];
     }
 
-    private function descend($state)
+    /**
+     * Descend into the data using remaining opcodes
+     *
+     * @param array $state VM state
+     *
+     * @return array
+     * @throws \RuntimeException If an invalid opcode is encountered
+     */
+    private function descend(array $state)
     {
-        while ($this->iterator->valid()) {
+        while ($state['iterator']->valid()) {
 
-            $op = $this->iterator->current();
+            $op = $state['iterator']->current();
             $arg = 'op_' . $op[0];
 
             if (!isset($this->methods[$arg])) {
@@ -70,93 +67,143 @@ class Interpreter
             }
 
             // Break if a breakpoint has been set
-            if ($op[0] === $this->breakpoint) {
-                $this->iterator->seek($this->iterator->key() - 1);
+            if ($op[0] === $state['breakpoint']) {
+                $state['iterator']->seek($state['iterator']->key() - 1);
                 return $state;
             }
 
             $state = $this->{$arg}($state, isset($op[1]) ? $op[1] : null);
-            $this->iterator->next();
+            $state['iterator']->next();
         }
 
         return $state;
     }
 
-    public function op_push($state, $arg = null)
+    /**
+     * Push a variable into the VM state operand stack
+     *
+     * @param array  $state VM state
+     * @param string $arg   Value to push
+     *
+     * @return array
+     */
+    public function op_push(array $state, $arg = null)
     {
-        $this->operandStack[] = $arg;
+        $state['stack'][] = $arg;
 
         return $state;
     }
 
-    private function op_field($state, $arg = null)
+    /**
+     * Descends into a specific key of the input data
+     *
+     * @param array $state VM state
+     * @param mixed $arg
+     *
+     * @return array
+     */
+    private function op_field(array $state, $arg = null)
     {
-        $arg = array_pop($this->operandStack);
+        $arg = array_pop($state['stack']);
 
-        if (!is_array($state)) {
-            return null;
-        } elseif (isset($state[$arg])) {
-            return $state[$arg];
+        if (is_array($state['data']) && isset($state['data'][$arg])) {
+            $state['data'] = $state['data'][$arg];
         } else {
-            return null;
+            $state['data'] = null;
         }
+
+        return $state;
     }
 
-    private function op_index($state, $arg = null)
+    /**
+     * Descends into a specific index of the input data
+     *
+     * @param array $state VM state
+     * @param mixed $arg
+     *
+     * @return array
+     */
+    private function op_index(array $state, $arg = null)
     {
-        $arg = array_pop($this->operandStack);
+        $arg = array_pop($state['stack']);
 
-        if (!is_array($state)) {
-            return null;
-        }
-
-        $arg = $arg < 0 ? count($state) + $arg : $arg;
-
-        if (isset($state[$arg])) {
-            return $state[$arg];
+        if (!is_array($state['data'])) {
+            $state['data'] = null;
         } else {
-            return null;
+            $arg = $arg < 0 ? count($state['data']) + $arg : $arg;
+            if (isset($state['data'][$arg])) {
+                $state['data'] = $state['data'][$arg];
+            } else {
+                $state['data'] = null;
+            }
         }
+
+        return $state;
     }
 
-    private function op_star($state, $arg = null)
+    /**
+     * Descends into each key/index of the input data using the remaining opcodes
+     *
+     * @param array $state VM state
+     * @param mixed $arg
+     *
+     * @return array
+     */
+    private function op_star(array $state, $arg = null)
     {
-        if (!is_array($state)) {
-            return null;
+        if (!is_array($state['data'])) {
+            $state['data'] = null;
+            return $state;
         }
 
-        $key = $this->iterator->key() + 1;
+        $key = $state['iterator']->key() + 1;
 
         // If the star is last in an expression or the next opcode is an or, then it's irrelevant
-        if ($key == count($this->iterator) || $this->iterator[$key][0] == 'or') {
-            return array_values($state);
+        if ($key == count($state['iterator']) || $state['iterator'][$key][0] == 'or') {
+            $state['data'] = array_values($state['data']);
+            return $state;
         }
 
         // Collect the result of each possibility until an OR opcode is hit
         $collected = [];
-        foreach ($state as $value) {
-            $this->iterator->seek($key);
-            $this->breakpoint = 'or';
-            if (null !== ($result = $this->descend($value))) {
-                $collected[] = $result;
+        $state['breakpoint'] = 'or';
+        foreach ($state['data'] as $value) {
+            $state['data'] = $value;
+            $state['iterator']->seek($key);
+            $result = $this->descend($state);
+            if ($result['data'] !== null) {
+                $collected[] = $result['data'];
             }
         }
-        $this->breakpoint = null;
 
-        return $collected ? $collected : null;
+        $state['breakpoint'] = null;
+        $state['data'] = $collected ? $collected : null;
+
+        return $state;
     }
 
-    private function op_or($state, $arg = null)
+    /**
+     * Parse an "or" opcode. If the current parsed data is not null, then that
+     * is the result. Otherwise, this opcode will attempt to parse the
+     * initial_data using the remaining opcodes up to the next or statement.
+     *
+     * @param array $state
+     * @param mixed $arg
+     *
+     * @return array
+     */
+    private function op_or(array $state, $arg = null)
     {
         // Recursively descend into the or processing from the original data if left EXP is null
         if ($state === null) {
-            $this->iterator->next();
-            return $this->descend($this->initialData);
+            $state['iterator']->next();
+            $state['data'] = $state['initial_data'];
+            return $this->descend($state);
         }
 
         // The left data is valid, so return it and consume any remaining opcode
-        $this->iterator->seek($this->iterator->count() - 1);
-        $this->iterator->next();
+        $state['iterator']->seek($state['iterator']->count() - 1);
+        $state['iterator']->next();
 
         return $state;
     }
