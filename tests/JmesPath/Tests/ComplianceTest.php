@@ -18,8 +18,8 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         $parser = new Parser(new Lexer());
         $opcodes = $parser->compile($expression);
-        $interpreter = new Interpreter($opcodes);
-        $parsed = $interpreter->execute($data);
+        $interpreter = new Interpreter();
+        $parsed = $interpreter->execute($opcodes, $data);
 
         $this->assertEquals(
             $result,
