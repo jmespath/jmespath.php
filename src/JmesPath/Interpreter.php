@@ -195,7 +195,7 @@ class Interpreter
     private function op_or(array $state, $arg = null)
     {
         // Recursively descend into the or processing from the original data if left EXP is null
-        if ($state === null) {
+        if ($state['data'] === null) {
             $state['iterator']->next();
             $state['data'] = $state['initial_data'];
             return $this->descend($state);
