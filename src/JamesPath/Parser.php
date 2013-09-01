@@ -79,7 +79,7 @@ class Parser
     private function parse_T_IDENTIFIER(Token $token)
     {
         $this->stack[] = ['push', $token->value];
-        $this->stack[] = ['op', 'field'];
+        $this->stack[] = ['field'];
 
         return $this->match(self::$nextExpr);
     }
@@ -91,10 +91,10 @@ class Parser
 
         $next = $this->match($expectedAfterOpenBracket);
         if ($next->type == Lexer::T_STAR) {
-            $this->stack[] = ['op', 'star'];
+            $this->stack[] = ['star'];
         } else {
             $this->stack[] = ['push', $next->value];
-            $this->stack[] = ['op', 'index'];
+            $this->stack[] = ['index'];
         }
         $this->match($expectedClosingBracket);
 
@@ -104,21 +104,21 @@ class Parser
     private function parse_T_NUMBER(Token $token)
     {
         $this->stack[] = ['push', $token->value];
-        $this->stack[] = ['op', 'field'];
+        $this->stack[] = ['field'];
 
         return $this->match(self::$nextExpr);
     }
 
     private function parse_T_OR(Token $token)
     {
-        $this->stack[] = ['op', 'or'];
+        $this->stack[] = ['or'];
 
         return $this->match(self::$firstTokens);
     }
 
     private function parse_T_STAR(Token $token)
     {
-        $this->stack[] = ['op', 'star'];
+        $this->stack[] = ['star'];
 
         return $this->match(self::$nextExpr);
     }

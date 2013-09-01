@@ -8,7 +8,7 @@ namespace JamesPath;
 class Interpreter
 {
     /** @var array Initial input data */
-    private $data;
+    private $initialData;
 
     /** @var array Opcode to execute */
     private $opcode;
@@ -16,8 +16,8 @@ class Interpreter
     /** @var array Array of known opcodes */
     private $methods;
 
-    /** @var array Buffer of opcode arguments */
-    private $buffer;
+    /** @var array Operand stack holding temporary values */
+    private $operandStack;
 
     /** @var \ArrayIterator */
     private $iterator;
@@ -45,9 +45,9 @@ class Interpreter
     public function execute($data)
     {
         $this->iterator->rewind();
-        $this->data = $data;
+        $this->initialData = $data;
         $this->breakpoint = null;
-        $this->buffer = [];
+        $this->operandStack = [];
 
         return $this->descend($data);
     }
@@ -55,35 +55,37 @@ class Interpreter
     private function descend($state)
     {
         while ($this->iterator->valid()) {
+
             $op = $this->iterator->current();
-            switch ($op[0]) {
-                case 'push':
-                    $this->buffer[] = $op[1];
-                    break;
-                case 'op':
-                    // Break if a breakpoint has been set
-                    if ($this->breakpoint && $op[1] == $this->breakpoint) {
-                        $this->iterator->seek($this->iterator->key() - 1);
-                        return $state;
-                    }
-                    $arg = 'op_' . $op[1];
-                    if (!isset($this->methods[$arg])) {
-                        throw new \RuntimeException('Unknown method: ' . $arg);
-                    }
-                    $state = $this->{$arg}($state);
-                    break;
-                default:
-                    throw new \RuntimeException('Unknown opcode: ' . $op[0]);
+            $arg = 'op_' . $op[0];
+
+            if (!isset($this->methods[$arg])) {
+                throw new \RuntimeException('Unknown opcode: ' . var_export($op, true));
             }
+
+            // Break if a breakpoint has been set
+            if ($op[0] === $this->breakpoint) {
+                $this->iterator->seek($this->iterator->key() - 1);
+                return $state;
+            }
+
+            $state = $this->{$arg}($state, isset($op[1]) ? $op[1] : null);
             $this->iterator->next();
         }
 
         return $state;
     }
 
-    private function op_field($state)
+    public function op_push($state, $arg = null)
     {
-        $arg = array_pop($this->buffer);
+        $this->operandStack[] = $arg;
+
+        return $state;
+    }
+
+    private function op_field($state, $arg = null)
+    {
+        $arg = array_pop($this->operandStack);
 
         if (!is_array($state)) {
             return null;
@@ -94,9 +96,9 @@ class Interpreter
         }
     }
 
-    private function op_index($state)
+    private function op_index($state, $arg = null)
     {
-        $arg = array_pop($this->buffer);
+        $arg = array_pop($this->operandStack);
 
         if (!is_array($state)) {
             return null;
@@ -111,7 +113,7 @@ class Interpreter
         }
     }
 
-    private function op_star($state)
+    private function op_star($state, $arg = null)
     {
         if (!is_array($state)) {
             return null;
@@ -140,12 +142,12 @@ class Interpreter
         return $collected ? $collected : null;
     }
 
-    private function op_or($state)
+    private function op_or($state, $arg = null)
     {
         // Recursively descend into the or processing from the original data if left EXP is null
         if ($state === null) {
             $this->iterator->next();
-            return $this->descend($this->data);
+            return $this->descend($this->initialData);
         }
 
         // The left data is valid, so return it and consume any remaining opcode
