@@ -3,7 +3,13 @@
 namespace JamesPath;
 
 /**
- * Executes JamesPath opcodes
+ * Executes JamesPath opcodes:
+ *
+ * push <value>: Pushes a value onto the operand stack
+ * field: Descends into map data using a key
+ * index: Descends into array data using an index
+ * star: Diverges on a node and collects matching subexpressions
+ * or: Returns the current non-null state or the evaluation of further opcodes
  */
 class Interpreter
 {
