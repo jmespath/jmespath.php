@@ -25,7 +25,7 @@ class Interpreter
 
     public function __construct()
     {
-        $this->methods = array_flip(get_class_methods($this));
+        $this->methods = array_fill_keys(get_class_methods($this), true);
     }
 
     /**

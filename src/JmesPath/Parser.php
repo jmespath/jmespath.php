@@ -38,7 +38,7 @@ class Parser
     public function __construct(Lexer $lexer)
     {
         $this->lexer = $lexer;
-        $this->methods = array_flip(get_class_methods($this));
+        $this->methods = array_fill_keys(get_class_methods($this), true);
     }
 
     /**
