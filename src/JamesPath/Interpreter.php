@@ -127,10 +127,8 @@ class Interpreter
 
         $key = $this->iterator->key() + 1;
 
-        // If the star is last in an expression, then it's irrelevant
-        if ($key == count($this->iterator)
-            || ($this->iterator[$key][0] == 'op' && $this->iterator[$key][1] == 'or')
-        ) {
+        // If the star is last in an expression or the next opcode is an or, then it's irrelevant
+        if ($key == count($this->iterator) || $this->iterator[$key][0] == 'or') {
             return array_values($state);
         }
 
