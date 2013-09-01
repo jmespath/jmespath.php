@@ -10,6 +10,9 @@ class Parser
     /** @var Lexer */
     private $lexer;
 
+    /** @var \ArrayIterator */
+    private $tokens;
+
     /** @var array opcode stack*/
     private $stack;
 
@@ -53,10 +56,15 @@ class Parser
     {
         $this->stack = [];
         $this->lexer->setInput($path);
+        $this->tokens = $this->lexer->getIterator();
 
         // Ensure that the first token is valid
-        if (!isset(self::$firstTokens[$this->lexer->current()['type']])) {
-            throw new SyntaxErrorException(self::$firstTokens, $this->lexer->current(), $this->lexer);
+        if (!isset(self::$firstTokens[$this->tokens->current()['type']])) {
+            throw new SyntaxErrorException(
+                self::$firstTokens,
+                $this->tokens->current(),
+                $this->lexer->getInput()
+            );
         }
 
         $this->extractTokens();
@@ -66,7 +74,7 @@ class Parser
 
     private function extractTokens()
     {
-        $token = $this->lexer->current();
+        $token = $this->tokens->current();
         while ($token['type'] !== Lexer::T_EOF) {
             $method = 'parse_' . $token['type'];
             if (!isset($this->methods[$method])) {
@@ -140,12 +148,12 @@ class Parser
      */
     private function match(array $types)
     {
-        $this->lexer->next();
-        $token = $this->lexer->current();
+        $this->tokens->next();
+        $token = $this->tokens->current();
         if (isset($types[$token['type']])) {
             return $token;
         }
 
-        throw new SyntaxErrorException($types, $token, $this->lexer);
+        throw new SyntaxErrorException($types, $token, $this->lexer->getInput());
     }
 }

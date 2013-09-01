@@ -7,10 +7,15 @@ namespace JmesPath;
  */
 class SyntaxErrorException extends \InvalidArgumentException
 {
-    public function __construct($expectedTypesOrMessage, array $token, Lexer $lexer)
+    /**
+     * @param string $expectedTypesOrMessage Expected array of tokens or message
+     * @param array  $token                  Current token
+     * @param string $expression             Expression input
+     */
+    public function __construct($expectedTypesOrMessage, array $token, $expression)
     {
         $message = "Syntax error at character {$token['pos']}\n"
-            . $lexer->getInput() . "\n" . str_repeat(' ', $token['pos']) . "^\n";
+            . $expression . "\n" . str_repeat(' ', $token['pos']) . "^\n";
 
         if (!is_array($expectedTypesOrMessage)) {
             $message .= $expectedTypesOrMessage;

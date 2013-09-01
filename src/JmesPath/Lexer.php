@@ -5,7 +5,7 @@ namespace JmesPath;
 /**
  * JmesPath recursive descent lexer
  */
-class Lexer
+class Lexer implements \IteratorAggregate
 {
     const T_EOF = 'T_EOF';
     const T_IDENTIFIER = 'T_IDENTIFIER';
@@ -51,7 +51,6 @@ class Lexer
     {
         $this->input = $input;
         $this->tokenize();
-        $this->rewind();
     }
 
     /**
@@ -62,31 +61,9 @@ class Lexer
         return $this->input;
     }
 
-    public function current()
+    public function getIterator()
     {
-        static $eof = ['type' => Lexer::T_EOF, 'value' => null, 'pos' => null];
-
-        return current($this->tokens) ?: $eof;
-    }
-
-    public function key()
-    {
-        return key($this->tokens);
-    }
-
-    public function rewind()
-    {
-        reset($this->tokens);
-    }
-
-    public function valid()
-    {
-        return (bool) current($this->tokens);
-    }
-
-    public function next()
-    {
-        next($this->tokens);
+        return new \ArrayIterator($this->tokens);
     }
 
     private function tokenize()
@@ -136,5 +113,11 @@ class Lexer
                 }
             }
         }
+
+        $this->tokens[] = [
+            'type'  => self::T_EOF,
+            'value' => null,
+            'pos'   => strlen($this->input)
+        ];
     }
 }
