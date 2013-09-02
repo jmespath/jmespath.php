@@ -3,7 +3,7 @@
 namespace JmesPath;
 
 /**
- * JmesPath recursive descent lexer
+ * JMESPath lexer
  */
 class Lexer implements \IteratorAggregate
 {
@@ -21,11 +21,18 @@ class Lexer implements \IteratorAggregate
     const T_IGNORE = 'T_IGNORE';
     const T_UNKNOWN = 'T_UNKNOWN';
 
+    /** @var string JMESPath expression */
     private $input;
+
+    /** @var array Array of parsed tokens */
     private $tokens;
 
+    /** @var string Mask of valid identifier characters */
+    private $identifier = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+    /** @var string Regular expression used to split an expression */
     private $regex = '/
-        (\w+)               # T_IDENTIFIER
+        ([A-Za-z0-9\-_]+)   # T_IDENTIFIER
         |("(?:\\\"|[^"])*") # T_IDENTIFIER
         |\s+                # Ignore whitespace
         |(\.)               # T_DOT
@@ -40,6 +47,7 @@ class Lexer implements \IteratorAggregate
         |(.)                # T_UNKNOWN
     /x';
 
+    /** @var array Array of simple matches to token types */
     private $simpleTokens = array(
         '.'  => self::T_DOT,
         '*'  => self::T_STAR,
@@ -49,6 +57,18 @@ class Lexer implements \IteratorAggregate
         ','  => self::T_COMMA,
         '{'  => self::T_LBRACE,
         '}'  => self::T_RBRACE,
+        // Common number optimizations to optimize for O(1) lookups
+        '-1' => self::T_NUMBER,
+        '0'  => self::T_NUMBER,
+        '1'  => self::T_NUMBER,
+        '2'  => self::T_NUMBER,
+        '3'  => self::T_NUMBER,
+        '4'  => self::T_NUMBER,
+        '5'  => self::T_NUMBER,
+        '6'  => self::T_NUMBER,
+        '7'  => self::T_NUMBER,
+        '8'  => self::T_NUMBER,
+        '9'  => self::T_NUMBER
     );
 
     /**
@@ -63,6 +83,8 @@ class Lexer implements \IteratorAggregate
     }
 
     /**
+     * Get the intitial string of JMESPath input
+     *
      * @return string
      */
     public function getInput()
@@ -75,6 +97,14 @@ class Lexer implements \IteratorAggregate
         return new \ArrayIterator($this->tokens);
     }
 
+    /**
+     * Tokenize the JMESPath expression into token arrays. The regular
+     * expression of the class breaks the expression into parts. Each part is
+     * then analyzed to determine the token type until finally, the EOF token
+     * is added signifying the end of the token stream.
+     *
+     * @throws SyntaxErrorException
+     */
     private function tokenize()
     {
         $this->tokens = array();
@@ -87,42 +117,55 @@ class Lexer implements \IteratorAggregate
 
         foreach ($tokens as $token) {
             if (isset($this->simpleTokens[$token[0]])) {
+                // Match simple tokens like '{', '.', etc
                 $this->tokens[] = [
                     'type'  => $this->simpleTokens[$token[0]],
                     'value' => $token[0],
                     'pos'   => $token[1]
                 ];
             } elseif (is_numeric($token[0])) {
+                // Match numbers
                 $this->tokens[] = [
                     'type'  => self::T_NUMBER,
                     'value' => (int) $token[0],
                     'pos'   => $token[1]
                 ];
-            } elseif (ctype_alnum($token[0])) {
+            } elseif (strlen($token[0]) == strspn($token[0], $this->identifier)) {
+                // Match identifiers by comparing against a mask of valid chars
                 $this->tokens[] = [
                     'type'  => self::T_IDENTIFIER,
                     'value' => str_replace('\\"', '"', $token[0]),
                     'pos'   => $token[1]
                 ];
-            } elseif ($token[0] != '"' && substr($token[0], 0, 1) == '"' && substr($token[0], -1, 1) == '"') {
+            } elseif (substr($token[0], 0, 1) == '"' &&
+                substr($token[0], -1, 1) == '"' &&
+                $token[0] != '"'
+            ) {
+                // Match valid quoted strings and remove escape characters
                 $this->tokens[] = [
                     'type'  => self::T_IDENTIFIER,
                     'value' => str_replace('\\"', '"', substr($token[0], 1, -1)),
                     'pos'   => $token[1]
                 ];
             } else {
+                // Match all other unknown characters
                 $this->tokens[] = $t = [
                     'type'  => self::T_UNKNOWN,
                     'value' => $token[0],
                     'pos'   => $token[1]
                 ];
-                // Check for an unclosed quote character
+                // Check for an unclosed quote character (token that is a quote)
                 if ($token[0] == '"') {
-                    throw new SyntaxErrorException('Unclosed quote character', $t, $this);
+                    throw new SyntaxErrorException(
+                        'Unclosed quote character',
+                        $t,
+                        $this
+                    );
                 }
             }
         }
 
+        // Always end the token stream with an EOF token
         $this->tokens[] = [
             'type'  => self::T_EOF,
             'value' => null,
