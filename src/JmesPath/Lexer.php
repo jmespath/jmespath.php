@@ -134,7 +134,7 @@ class Lexer implements \IteratorAggregate
                 // Match identifiers by comparing against a mask of valid chars
                 $this->tokens[] = [
                     'type'  => self::T_IDENTIFIER,
-                    'value' => str_replace('\\"', '"', $token[0]),
+                    'value' => $token[0],
                     'pos'   => $token[1]
                 ];
             } elseif (substr($token[0], 0, 1) == '"' &&
