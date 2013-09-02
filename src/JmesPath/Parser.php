@@ -170,22 +170,15 @@ class Parser
         ];
 
         $nextToken = $this->match($expectedAfterOpenBrace);
-        $value = $nextToken['value'];
+        $this->stack[] = ['push', $nextToken['value']];
         $nextToken = $this->match($expectedAfterField);
 
-        if ($nextToken['type'] == Lexer::T_RBRACE) {
-            // A simple field extraction
-            $this->stack[] = ['field', $value];
-        } else {
-            // A multi field extraction
-            $this->stack[] = ['push', $value];
-            while ($nextToken['type'] == Lexer::T_COMMA) {
-                $nextToken = $this->match([Lexer::T_IDENTIFIER => true]);
-                $this->stack[] = ['push', $nextToken['value']];
-                $nextToken = $this->match([Lexer::T_COMMA => true, Lexer::T_RBRACE => true]);
-            }
-            $this->stack[] = ['mfield'];
+        while ($nextToken['type'] == Lexer::T_COMMA) {
+            $nextToken = $this->match([Lexer::T_IDENTIFIER => true]);
+            $this->stack[] = ['push', $nextToken['value']];
+            $nextToken = $this->match([Lexer::T_COMMA => true, Lexer::T_RBRACE => true]);
         }
+        $this->stack[] = ['mfield'];
 
         return $this->match(self::$nextExpr);
     }
