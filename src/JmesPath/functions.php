@@ -3,53 +3,35 @@
 namespace JmesPath;
 
 /**
- * Returns data from the input data that matches a given JmesPath expression
+ * Returns data from the input array that matches a given JMESPath expression.
  *
- * @param string $expression JmesPath expression to evaluate
+ * This method maintains a cache of 4096 compiled JMESPath expressions. When the
+ * cache exceeds 4096, the cache is cleared.
+ *
+ * @param string $expression JMESPath expression to evaluate
  * @param array  $data       Data to search
  *
  * @return mixed|null Returns the matching data or null
  */
 function search($expression, array $data)
 {
-    static $interpreter;
+    static $interpreter, $parser, $cache = [], $cacheSize = 0;
+
+    if (!isset($cache[$expression])) {
+        if (!$parser) {
+            $parser = new Parser(new Lexer());
+        }
+        // Reset the cache when it exceeds 4096 entries
+        if (++$cacheSize > 4096) {
+            $cache = [];
+            $cacheSize = 0;
+        }
+        $cache[$expression] = $parser->compile($expression);
+    }
 
     if (!$interpreter) {
         $interpreter = new Interpreter();
     }
 
-    return $interpreter->execute(compile($expression), $data);
-}
-
-/**
- * Compile a JMESPath expression into opcodes
- *
- * @param string $expression Expression to compile
- *
- * @return array Returns an array of opcodes
- */
-function compile($expression)
-{
-    static $cache, $cacheSize, $parser;
-
-    if (!$cache) {
-        $cache = [];
-        $cacheSize = 0;
-    }
-
-    if (!isset($cache[$expression])) {
-
-        if (!$parser) {
-            $parser = new Parser(new Lexer());
-        }
-
-        // Reset the cache when it exceeds 1000 entries
-        if (++$cacheSize > 1000) {
-            $cache = [];
-        }
-
-        $cache[$expression] = $parser->compile($expression);
-    }
-
-    return $cache[$expression];
+    return $interpreter->execute($cache[$expression], $data);
 }
