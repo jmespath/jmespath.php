@@ -10,6 +10,8 @@ namespace JmesPath;
  * - index: Descends into array data using an index
  * - star: Diverges on a node and collects matching subexpressions
  * - or: Returns the current non-null state or the evaluation of further opcodes
+ * - mindex: Multi index filter. Filters using fields from the operand stack.
+ * - mfield: Multi field filter. Filters using fields from the operand stack.
  *
  * Each function is passed a state context array that contains:
  * - 'initial_data' => Initial data that was passed in
@@ -17,8 +19,6 @@ namespace JmesPath;
  * - 'stack'        => Operand stack
  * - 'iterator'     => Opcode iterator
  * - 'breakpoint'   => Stop recursively executing when this opcode is encountered
- * - 'mindex'       => Multi index filter
- * - 'mfield'       => Multi field filter
  */
 class Interpreter
 {
