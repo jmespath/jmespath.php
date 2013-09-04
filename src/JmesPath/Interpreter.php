@@ -207,16 +207,10 @@ class Interpreter
         }
 
         $key = $state['iterator']->key() + 1;
-
-        // If the star is last in an expression or the next opcode is an or, then it's irrelevant
-        if ($key == count($state['iterator']) || $state['iterator'][$key][0] == 'or') {
-            $state['data'] = array_values($state['data']);
-            return $state;
-        }
-
-        // Collect the result of each possibility until an OR opcode is hit
         $collected = [];
         $state['breakpoint'] = 'or';
+
+        // Collect the result of each possibility until an OR opcode is hit
         foreach ($state['data'] as $value) {
             $state['data'] = $value;
             $state['iterator']->seek($key);
