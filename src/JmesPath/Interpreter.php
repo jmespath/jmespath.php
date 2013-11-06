@@ -3,7 +3,7 @@
 namespace JmesPath;
 
 /**
- * Executes JmesPath opcodes:
+ * Executes JMESPath opcodes:
  *
  * - push <value>: Pushes a value onto the operand stack (used for multi-value opcodes)
  * - field: Descends into map data using a key

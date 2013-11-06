@@ -83,7 +83,7 @@ class Lexer implements \IteratorAggregate
     }
 
     /**
-     * Get the intitial string of JMESPath input
+     * Get the initial string of JMESPath input
      *
      * @return string
      */
