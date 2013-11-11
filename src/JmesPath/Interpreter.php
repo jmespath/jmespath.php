@@ -40,7 +40,7 @@ class Interpreter
     public function execute(array $opcodes, array $data)
     {
         $this->i = new \ArrayIterator($opcodes);
-        $this->stack = [$data];
+        $this->stack = [&$data, $data];
         $this->eaches = [];
 
         while ($this->i->valid()) {
@@ -152,6 +152,8 @@ class Interpreter
     {
         if (end($this->stack)) {
             $this->i->seek($arg);
+        } else {
+            array_pop($this->stack);
         }
     }
 
@@ -164,6 +166,11 @@ class Interpreter
     {
         $this->i->seek($arg - 1);
     }
+
+    /**
+     * Halts execution
+     */
+    private function op_stop() {}
 
     /**
      * Pops two items off of the stack, TOS and TOS1. Then pushes TOS1 back on
