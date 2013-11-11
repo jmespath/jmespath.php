@@ -65,6 +65,8 @@ class Interpreter
             }
         }
 
+        $this->eaches = $this->i = null;
+
         return array_pop($this->stack);
     }
 
