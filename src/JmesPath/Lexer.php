@@ -82,7 +82,7 @@ class Lexer implements \IteratorAggregate
     public function setInput($input)
     {
         $this->input = $input;
-        $this->tokenize();
+        $this->tokens = null;
     }
 
     /**
@@ -97,6 +97,10 @@ class Lexer implements \IteratorAggregate
 
     public function getIterator()
     {
+        if (null === $this->tokens) {
+            $this->tokenize();
+        }
+
         return new \ArrayIterator($this->tokens);
     }
 
@@ -159,11 +163,7 @@ class Lexer implements \IteratorAggregate
                 ];
                 // Check for an unclosed quote character (token that is a quote)
                 if ($token[0] == '"') {
-                    throw new SyntaxErrorException(
-                        'Unclosed quote character',
-                        $t,
-                        $this
-                    );
+                    throw new SyntaxErrorException('Unclosed quote character', $t, $this->input);
                 }
             }
         }
