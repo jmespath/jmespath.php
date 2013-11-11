@@ -165,6 +165,10 @@ class Parser
         return $this->match(self::$nextExpr);
     }
 
+    /**
+     * Parses an OR expression using a jump_if_true opcode. Parses tokens until
+     * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
+     */
     private function parse_T_OR(array $token)
     {
         // Parse until the next terminal condition
@@ -181,9 +185,23 @@ class Parser
         return $token;
     }
 
+    /**
+     * Parses a wildcard expression using a bytecode loop. Parses tokens until
+     * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
+     */
     private function parse_T_STAR(array $token)
     {
         // Create a bytecode loop
+        $token = $this->match(self::$nextExpr);
+        $this->stack[] = ['each', null];
+        $index = count($this->stack) - 1;
+
+        while (!isset(self::$scope[$token['type']])) {
+            $token = $this->parseInstruction($token);
+        }
+
+        $this->stack[$index][1] = count($this->stack) + 1;
+        $this->stack[] = ['goto', $index];
 
         return $this->match(self::$nextExpr);
     }
@@ -197,8 +215,10 @@ class Parser
      */
     private function match(array $types)
     {
+        static $nullToken = ['type' => Lexer::T_EOF];
         $this->tokens->next();
-        $token = $this->tokens->current();
+        $token = $this->tokens->current() ?: $nullToken;
+
         if (isset($types[$token['type']])) {
             return $token;
         }

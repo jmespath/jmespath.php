@@ -238,7 +238,6 @@ class Interpreter
             // It can be iterated so track the iteration at the current position
             $iter = new \ArrayIterator($tos);
             $this->eaches[$index] = [$iter, $arg, []];
-            array_pop($this->stack);
             $this->stack[] = $iter->current();
         } else {
             // If it can't be iterated, jump right away
