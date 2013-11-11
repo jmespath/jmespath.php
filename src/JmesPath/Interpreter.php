@@ -149,7 +149,8 @@ class Interpreter
     }
 
     /**
-     * Jump to the given bytecode index if TOS is true. Leaves TOS on the stack.
+     * Jump to the given bytecode index if TOS is true. Leaves TOS on the stack
+     * if true. Pops TOS if false.
      *
      * @param int $arg Bytecode index to jump to
      */
@@ -159,6 +160,20 @@ class Interpreter
             $this->i->seek($arg);
         } else {
             array_pop($this->stack);
+        }
+    }
+
+    /**
+     * Jump to the given bytecode index if TOS is null or an empty array. Leaves
+     * TOS on the stack.
+     *
+     * @param int $arg Bytecode index to jump to
+     */
+    private function op_jump_if_false($arg)
+    {
+        $tos = end($this->stack);
+        if ($tos === null || $tos === []) {
+            $this->i->seek($arg);
         }
     }
 

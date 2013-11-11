@@ -113,7 +113,8 @@ class Parser
             Lexer::T_IDENTIFIER => true,
             Lexer::T_NUMBER => true,
             Lexer::T_STAR => true,
-            Lexer::T_LBRACE => true
+            Lexer::T_LBRACE => true,
+            Lexer::T_LBRACKET => true
         ];
 
         return $this->match($expectedAfterDot);
@@ -121,21 +122,22 @@ class Parser
 
     private function parse_T_LBRACKET(array $token)
     {
-        static $expectedFirst = [Lexer::T_NUMBER => true, Lexer::T_STAR => true];
+        static $expectedFirst = [Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true, Lexer::T_STAR => true];
 
         $token = $this->match($expectedFirst);
         $value = $token['value'];
         $nextToken = $this->peek();
 
-        if ($token['type'] == Lexer::T_NUMBER && $nextToken['type'] == Lexer::T_RBRACKET) {
-            // A simple index extraction
-            $this->match([Lexer::T_RBRACKET => true]);
-            $this->stack[] = ['index', $value];
-        } elseif ($token['type'] == Lexer::T_STAR && $nextToken['type'] == Lexer::T_RBRACKET) {
-            $this->nextToken();
-            return $this->parseInstruction($token);
-        } else {
+        if ($nextToken['type'] != Lexer::T_RBRACKET || $token['type'] == Lexer::T_IDENTIFIER) {
             $this->parseMultiBracket($token);
+        } else {
+            // A simple extraction
+            $this->match([Lexer::T_RBRACKET => true]);
+            if ($token['type'] == Lexer::T_NUMBER) {
+                $this->stack[] = ['index', $value];
+            } elseif ($token['type'] == Lexer::T_STAR) {
+                return $this->parseInstruction($token);
+            }
         }
 
         return $this->nextToken();
@@ -143,6 +145,8 @@ class Parser
 
     private function parseMultiBracket(array $token)
     {
+        $this->stack[] = ['jump_if_false', null];
+        $index = count($this->stack) - 1;
         $this->stack[] = ['dup_top'];
         $this->stack[] = ['push', []];
         $this->stack[] = ['rot_two'];
@@ -161,6 +165,9 @@ class Parser
         $this->stack[] = ['store_key'];
         $this->stack[] = ['rot_two'];
         $this->stack[] = ['pop'];
+
+        // Update the jump index with the next bytecode address
+        $this->stack[$index][1] = count($this->stack);
     }
 
     private function parse_T_LBRACE(array $token)
@@ -183,6 +190,8 @@ class Parser
 
     private function parseMultiBrace(array $token)
     {
+        $this->stack[] = ['jump_if_false', null];
+        $index = count($this->stack) - 1;
         $this->stack[] = ['dup_top'];
         $this->stack[] = ['push', []];
         $this->stack[] = ['rot_two'];
@@ -208,6 +217,9 @@ class Parser
         $this->stack[] = ['store_key', $currentKey];
         $this->stack[] = ['rot_two'];
         $this->stack[] = ['pop'];
+
+        // Update the jump index with the next bytecode address
+        $this->stack[$index][1] = count($this->stack);
     }
 
     /**

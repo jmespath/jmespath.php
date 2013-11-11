@@ -32,7 +32,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
     {
         $cases = array();
 
-        foreach (array('basic', 'indices', 'ormatch', 'wildcard', 'escape') as $name) {
+        foreach (array('basic', 'indices', 'ormatch', 'wildcard', 'escape', 'multiselect') as $name) {
             $contents = file_get_contents(__DIR__ . "/../../../vendor/boto/jmespath/tests/compliance/{$name}.json");
             $json = json_decode($contents, true);
             foreach ($json as $suite) {
