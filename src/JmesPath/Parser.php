@@ -120,108 +120,6 @@ class Parser
         return $this->match($expectedAfterDot);
     }
 
-    private function parse_T_LBRACKET(array $token)
-    {
-        static $expectedFirst = [Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true, Lexer::T_STAR => true];
-
-        $token = $this->match($expectedFirst);
-        $value = $token['value'];
-        $nextToken = $this->peek();
-
-        if ($nextToken['type'] != Lexer::T_RBRACKET || $token['type'] == Lexer::T_IDENTIFIER) {
-            $this->parseMultiBracket($token);
-        } else {
-            // A simple extraction
-            $this->match([Lexer::T_RBRACKET => true]);
-            if ($token['type'] == Lexer::T_NUMBER) {
-                $this->stack[] = ['index', $value];
-            } elseif ($token['type'] == Lexer::T_STAR) {
-                return $this->parseInstruction($token);
-            }
-        }
-
-        return $this->nextToken();
-    }
-
-    private function parseMultiBracket(array $token)
-    {
-        $this->stack[] = ['jump_if_false', null];
-        $index = count($this->stack) - 1;
-        $this->stack[] = ['dup_top'];
-        $this->stack[] = ['push', []];
-        $this->stack[] = ['rot_two'];
-
-        do {
-            $token = $this->parseInstruction($token);
-            if ($token['type'] == Lexer::T_COMMA) {
-                $this->stack[] = ['store_key'];
-                $this->stack[] = ['rot_two'];
-                $this->stack[] = ['dup_top'];
-                $this->stack[] = ['rot_three'];
-                $token = $this->parseInstruction($this->match(self::$firstTokens));
-            }
-        } while ($token['type'] != Lexer::T_RBRACKET);
-
-        $this->stack[] = ['store_key'];
-        $this->stack[] = ['rot_two'];
-        $this->stack[] = ['pop'];
-
-        // Update the jump index with the next bytecode address
-        $this->stack[$index][1] = count($this->stack);
-    }
-
-    private function parse_T_LBRACE(array $token)
-    {
-        $token = $this->match([Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true]);
-        $value = $token['value'];
-        $nextToken = $this->peek();
-
-        if ($nextToken['type'] == Lexer::T_RBRACKET &&
-            ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
-        ) {
-            // A simple index extraction
-            $this->stack[] = ['field', $value];
-        } else {
-            $this->parseMultiBrace($token);
-        }
-
-        return $this->nextToken();
-    }
-
-    private function parseMultiBrace(array $token)
-    {
-        $this->stack[] = ['jump_if_false', null];
-        $index = count($this->stack) - 1;
-        $this->stack[] = ['dup_top'];
-        $this->stack[] = ['push', []];
-        $this->stack[] = ['rot_two'];
-
-        $currentKey = $token['value'];
-        $this->match([Lexer::T_COLON => true]);
-        $token = $this->match(self::$firstTokens);
-
-        do {
-            $token = $this->parseInstruction($token);
-            if ($token['type'] == Lexer::T_COMMA) {
-                $this->stack[] = ['store_key', $currentKey];
-                $this->stack[] = ['rot_two'];
-                $this->stack[] = ['dup_top'];
-                $this->stack[] = ['rot_three'];
-                $token = $this->match([Lexer::T_IDENTIFIER => true]);
-                $this->match([Lexer::T_COLON => true]);
-                $currentKey = $token['value'];
-                $token = $this->parseInstruction($this->match(self::$firstTokens));
-            }
-        } while ($token['type'] != Lexer::T_RBRACE);
-
-        $this->stack[] = ['store_key', $currentKey];
-        $this->stack[] = ['rot_two'];
-        $this->stack[] = ['pop'];
-
-        // Update the jump index with the next bytecode address
-        $this->stack[$index][1] = count($this->stack);
-    }
-
     /**
      * Parses an OR expression using a jump_if_true opcode. Parses tokens until
      * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
@@ -274,10 +172,121 @@ class Parser
         return $this->nextToken();
     }
 
+    private function parse_T_LBRACKET(array $token)
+    {
+        static $expectedFirst = [Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true, Lexer::T_STAR => true];
+
+        $token = $this->match($expectedFirst);
+        $value = $token['value'];
+        $nextToken = $this->peek();
+
+        if ($nextToken['type'] != Lexer::T_RBRACKET || $token['type'] == Lexer::T_IDENTIFIER) {
+            $this->parseMultiBracket($token);
+        } else {
+            // A simple extraction
+            $this->match([Lexer::T_RBRACKET => true]);
+            if ($token['type'] == Lexer::T_NUMBER) {
+                $this->stack[] = ['index', $value];
+            } elseif ($token['type'] == Lexer::T_STAR) {
+                return $this->parseInstruction($token);
+            }
+        }
+
+        return $this->nextToken();
+    }
+
+    private function parseMultiBracket(array $token)
+    {
+        $index = $this->prepareMultiBranch();
+
+        do {
+            $token = $this->parseInstruction($token);
+            if ($token['type'] == Lexer::T_COMMA) {
+                $this->storeMultiBranchKey(null);
+                $token = $this->parseInstruction($this->match(self::$firstTokens));
+            }
+        } while ($token['type'] != Lexer::T_RBRACKET);
+
+        $this->finishMultiBranch($index, null);
+    }
+
+    private function parse_T_LBRACE(array $token)
+    {
+        $token = $this->match([Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true]);
+        $value = $token['value'];
+        $nextToken = $this->peek();
+
+        if ($nextToken['type'] == Lexer::T_RBRACKET &&
+            ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
+        ) {
+            // A simple index extraction
+            $this->stack[] = ['field', $value];
+        } else {
+            $this->parseMultiBrace($token);
+        }
+
+        return $this->nextToken();
+    }
+
+    private function parseMultiBrace(array $token)
+    {
+        $index = $this->prepareMultiBranch();
+        $currentKey = $token['value'];
+        $this->match([Lexer::T_COLON => true]);
+        $token = $this->match(self::$firstTokens);
+
+        do {
+            $token = $this->parseInstruction($token);
+            if ($token['type'] == Lexer::T_COMMA) {
+                $this->storeMultiBranchKey($currentKey);
+                $token = $this->match([Lexer::T_IDENTIFIER => true]);
+                $this->match([Lexer::T_COLON => true]);
+                $currentKey = $token['value'];
+                $token = $this->parseInstruction($this->match(self::$firstTokens));
+            }
+        } while ($token['type'] != Lexer::T_RBRACE);
+
+        $this->finishMultiBranch($index, $currentKey);
+    }
+
     /**
-     * Match any token
-     *
-     * @return array
+     * @return int Returns the index of the jump bytecode instruction
+     */
+    private function prepareMultiBranch()
+    {
+        $this->stack[] = ['jump_if_false', null];
+        $this->stack[] = ['dup_top'];
+        $this->stack[] = ['push', []];
+        $this->stack[] = ['rot_two'];
+
+        return count($this->stack) - 4;
+    }
+
+    /**
+     * @param string|null $key Key to store the result in
+     */
+    private function storeMultiBranchKey($key)
+    {
+        $this->stack[] = ['store_key', $key];
+        $this->stack[] = ['rot_two'];
+        $this->stack[] = ['dup_top'];
+        $this->stack[] = ['rot_three'];
+    }
+
+    /**
+     * @param int         $index Index to update for the pre-jump instruction
+     * @param string|null $key   Key used to store the last result value
+     */
+    private function finishMultiBranch($index, $key)
+    {
+        $this->stack[] = ['store_key', $key];
+        $this->stack[] = ['rot_two'];
+        $this->stack[] = ['pop'];
+        $this->stack[$index][1] = count($this->stack);
+    }
+
+    /**
+     * @return array Returns the next token after advancing
      */
     private function nextToken()
     {
@@ -293,7 +302,7 @@ class Parser
      * Match the next token against one or more types
      *
      * @param array $types Type to match
-     * @return array Returns a token map
+     * @return array Returns a token
      * @throws SyntaxErrorException
      */
     private function match(array $types)
