@@ -5,8 +5,8 @@ namespace JmesPath;
 /**
  * Returns data from the input array that matches a given JMESPath expression.
  *
- * This method maintains a cache of 4096 compiled JMESPath expressions. When the
- * cache exceeds 4096, the cache is cleared.
+ * This method maintains a cache of 1024 compiled JMESPath expressions. When the
+ * cache exceeds 1024, the cache is cleared.
  *
  * @param string $expression JMESPath expression to evaluate
  * @param array  $data       Data to search
@@ -21,8 +21,8 @@ function search($expression, array $data)
         if (!$parser) {
             $parser = new Parser(new Lexer());
         }
-        // Reset the cache when it exceeds 4096 entries
-        if (++$cacheSize > 4096) {
+        // Reset the cache when it exceeds 1024 entries
+        if (++$cacheSize > 1024) {
             $cache = [];
             $cacheSize = 0;
         }

@@ -216,11 +216,12 @@ class Parser
         $value = $token['value'];
         $nextToken = $this->peek();
 
-        if ($nextToken['type'] == Lexer::T_RBRACKET &&
+        if ($nextToken['type'] == Lexer::T_RBRACE &&
             ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
         ) {
             // A simple index extraction
             $this->stack[] = ['field', $value];
+            $this->nextToken();
         } else {
             $this->parseMultiBrace($token);
         }
@@ -336,13 +337,13 @@ class Parser
      *
      * @param array $token Token to parse
      * @return array Returns the next token
-     * @throws \RuntimeException When an invalid token is encountered
+     * @throws SyntaxErrorException When an invalid token is encountered
      */
     private function parseInstruction(array $token)
     {
         $method = 'parse_' . $token['type'];
         if (!isset($this->methods[$method])) {
-            throw new \RuntimeException('Invalid token: ' . $token['type']);
+            throw new SyntaxErrorException('No matching opcode', $token, $this->lexer->getInput());
         }
 
         return $this->{$method}($token);
