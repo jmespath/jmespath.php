@@ -101,7 +101,7 @@ class Parser
             // Account for "foo.-1"
             $this->stack[] = ['field', $token['value']];
         } else {
-            $this->stack[] = ['index', $token['value']];
+            $this->stack[] = ['index', (int) $token['value']];
         }
 
         return $this->nextToken();
@@ -186,7 +186,7 @@ class Parser
             // A simple extraction
             $this->match([Lexer::T_RBRACKET => true]);
             if ($token['type'] == Lexer::T_NUMBER) {
-                $this->stack[] = ['index', $value];
+                $this->stack[] = ['index', (int) $value];
             } elseif ($token['type'] == Lexer::T_STAR) {
                 return $this->parseInstruction($token);
             }
