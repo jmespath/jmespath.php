@@ -19,18 +19,10 @@ class Parser
     /** @var array Known opcodes of the parser */
     private $methods;
 
-    /** @var array Default lexical tokens to expect */
-    private static $nextExpr = [
-        Lexer::T_DOT => true,
-        Lexer::T_EOF => true,
-        Lexer::T_LBRACKET => true,
-        Lexer::T_LBRACE => true,
-        Lexer::T_OR => true
-    ];
-
     /** @var array First acceptable token */
     private static $firstTokens = [
         Lexer::T_IDENTIFIER => true,
+        Lexer::T_NUMBER => true,
         Lexer::T_STAR => true,
         Lexer::T_LBRACKET => true,
         Lexer::T_LBRACE => true,
@@ -92,14 +84,14 @@ class Parser
     {
         $this->stack[] = ['field', $token['value']];
 
-        return $this->match(self::$nextExpr);
+        return $this->matchAny();
     }
 
     private function parse_T_NUMBER(array $token)
     {
-        $this->stack[] = ['field', $token['value']];
+        $this->stack[] = ['index', $token['value']];
 
-        return $this->match(self::$nextExpr);
+        return $this->matchAny();
     }
 
     private function parse_T_DOT(array $token)
@@ -117,52 +109,89 @@ class Parser
     private function parse_T_LBRACKET(array $token)
     {
         static $expectedFirst = [Lexer::T_NUMBER => true, Lexer::T_STAR => true];
-        static $expectedAfterEntry = [
-            Lexer::T_NUMBER => true,
-            Lexer::T_STAR => true,
-            Lexer::T_COMMA => true,
-            Lexer::T_RBRACKET => true
-        ];
 
-        $currentToken = $this->match($expectedFirst);
-        $value = $currentToken['value'];
-        $nextToken = $this->match($expectedAfterEntry);
-        if ($currentToken['type'] == Lexer::T_NUMBER && $nextToken['type'] == Lexer::T_RBRACKET) {
+        $token = $this->match($expectedFirst);
+        $value = $token['value'];
+        $nextToken = $this->peek();
+
+        if ($token['type'] == Lexer::T_NUMBER && $nextToken['type'] == Lexer::T_RBRACKET) {
             // A simple index extraction
+            $this->match([Lexer::T_RBRACKET => true]);
             $this->stack[] = ['index', $value];
         } else {
-            // A multi expression
-
+            $this->parseMultiBracket($token);
         }
 
-        return $this->match(self::$nextExpr);
+        return $this->matchAny();
+    }
+
+    private function parseMultiBracket(array $token)
+    {
+        $this->stack[] = ['dup_top'];
+        $this->stack[] = ['push', []];
+        $this->stack[] = ['rot_two'];
+
+        do {
+            $token = $this->parseInstruction($token);
+            if ($token['type'] == Lexer::T_COMMA) {
+                $this->stack[] = ['store_key'];
+                $this->stack[] = ['rot_two'];
+                $this->stack[] = ['dup_top'];
+                $this->stack[] = ['rot_three'];
+                $token = $this->parseInstruction($this->match(self::$firstTokens));
+            }
+        } while ($token['type'] != Lexer::T_RBRACKET);
+
+        $this->stack[] = ['store_key'];
+        $this->stack[] = ['rot_two'];
+        $this->stack[] = ['pop'];
     }
 
     private function parse_T_LBRACE(array $token)
     {
-        static $expectedFirst = [Lexer::T_IDENTIFIER, Lexer::T_NUMBER => true, Lexer::T_STAR => true];
-        static $expectedAfterEntry = [
-            Lexer::T_IDENTIFIER,
-            Lexer::T_NUMBER => true,
-            Lexer::T_STAR => true,
-            Lexer::T_COMMA => true,
-            Lexer::T_RBRACE => true
-        ];
+        $token = $this->match([Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true]);
+        $value = $token['value'];
+        $nextToken = $this->peek();
 
-        $currentToken = $this->match($expectedFirst);
-        $value = $currentToken['value'];
-        $nextToken = $this->match($expectedAfterEntry);
         if ($nextToken['type'] == Lexer::T_RBRACKET &&
-            ($currentToken['type'] == Lexer::T_NUMBER || $currentToken['type'] == Lexer::T_IDENTIFIER)
+            ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
         ) {
             // A simple index extraction
             $this->stack[] = ['field', $value];
         } else {
-            // A multi expression
-
+            $this->parseMultiBrace($token);
         }
 
-        return $this->match(self::$nextExpr);
+        return $this->matchAny();
+    }
+
+    private function parseMultiBrace(array $token)
+    {
+        $this->stack[] = ['dup_top'];
+        $this->stack[] = ['push', []];
+        $this->stack[] = ['rot_two'];
+
+        $currentKey = $token['value'];
+        $this->match([Lexer::T_COLON => true]);
+        $token = $this->match(self::$firstTokens);
+
+        do {
+            $token = $this->parseInstruction($token);
+            if ($token['type'] == Lexer::T_COMMA) {
+                $this->stack[] = ['store_key', $currentKey];
+                $this->stack[] = ['rot_two'];
+                $this->stack[] = ['dup_top'];
+                $this->stack[] = ['rot_three'];
+                $token = $this->match([Lexer::T_IDENTIFIER => true]);
+                $this->match([Lexer::T_COLON => true]);
+                $currentKey = $token['value'];
+                $token = $this->parseInstruction($this->match(self::$firstTokens));
+            }
+        } while ($token['type'] != Lexer::T_RBRACE);
+
+        $this->stack[] = ['store_key', $currentKey];
+        $this->stack[] = ['rot_two'];
+        $this->stack[] = ['pop'];
     }
 
     /**
@@ -191,8 +220,19 @@ class Parser
      */
     private function parse_T_STAR(array $token)
     {
+        static $afterStar = [
+            Lexer::T_DOT => true,
+            Lexer::T_EOF => true,
+            Lexer::T_LBRACKET => true,
+            Lexer::T_RBRACKET => true,
+            Lexer::T_LBRACE => true,
+            Lexer::T_RBRACE => true,
+            Lexer::T_OR => true,
+            Lexer::T_COMMA => true
+        ];
+
         // Create a bytecode loop
-        $token = $this->match(self::$nextExpr);
+        $token = $this->match($afterStar);
         $this->stack[] = ['each', null];
         $index = count($this->stack) - 1;
 
@@ -203,7 +243,20 @@ class Parser
         $this->stack[$index][1] = count($this->stack) + 1;
         $this->stack[] = ['goto', $index];
 
-        return $this->match(self::$nextExpr);
+        return $this->matchAny();
+    }
+
+    /**
+     * Match any token
+     *
+     * @return array
+     */
+    private function matchAny()
+    {
+        static $nullToken = ['type' => Lexer::T_EOF];
+        $this->tokens->next();
+
+        return $this->tokens->current() ?: $nullToken;
     }
 
     /**
@@ -224,6 +277,21 @@ class Parser
         }
 
         throw new SyntaxErrorException($types, $token, $this->lexer->getInput());
+    }
+
+    /**
+     * Grab the next lexical token without consuming it
+     *
+     * @return array
+     */
+    private function peek()
+    {
+        $position = $this->tokens->key();
+        $this->tokens->next();
+        $value = $this->tokens->current();
+        $this->tokens->seek($position);
+
+        return $value;
     }
 
     /**

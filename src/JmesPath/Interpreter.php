@@ -48,8 +48,10 @@ class Interpreter
             $arg = 'op_' . $op[0];
 
             if ($this->debug) {
-                echo $arg . ': ' . (isset($op[1]) ? var_export($op[1], true) : null) . "\n";
-                var_export($this->stack);
+                echo $arg . ': ' . (isset($op[1]) ? json_encode($op[1]) : null) . "\n";
+                foreach ($this->stack as $index => $stack) {
+                    echo $index . ': ' . json_encode($stack) . "\n";
+                }
                 echo "\n\n===========\n\n";
             }
 
@@ -174,11 +176,12 @@ class Interpreter
 
     /**
      * Pops two items off of the stack, TOS and TOS1. Then pushes TOS1 back on
-     * the stack after setting TOS1[$arg] = TOS.
+     * the stack after setting TOS1[$arg] = TOS. If no operand, $arg, is
+     * provided, the TOS is appended to TOS1.
      *
      * @param string $arg Index to set
      */
-    private function op_store_key($arg)
+    private function op_store_key($arg = null)
     {
         $tos = array_pop($this->stack);
         $tos1 = array_pop($this->stack);
@@ -186,7 +189,11 @@ class Interpreter
         if (!is_array($tos1)) {
             $this->stack[] = [];
         } else {
-            $tos1[$arg] = $tos;
+            if ($arg === null) {
+                $tos1[] = $tos;
+            } else {
+                $tos1[$arg] = $tos;
+            }
             $this->stack[] = $tos1;
         }
     }
@@ -238,6 +245,7 @@ class Interpreter
             // It can be iterated so track the iteration at the current position
             $iter = new \ArrayIterator($tos);
             $this->eaches[$index] = [$iter, $arg, []];
+            $this->stack[] = $tos;
             $this->stack[] = $iter->current();
         } else {
             // If it can't be iterated, jump right away
