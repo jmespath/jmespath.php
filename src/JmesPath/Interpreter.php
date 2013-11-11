@@ -59,7 +59,10 @@ class Interpreter
                 throw new \RuntimeException('Unknown opcode {$op}');
             }
             $this->{$arg}(isset($op[1]) ? $op[1] : null);
-            $this->i->next();
+
+            if ($arg != 'op_goto') {
+                $this->i->next();
+            }
         }
 
         return array_pop($this->stack);
@@ -166,7 +169,7 @@ class Interpreter
      */
     private function op_goto($arg)
     {
-        $this->i->seek($arg - 1);
+        $this->i->seek($arg);
     }
 
     /**
@@ -235,8 +238,8 @@ class Interpreter
             if ($iter->valid()) {
                 $this->stack[] = $iter->current();
             } else {
-                // Push the result onto the stack
-                $this->stack[] = $this->eaches[$index][2];
+                // Push the result onto the stack (or null if no results)
+                $this->stack[] = $this->eaches[$index][2] ?: null;
                 unset($this->eaches[$index]);
                 $this->i->seek($jmp - 1);
             }

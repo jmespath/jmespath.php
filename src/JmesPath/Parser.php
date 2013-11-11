@@ -13,6 +13,12 @@ class Parser
     /** @var \ArrayIterator */
     private $tokens;
 
+    /** @var array */
+    private $currentToken;
+
+    /** @var array */
+    private $previousToken;
+
     /** @var array opcode stack*/
     private $stack;
 
@@ -60,17 +66,19 @@ class Parser
         $this->stack = [];
         $this->lexer->setInput($path);
         $this->tokens = $this->lexer->getIterator();
+        $this->currentToken = $this->tokens->current();
+        $this->previousToken = null;
 
         // Ensure that the first token is valid
-        if (!isset(self::$firstTokens[$this->tokens->current()['type']])) {
+        if (!isset(self::$firstTokens[$this->currentToken['type']])) {
             throw new SyntaxErrorException(
                 self::$firstTokens,
-                $this->tokens->current(),
+                $this->currentToken,
                 $this->lexer->getInput()
             );
         }
 
-        $token = $this->tokens->current();
+        $token = $this->currentToken;
         while ($token['type'] !== Lexer::T_EOF) {
             $token = $this->parseInstruction($token);
         }
@@ -84,14 +92,19 @@ class Parser
     {
         $this->stack[] = ['field', $token['value']];
 
-        return $this->matchAny();
+        return $this->nextToken();
     }
 
     private function parse_T_NUMBER(array $token)
     {
-        $this->stack[] = ['index', $token['value']];
+        if ($this->previousToken && $this->previousToken['type'] == Lexer::T_DOT) {
+            // Account for "foo.-1"
+            $this->stack[] = ['field', $token['value']];
+        } else {
+            $this->stack[] = ['index', $token['value']];
+        }
 
-        return $this->matchAny();
+        return $this->nextToken();
     }
 
     private function parse_T_DOT(array $token)
@@ -118,11 +131,14 @@ class Parser
             // A simple index extraction
             $this->match([Lexer::T_RBRACKET => true]);
             $this->stack[] = ['index', $value];
+        } elseif ($token['type'] == Lexer::T_STAR && $nextToken['type'] == Lexer::T_RBRACKET) {
+            $this->nextToken();
+            return $this->parseInstruction($token);
         } else {
             $this->parseMultiBracket($token);
         }
 
-        return $this->matchAny();
+        return $this->nextToken();
     }
 
     private function parseMultiBracket(array $token)
@@ -162,7 +178,7 @@ class Parser
             $this->parseMultiBrace($token);
         }
 
-        return $this->matchAny();
+        return $this->nextToken();
     }
 
     private function parseMultiBrace(array $token)
@@ -243,7 +259,7 @@ class Parser
         $this->stack[$index][1] = count($this->stack) + 1;
         $this->stack[] = ['goto', $index];
 
-        return $this->matchAny();
+        return $this->nextToken();
     }
 
     /**
@@ -251,12 +267,14 @@ class Parser
      *
      * @return array
      */
-    private function matchAny()
+    private function nextToken()
     {
         static $nullToken = ['type' => Lexer::T_EOF];
+        $this->previousToken = $this->currentToken;
         $this->tokens->next();
+        $this->currentToken = $this->tokens->current() ?: $nullToken;
 
-        return $this->tokens->current() ?: $nullToken;
+        return $this->currentToken;
     }
 
     /**
@@ -268,9 +286,7 @@ class Parser
      */
     private function match(array $types)
     {
-        static $nullToken = ['type' => Lexer::T_EOF];
-        $this->tokens->next();
-        $token = $this->tokens->current() ?: $nullToken;
+        $token = $this->nextToken();
 
         if (isset($types[$token['type']])) {
             return $token;
