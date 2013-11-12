@@ -91,8 +91,6 @@ class Parser
     private function parse_T_IDENTIFIER(array $token)
     {
         $this->stack[] = ['field', $token['value']];
-
-        return $this->nextToken();
     }
 
     private function parse_T_NUMBER(array $token)
@@ -103,8 +101,6 @@ class Parser
         } else {
             $this->stack[] = ['index', (int) $token['value']];
         }
-
-        return $this->nextToken();
     }
 
     private function parse_T_DOT(array $token)
@@ -191,8 +187,6 @@ class Parser
                 return $this->parseInstruction($token);
             }
         }
-
-        return $this->nextToken();
     }
 
     private function parseMultiBracket(array $token)
@@ -225,8 +219,6 @@ class Parser
         } else {
             $this->parseMultiBrace($token);
         }
-
-        return $this->nextToken();
     }
 
     private function parseMultiBrace(array $token)
@@ -346,6 +338,6 @@ class Parser
             throw new SyntaxErrorException('No matching opcode', $token, $this->lexer->getInput());
         }
 
-        return $this->{$method}($token);
+        return $this->{$method}($token) ?: $this->nextToken();
     }
 }

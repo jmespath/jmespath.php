@@ -43,13 +43,21 @@ class Interpreter
         $this->stack = [&$data, $data];
         $this->eaches = [];
 
+        if ($this->debug) {
+            echo "Bytecode:\n\n";
+            foreach ($opcodes as $id => $code) {
+                echo $id . ': ' . json_encode($code) . "\n";
+            }
+            echo "\n\n";
+        }
+
         while ($this->i->valid()) {
             $op = $this->i->current();
             $arg = 'op_' . $op[0];
 
             if ($this->debug) {
-                echo $arg . ': ' . (isset($op[1]) ? json_encode($op[1]) : null) . "\n";
-                foreach ($this->stack as $index => $stack) {
+                echo '[' . $this->i->key() . '] ' . $arg . ': ' . (isset($op[1]) ? json_encode($op[1]) : null) . "\n";
+                foreach (array_reverse($this->stack) as $index => $stack) {
                     echo $index . ': ' . json_encode($stack) . "\n";
                 }
                 echo "\n\n===========\n\n";
