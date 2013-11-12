@@ -169,7 +169,7 @@ class Parser
         $this->stack[$index][1] = count($this->stack) + 1;
         $this->stack[] = ['goto', $index];
 
-        return $this->nextToken();
+        return $token;
     }
 
     private function parse_T_LBRACKET(array $token)
