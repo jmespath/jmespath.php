@@ -168,8 +168,6 @@ class Interpreter
     {
         if (end($this->stack)) {
             $this->i->seek($arg);
-        } else {
-            array_pop($this->stack);
         }
     }
 

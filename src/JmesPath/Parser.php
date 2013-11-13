@@ -126,6 +126,7 @@ class Parser
         $token = $this->match(self::$firstTokens);
         $this->stack[] = ['jump_if_true', null];
         $index = count($this->stack) - 1;
+        $this->stack[] = ['pop'];
 
         do {
             $token = $this->parseInstruction($token);
