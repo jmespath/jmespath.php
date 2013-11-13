@@ -37,10 +37,10 @@ class Parser
 
     /** @var array Scope changes */
     private static $scope = [
-        Lexer::T_COMMA,
-        Lexer::T_OR,
-        Lexer::T_RBRACE,
-        Lexer::T_RBRACKET,
+        Lexer::T_COMMA => true,
+        Lexer::T_OR => true,
+        Lexer::T_RBRACE => true,
+        Lexer::T_RBRACKET => true,
         Lexer::T_EOF => true
     ];
 
@@ -337,7 +337,11 @@ class Parser
     {
         $method = 'parse_' . $token['type'];
         if (!isset($this->methods[$method])) {
-            throw new SyntaxErrorException('No matching opcode', $token, $this->lexer->getInput());
+            throw new SyntaxErrorException(
+                'No matching opcode for ' . $token['type'],
+                $token,
+                $this->lexer->getInput()
+            );
         }
 
         return $this->{$method}($token) ?: $this->nextToken();
