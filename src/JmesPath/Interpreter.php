@@ -44,11 +44,11 @@ class Interpreter
         $this->eaches = [];
 
         if ($this->debug) {
-            echo "Bytecode:\n\n";
+            echo "Bytecode:\n---------\n\n";
             foreach ($opcodes as $id => $code) {
                 echo $id . ': ' . json_encode($code) . "\n";
             }
-            echo "\n\n";
+            echo "\n\nExecution stack:\n----------------\n\n";
         }
 
         while ($this->i->valid()) {
