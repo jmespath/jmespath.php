@@ -194,8 +194,9 @@ class Parser
         $index = $this->prepareMultiBranch();
 
         do {
-            $token = $this->parseInstruction($token);
-            if ($token['type'] == Lexer::T_COMMA) {
+            if ($token['type'] != Lexer::T_COMMA) {
+                $token = $this->parseInstruction($token);
+            } else {
                 $this->storeMultiBranchKey(null);
                 $token = $this->parseInstruction($this->match(self::$firstTokens));
             }
@@ -229,8 +230,9 @@ class Parser
         $token = $this->match(self::$firstTokens);
 
         do {
-            $token = $this->parseInstruction($token);
-            if ($token['type'] == Lexer::T_COMMA) {
+            if ($token['type'] != Lexer::T_COMMA) {
+                $token = $this->parseInstruction($token);
+            } else {
                 $this->storeMultiBranchKey($currentKey);
                 $token = $this->match([Lexer::T_IDENTIFIER => true]);
                 $this->match([Lexer::T_COLON => true]);

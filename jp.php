@@ -17,4 +17,4 @@ $interpreter = new Interpreter(true);
 $opcodes = $parser->compile($expression);
 $result = $interpreter->execute($opcodes, $data);
 
-echo "Result:\n-------\n\n{$result}\n\n";
+echo sprintf("Result:\n-------\n\n%s\n\n", json_encode($result, JSON_PRETTY_PRINT));
