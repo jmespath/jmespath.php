@@ -25,6 +25,9 @@ class Parser
     /** @var array Known opcodes of the parser */
     private $methods;
 
+    /** @var int The number of open multi expressions */
+    private $inMultiBranch = 0;
+
     /** @var array First acceptable token */
     private static $firstTokens = [
         Lexer::T_IDENTIFIER => true,
@@ -128,11 +131,18 @@ class Parser
         $index = count($this->stack) - 1;
         $this->stack[] = ['pop'];
 
+        // Special stack handling when an OR is inside of a multi branch
+        if ($this->inMultiBranch) {
+            $this->stack[] = ['rot_two'];
+            $this->stack[] = ['dup_top'];
+            $this->stack[] = ['rot_three'];
+        }
+
         do {
             $token = $this->parseInstruction($token);
         } while (!isset(self::$scope[$token['type']]));
 
-        $this->stack[$index][1] = count($this->stack);
+        $this->stack[$index][1] = count($this->stack) - 1;
 
         return $token;
     }
@@ -250,6 +260,7 @@ class Parser
      */
     private function prepareMultiBranch()
     {
+        ++$this->inMultiBranch;
         $this->stack[] = ['jump_if_false', null];
         $this->stack[] = ['dup_top'];
         $this->stack[] = ['push', []];
@@ -279,6 +290,7 @@ class Parser
         $this->stack[] = ['rot_two'];
         $this->stack[] = ['pop'];
         $this->stack[$index][1] = count($this->stack);
+        --$this->inMultiBranch;
     }
 
     /**
