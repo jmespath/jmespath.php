@@ -46,7 +46,9 @@ class Interpreter
         if ($this->debug) {
             echo "Bytecode\n=========\n\n";
             foreach ($opcodes as $id => $code) {
-                echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ' . json_encode($code) . "\n";
+                echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
+                echo str_pad($code[0], 17, ' ') . '  ';
+                echo ((isset($code[1])) ? json_encode($code[1]) : '') . "\n";
             }
             echo "\nData\n====\n\n" . json_encode($data, JSON_PRETTY_PRINT) . "\n\n";
             echo "Execution stack\n===============\n\n";
