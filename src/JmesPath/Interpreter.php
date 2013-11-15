@@ -44,23 +44,32 @@ class Interpreter
         $this->eaches = [];
 
         if ($this->debug) {
-            echo "Bytecode:\n---------\n\n";
+            echo "Bytecode\n=========\n\n";
             foreach ($opcodes as $id => $code) {
-                echo $id . ': ' . json_encode($code) . "\n";
+                echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ' . json_encode($code) . "\n";
             }
-            echo "\n\nExecution stack:\n----------------\n\n";
+            echo "\nData\n====\n\n" . json_encode($data, JSON_PRETTY_PRINT) . "\n\n";
+            echo "Execution stack\n===============\n\n";
         }
 
         while ($this->i->valid()) {
+
             $op = $this->i->current();
             $arg = 'op_' . $op[0];
 
             if ($this->debug) {
-                echo '[' . $this->i->key() . '] ' . $arg . ': ' . (isset($op[1]) ? json_encode($op[1]) : null) . "\n";
+
+                $opLine = '> ' .    str_pad($this->i->key(), 3, ' ', STR_PAD_RIGHT) . ' ';
+                $opLine .= str_pad($arg, 17, ' ') . '   ';
+                $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 12, ' ');
+                echo $opLine . "\n";
+                echo str_repeat('-', strlen($opLine)) . "\n\n";
+
                 foreach (array_reverse($this->stack) as $index => $stack) {
-                    echo $index . ': ' . json_encode($stack) . "\n";
+                    echo '    ' . str_pad($index, 3, ' ', STR_PAD_LEFT) . ': ';
+                    echo json_encode($stack) . "\n";
                 }
-                echo "\n\n===========\n\n";
+                echo "\n\n";
             }
 
             if (!isset($this->methods[$arg])) {
