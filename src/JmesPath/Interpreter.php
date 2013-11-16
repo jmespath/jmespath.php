@@ -44,14 +44,7 @@ class Interpreter
         $this->eaches = [];
 
         if ($this->debug) {
-            echo "Bytecode\n=========\n\n";
-            foreach ($opcodes as $id => $code) {
-                echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
-                echo str_pad($code[0], 17, ' ') . '  ';
-                echo ((isset($code[1])) ? json_encode($code[1]) : '') . "\n";
-            }
-            echo "\nData\n====\n\n" . json_encode($data, JSON_PRETTY_PRINT) . "\n\n";
-            echo "Execution stack\n===============\n\n";
+            $this->debugInit($opcodes, $data);
         }
 
         while ($this->i->valid()) {
@@ -60,18 +53,7 @@ class Interpreter
             $arg = 'op_' . $op[0];
 
             if ($this->debug) {
-
-                $opLine = '> ' .    str_pad($this->i->key(), 3, ' ', STR_PAD_RIGHT) . ' ';
-                $opLine .= str_pad($arg, 17, ' ') . '   ';
-                $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 12, ' ');
-                echo $opLine . "\n";
-                echo str_repeat('-', strlen($opLine)) . "\n\n";
-
-                foreach (array_reverse($this->stack) as $index => $stack) {
-                    echo '    ' . str_pad($index, 3, ' ', STR_PAD_LEFT) . ': ';
-                    echo json_encode($stack) . "\n";
-                }
-                echo "\n\n";
+                $this->debugLine($op);
             }
 
             if (!isset($this->methods[$arg])) {
@@ -288,5 +270,33 @@ class Interpreter
             $this->stack[] = $tos;
             $this->i->seek($arg - 1);
         }
+    }
+
+    private function debugInit(array $opcodes, array $data)
+    {
+        echo "Bytecode\n=========\n\n";
+        foreach ($opcodes as $id => $code) {
+            echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
+            echo str_pad($code[0], 17, ' ') . '  ';
+            echo ((isset($code[1])) ? json_encode($code[1]) : '') . "\n";
+        }
+        echo "\nData\n====\n\n" . json_encode($data, JSON_PRETTY_PRINT) . "\n\n";
+        echo "Execution stack\n===============\n\n";
+    }
+
+    private function debugLine($op)
+    {
+        $arg = 'op_' . $op[0];
+        $opLine = '> ' .    str_pad($this->i->key(), 3, ' ', STR_PAD_RIGHT) . ' ';
+        $opLine .= str_pad($arg, 17, ' ') . '   ';
+        $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 12, ' ');
+        echo $opLine . "\n";
+        echo str_repeat('-', strlen($opLine)) . "\n\n";
+
+        foreach (array_reverse($this->stack) as $index => $stack) {
+            echo '    ' . str_pad($index, 3, ' ', STR_PAD_LEFT) . ': ';
+            echo json_encode($stack) . "\n";
+        }
+        echo "\n\n";
     }
 }
