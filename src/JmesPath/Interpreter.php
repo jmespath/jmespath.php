@@ -61,7 +61,7 @@ class Interpreter
                 case 'dup_top':
                     $tos = array_pop($stack);
                     $stack[] = $tos;
-                    $stack[] =& $tos;
+                    $stack[] = $tos;
                     break;
 
                 case 'field':
