@@ -35,7 +35,8 @@ class Parser
         Lexer::T_STAR => true,
         Lexer::T_LBRACKET => true,
         Lexer::T_LBRACE => true,
-        Lexer::T_EOF => true
+        Lexer::T_EOF => true,
+        Lexer::T_DOLLAR => true
     );
 
     /** @var array Scope changes */
@@ -147,6 +148,14 @@ class Parser
         return $token;
     }
 
+    private function parse_T_DOLLAR(array $token)
+    {
+        if ($this->inMultiBranch) {
+            $this->stack[] = array('pop');
+        }
+        $this->stack[] = array('push_root');
+     }
+
     /**
      * Parses a wildcard expression using a bytecode loop. Parses tokens until
      * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
@@ -190,7 +199,8 @@ class Parser
             Lexer::T_IDENTIFIER => true,
             Lexer::T_NUMBER => true,
             Lexer::T_STAR => true,
-            Lexer::T_RBRACKET => true
+            Lexer::T_RBRACKET => true,
+            Lexer::T_DOLLAR => true
         );
 
         $token = $this->match($expectedAfter);

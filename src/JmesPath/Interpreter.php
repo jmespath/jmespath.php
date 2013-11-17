@@ -188,6 +188,10 @@ class Interpreter
                     }
                     break;
 
+                case 'push_root':
+                    $stack[] =& $data;
+                    break;
+
                 case 'stop': break;
 
                 default:
