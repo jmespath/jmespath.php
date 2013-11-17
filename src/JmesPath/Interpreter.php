@@ -43,6 +43,7 @@ class Interpreter
             $opArray = $iter->current();
             $op = $opArray[0];
             $arg = isset($opArray[1]) ? $opArray[1] : null;
+            $arg2 = isset($opArray[2]) ? $opArray[2] : null;
 
             if ($this->debug) {
                 $this->debugLine($iter->key(), $stack, $opArray);
@@ -145,7 +146,21 @@ class Interpreter
                             $stack[] = $eachIter->current();
                         } else {
                             // Push the result onto the stack (or null if no results)
-                            $stack[] = $eaches[$index][2] ?: null;
+                            if ($arg2) {
+                                $stack[] = $eaches[$index][2] ?: null;
+                            } else {
+                                $result = [];
+                                foreach ($eaches[$index][2] as $item) {
+                                    // Can't merge in hashes or scalars
+                                    if (!is_array($item) || array_keys($item)[0] !== 0) {
+                                        $result[] = $item;
+                                    } else {
+                                        $result = array_merge($result, $item);
+                                    }
+                                }
+                                $stack[] = $result;
+                            }
+
                             unset($eaches[$index]);
                             $iter->seek($jmp - 1);
                         }
