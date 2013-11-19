@@ -131,11 +131,13 @@ class Interpreter
                 case 'merge':
                     $tos = array_pop($stack);
                     $result = [];
-                    foreach ($tos as $values) {
-                        if (is_array($values) && array_keys($values)[0] === 0) {
-                            $result = array_merge($result, $values);
-                        } else {
-                            $result[] = $values;
+                    if (is_array($tos)) {
+                        foreach ($tos as $values) {
+                            if (is_array($values) && array_keys($values)[0] === 0) {
+                                $result = array_merge($result, $values);
+                            } else {
+                                $result[] = $values;
+                            }
                         }
                     }
                     $stack[] = $result;
