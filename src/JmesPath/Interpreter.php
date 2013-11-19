@@ -43,7 +43,6 @@ class Interpreter
             $opArray = $iter->current();
             $op = $opArray[0];
             $arg = isset($opArray[1]) ? $opArray[1] : null;
-            $arg2 = isset($opArray[2]) ? $opArray[2] : null;
 
             if ($this->debug) {
                 $this->debugLine($iter->key(), $stack, $opArray);
@@ -129,6 +128,19 @@ class Interpreter
                     }
                     break;
 
+                case 'merge':
+                    $tos = array_pop($stack);
+                    $result = [];
+                    foreach ($tos as $values) {
+                        if (is_array($values) && array_keys($values)[0] === 0) {
+                            $result = array_merge($result, $values);
+                        } else {
+                            $result[] = $values;
+                        }
+                    }
+                    $stack[] = $result;
+                    break;
+
                 case 'each':
                     $index = $iter->key();
                     $tos = array_pop($stack);
@@ -146,21 +158,7 @@ class Interpreter
                             $stack[] = $eachIter->current();
                         } else {
                             // Push the result onto the stack (or null if no results)
-                            if ($arg2) {
-                                $stack[] = $eaches[$index][2] ?: null;
-                            } else {
-                                $result = [];
-                                foreach ($eaches[$index][2] as $item) {
-                                    // Can't merge in hashes or scalars
-                                    if (!is_array($item) || array_keys($item)[0] !== 0) {
-                                        $result[] = $item;
-                                    } else {
-                                        $result = array_merge($result, $item);
-                                    }
-                                }
-                                $stack[] = $result;
-                            }
-
+                            $stack[] = $eaches[$index][2] ?: null;
                             unset($eaches[$index]);
                             $iter->seek($jmp - 1);
                         }
@@ -212,8 +210,13 @@ class Interpreter
         echo str_repeat('-', strlen($opLine)) . "\n\n";
 
         foreach (array_reverse($stack) as $index => $stack) {
+            $json = json_encode($stack);
             echo '    ' . str_pad($index, 3, ' ', STR_PAD_LEFT) . ': ';
-            echo json_encode($stack) . "\n";
+            echo substr(json_encode($stack), 0, 500);
+            if (strlen($json) > 500) {
+                echo ' [...]';
+            }
+            echo "\n";
         }
         echo "\n\n";
     }
