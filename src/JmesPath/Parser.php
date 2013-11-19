@@ -170,6 +170,10 @@ class Parser
         $index = count($this->stack) - 1;
 
         while (!isset(self::$scope[$token['type']])) {
+            // Don't continue the original project in a subprojection for "[]"
+            if ($token['type'] == Lexer::T_LBRACKET && $this->peek()['type'] == Lexer::T_RBRACKET) {
+                break;
+            }
             $token = $this->parseInstruction($token);
         }
 
@@ -184,11 +188,11 @@ class Parser
         static $expectedAfter = [Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true, Lexer::T_STAR => true, Lexer::T_RBRACKET => true];
 
         $token = $this->match($expectedAfter);
+
         // Don't JmesForm the data into a split array
         if ($token['type'] == Lexer::T_RBRACKET) {
-            $next = $this->parse_T_STAR($token);
             $this->stack[] = ['merge'];
-            return $next;
+            return $this->parse_T_STAR($token);
         }
 
         $value = $token['value'];
@@ -338,12 +342,11 @@ class Parser
      */
     private function peek()
     {
-        $position = $this->tokens->key();
-        $this->tokens->next();
-        $value = $this->tokens->current();
-        $this->tokens->seek($position);
+        $nextPos = $this->tokens->key() + 1;
 
-        return $value;
+        return isset($this->tokens[$nextPos])
+            ? $this->tokens[$nextPos]
+            : ['type' => Lexer::T_EOF, 'value' => ''];
     }
 
     /**

@@ -35,15 +35,15 @@ class Lexer implements \IteratorAggregate
     private $regex = '/
         ([A-Za-z0-9\-_]+)   # T_IDENTIFIER
         |("(?:\\\"|[^"])*") # T_IDENTIFIER
-        |\s+                # Ignore whitespace
+        |(\-?\d+)           # T_NUMBER
         |(\.)               # T_DOT
-        |(,)                # T_COMMA
-        |({)                # T_LBRACE
-        |(})                # T_RBRACE
+        |\s+                # Ignore whitespace
         |(\*)               # T_STAR
         |(\[)               # T_LBRACKET
         |(\])               # T_RBRACKET
-        |(\-?\d+)           # T_NUMBER
+        |(,)                # T_COMMA
+        |({)                # T_LBRACE
+        |(})                # T_RBRACE
         |(\|\|)             # T_OR
         |(:)                # T_COLON
         |(.)                # T_UNKNOWN
