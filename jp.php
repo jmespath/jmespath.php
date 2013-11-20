@@ -6,8 +6,26 @@ use JmesPath\Lexer;
 use JmesPath\Parser;
 use JmesPath\Interpreter;
 
-$expression = $argv[1];
-$data = json_decode(stream_get_contents(STDIN), true);
+if (!isset($argv[2])) {
+    // Simple expression extraction
+    $expression = $argv[1];
+    $data = json_decode(stream_get_contents(STDIN), true);
+} elseif (!isset($argv[3])) {
+    die('Must specify an expression OR a jmespath compliance script, test suite, and test case');
+} else {
+    // Manually run a compliance test
+    $suite = $argv[1];
+    $outer = $argv[2];
+    $inner = $argv[3];
+    $path = __DIR__ . "/vendor/boto/jmespath/tests/compliance/{$suite}.json";
+    if (!file_exists($path)) {
+        die('File not found at ' . $path);
+    }
+    $json = json_decode(file_get_contents($path), true);
+    $set = $json[$outer];
+    $data = $set['given'];
+    $expression = $set['cases'][$inner]['expression'];
+}
 
 echo "Expression\n==========\n\n{$expression}\n\n";
 

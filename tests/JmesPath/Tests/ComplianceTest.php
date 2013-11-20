@@ -21,9 +21,9 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         $interpreter = new Interpreter();
         $parsed = $interpreter->execute($opcodes, $data);
 
-        $failure = $expression . "\n\nInput: "
-            . json_encode($data, JSON_PRETTY_PRINT)
-            . "\n\nResult: " . json_encode($data, JSON_PRETTY_PRINT)
+        $failure = $expression
+            . "\n\nInput: " . json_encode($data, JSON_PRETTY_PRINT)
+            . "\n\nResult: " . json_encode($parsed, JSON_PRETTY_PRINT)
             . "\n\nExpected: " . json_encode($result, JSON_PRETTY_PRINT)
             . "\n\nopcodes: " . json_encode($opcodes, JSON_PRETTY_PRINT);
 
