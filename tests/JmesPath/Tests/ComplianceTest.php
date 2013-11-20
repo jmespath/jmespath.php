@@ -11,7 +11,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider complianceProvider
      */
-    public function testPassesCompliance($data, $expression, $result)
+    public function testPassesCompliance($data, $expression, $result, $file, $suite, $case)
     {
         // Fix the old "or" syntax
         $expression = str_replace(' or ', ' || ', $expression);
@@ -21,7 +21,8 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         $interpreter = new Interpreter();
         $parsed = $interpreter->execute($opcodes, $data);
 
-        $failure = $expression
+        $failure = "\nphp jp.php {$file} {$suite} {$case}\n"
+            . "\n$expression\n"
             . "\n\nInput: " . json_encode($data, JSON_PRETTY_PRINT)
             . "\n\nResult: " . json_encode($parsed, JSON_PRETTY_PRINT)
             . "\n\nExpected: " . json_encode($result, JSON_PRETTY_PRINT)
@@ -41,9 +42,9 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         foreach (array('basic', 'indices', 'ormatch', 'wildcard', 'escape', 'multiselect') as $name) {
             $contents = file_get_contents(__DIR__ . "/../../../vendor/boto/jmespath/tests/compliance/{$name}.json");
             $json = json_decode($contents, true);
-            foreach ($json as $suite) {
-                foreach ($suite['cases'] as $case) {
-                    $cases[] = array($suite['given'], $case['expression'], $case['result']);
+            foreach ($json as $suiteNumber => $suite) {
+                foreach ($suite['cases'] as $caseNumber => $case) {
+                    $cases[] = array($suite['given'], $case['expression'], $case['result'], $name, $suiteNumber, $caseNumber);
                 }
             }
         }
