@@ -142,7 +142,7 @@ class Parser
             $token = $this->parseInstruction($token);
         } while (!isset(self::$scope[$token['type']]));
 
-        $this->stack[$index][1] = count($this->stack) - 1;
+        $this->stack[$index][1] = count($this->stack);
 
         return $token;
     }

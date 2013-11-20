@@ -98,6 +98,7 @@ class Interpreter
                 case 'jump_if_true':
                     if (end($stack)) {
                         $iter->seek($arg);
+                        continue 2;
                     }
                     break;
 
@@ -105,6 +106,7 @@ class Interpreter
                     $tos = end($stack);
                     if ($tos === null || $tos === []) {
                         $iter->seek($arg);
+                        continue 2;
                     }
                     break;
 
@@ -171,8 +173,8 @@ class Interpreter
                         $eaches[$index] = [$eachIter, $arg, []];
                         $stack[] = $eachIter->current();
                     } else {
-                        // If it can't be iterated, jump right away
-                        $stack[] = $tos;
+                        // If it can't be iterated, push null and jump
+                        $stack[] = [];
                         $iter->seek($arg - 1);
                     }
                     break;
