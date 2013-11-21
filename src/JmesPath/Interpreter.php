@@ -151,31 +151,49 @@ class Interpreter
 
                     if (isset($eaches[$index])) {
 
-                        list($eachIter, $jmp,) = $eaches[$index];
-                        // Add to the results if not empty
-                        if (!empty($tos)) {
-                            $eaches[$index][2][] = $tos;
+                        $ei =& $eaches[$index];
+
+                        // Add to the results if not null and increment iter count
+                        $ei['count']++;
+                        if ($tos !== null) {
+                            $ei['result'][] = $tos;
                         }
 
-                        $eachIter->next();
-                        if ($eachIter->valid()) {
-                            $stack[] = $eachIter->current();
+                        $ei['iter']->next();
+                        if ($ei['iter']->valid()) {
+                            $stack[] = $ei['iter']->current();
                         } else {
-                            // Push the result onto the stack (or null if no results)
-                            $stack[] = $eaches[$index][2] ?: null;
+                            // We're done iterating, so collect the results
+                            if ($ei['result']) {
+                                // Push the result onto the stack if not empty
+                                $stack[] = $ei['result'];
+                            } elseif ($ei['count']) {
+                                // If empty but there was iteration, then push an empty array
+                                $stack[] = [];
+                            } else {
+                                // Empty and not iterated means you tried to branch on a scalar
+                                // so push null
+                                $stack[] = null;
+                            }
                             unset($eaches[$index]);
-                            $iter->seek($jmp - 1);
+                            $iter->seek($ei['jmp']);
+                            continue 2;
                         }
 
-                    } elseif (is_array($tos)) {
-                        // It can be iterated so track the iteration at the current position
-                        $eachIter = new \ArrayIterator($tos);
-                        $eaches[$index] = [$eachIter, $arg, []];
-                        $stack[] = $eachIter->current();
+                    } elseif (!is_array($tos)) {
+                        // The TOS cannot be iterated so break from the loop
+                        $stack[] = null;
+                        $iter->seek($arg);
+                        continue 2;
                     } else {
-                        // If it can't be iterated, push null and jump
-                        $stack[] = [];
-                        $iter->seek($arg - 1);
+                        // It can be iterated so track the iteration at the current position
+                        $eaches[$index] = [
+                            'iter'   => new \ArrayIterator($tos),
+                            'jmp'    => $arg,
+                            'result' => [],
+                            'count'  => 0
+                        ];
+                        $stack[] = reset($tos);
                     }
                     break;
 

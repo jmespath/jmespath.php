@@ -206,7 +206,7 @@ class Parser
             if ($token['type'] == Lexer::T_NUMBER) {
                 $this->stack[] = ['index', (int) $value];
             } elseif ($token['type'] == Lexer::T_STAR) {
-                return $this->parseInstruction($token);
+                return $this->parse_T_STAR($token);
             }
         }
     }
