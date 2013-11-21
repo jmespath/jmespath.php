@@ -151,32 +151,18 @@ class Interpreter
 
                     if (isset($eaches[$index])) {
 
-                        $ei =& $eaches[$index];
-
-                        // Add to the results if not null and increment iter count
-                        $ei['count']++;
                         if ($tos !== null) {
-                            $ei['result'][] = $tos;
+                            $eaches[$index]['result'][] = $tos;
                         }
 
-                        $ei['iter']->next();
-                        if ($ei['iter']->valid()) {
-                            $stack[] = $ei['iter']->current();
+                        $eaches[$index]['iter']->next();
+                        if ($eaches[$index]['iter']->valid()) {
+                            $stack[] = $eaches[$index]['iter']->current();
                         } else {
-                            // We're done iterating, so collect the results
-                            if ($ei['result']) {
-                                // Push the result onto the stack if not empty
-                                $stack[] = $ei['result'];
-                            } elseif ($ei['count']) {
-                                // If empty but there was iteration, then push an empty array
-                                $stack[] = [];
-                            } else {
-                                // Empty and not iterated means you tried to branch on a scalar
-                                // so push null
-                                $stack[] = null;
-                            }
+                            // We're done iterating, so collect the results and push on TOS
+                            $stack[] = $eaches[$index]['result'];
+                            $iter->seek($eaches[$index]['jmp']);
                             unset($eaches[$index]);
-                            $iter->seek($ei['jmp']);
                             continue 2;
                         }
 
@@ -185,13 +171,17 @@ class Interpreter
                         $stack[] = null;
                         $iter->seek($arg);
                         continue 2;
+                    } elseif (!$tos) {
+                        // The array is empty so push an empty list and skip iteration
+                        $stack[] = [];
+                        $iter->seek($arg);
+                        continue 2;
                     } else {
                         // It can be iterated so track the iteration at the current position
                         $eaches[$index] = [
                             'iter'   => new \ArrayIterator($tos),
                             'jmp'    => $arg,
-                            'result' => [],
-                            'count'  => 0
+                            'result' => []
                         ];
                         $stack[] = reset($tos);
                     }
