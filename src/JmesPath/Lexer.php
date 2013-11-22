@@ -21,6 +21,7 @@ class Lexer implements \IteratorAggregate
     const T_IGNORE = 'T_IGNORE';
     const T_UNKNOWN = 'T_UNKNOWN';
     const T_COLON = 'T_COLON';
+    const T_DOLLAR = 'T_DOLLAR';
 
     /** @var string JMESPath expression */
     private $input;
@@ -46,6 +47,7 @@ class Lexer implements \IteratorAggregate
         |(})                # T_RBRACE
         |(\|\|)             # T_OR
         |(:)                # T_COLON
+        |(\$)               # T_DOLLAR
         |(.)                # T_UNKNOWN
     /x';
 
@@ -60,6 +62,7 @@ class Lexer implements \IteratorAggregate
         ':'  => self::T_COLON,
         '{'  => self::T_LBRACE,
         '}'  => self::T_RBRACE,
+        '$'  => self::T_DOLLAR,
         // Common number optimizations to optimize for O(1) lookups
         '-1' => self::T_NUMBER,
         '0'  => self::T_NUMBER,
