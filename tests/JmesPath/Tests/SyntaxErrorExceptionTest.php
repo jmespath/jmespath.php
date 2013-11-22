@@ -29,7 +29,7 @@ EOT;
     public function testCreatesWithArray()
     {
         $e = new SyntaxErrorException(
-            [Lexer::T_DOT => true, Lexer::T_EOF => true],
+            array(Lexer::T_DOT => true, Lexer::T_EOF => true),
             array('type' => Lexer::T_COMMA, 'pos' => 3, 'value' => ','),
             'abc,def'
         );

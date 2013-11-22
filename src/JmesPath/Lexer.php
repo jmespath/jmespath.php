@@ -125,42 +125,42 @@ class Lexer implements \IteratorAggregate
         foreach ($tokens as $token) {
             if (isset($this->simpleTokens[$token[0]])) {
                 // Match simple tokens like '{', '.', etc
-                $this->tokens[] = [
+                $this->tokens[] = array(
                     'type'  => $this->simpleTokens[$token[0]],
                     'value' => $token[0],
                     'pos'   => $token[1]
-                ];
+                );
             } elseif (is_numeric($token[0])) {
                 // Match numbers
-                $this->tokens[] = [
+                $this->tokens[] = array(
                     'type'  => self::T_NUMBER,
                     'value' => (int) $token[0],
                     'pos'   => $token[1]
-                ];
+                );
             } elseif (strlen($token[0]) == strspn($token[0], $this->identifier)) {
                 // Match identifiers by comparing against a mask of valid chars
-                $this->tokens[] = [
+                $this->tokens[] = array(
                     'type'  => self::T_IDENTIFIER,
                     'value' => $token[0],
                     'pos'   => $token[1]
-                ];
+                );
             } elseif (substr($token[0], 0, 1) == '"' &&
                 substr($token[0], -1, 1) == '"' &&
                 $token[0] != '"'
             ) {
                 // Match valid quoted strings and remove escape characters
-                $this->tokens[] = [
+                $this->tokens[] = array(
                     'type'  => self::T_IDENTIFIER,
                     'value' => str_replace('\\"', '"', substr($token[0], 1, -1)),
                     'pos'   => $token[1]
-                ];
+                );
             } else {
                 // Match all other unknown characters
-                $this->tokens[] = $t = [
+                $this->tokens[] = $t = array(
                     'type'  => self::T_UNKNOWN,
                     'value' => $token[0],
                     'pos'   => $token[1]
-                ];
+                );
                 // Check for an unclosed quote character (token that is a quote)
                 if ($token[0] == '"') {
                     throw new SyntaxErrorException('Unclosed quote character', $t, $this->input);
@@ -169,10 +169,10 @@ class Lexer implements \IteratorAggregate
         }
 
         // Always end the token stream with an EOF token
-        $this->tokens[] = [
+        $this->tokens[] = array(
             'type'  => self::T_EOF,
             'value' => null,
             'pos'   => strlen($this->input)
-        ];
+        );
     }
 }

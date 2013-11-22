@@ -15,7 +15,7 @@ namespace JmesPath;
  */
 function search($expression, array $data)
 {
-    static $interpreter, $parser, $cache = [], $cacheSize = 0;
+    static $interpreter, $parser, $cache = array(), $cacheSize = 0;
 
     if (!isset($cache[$expression])) {
         if (!$parser) {
@@ -23,7 +23,7 @@ function search($expression, array $data)
         }
         // Reset the cache when it exceeds 1024 entries
         if (++$cacheSize > 1024) {
-            $cache = [];
+            $cache = array();
             $cacheSize = 0;
         }
         $cache[$expression] = $parser->compile($expression);

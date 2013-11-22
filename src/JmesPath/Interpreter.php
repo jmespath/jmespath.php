@@ -31,8 +31,8 @@ class Interpreter
     public function execute(array $opcodes, array $data)
     {
         $iter = new \ArrayIterator($opcodes);
-        $stack = [&$data, &$data];
-        $eaches = [];
+        $stack = array(&$data, &$data);
+        $eaches = array();
 
         if ($this->debug) {
             $this->debugInit($opcodes, $data);
@@ -104,7 +104,7 @@ class Interpreter
 
                 case 'jump_if_false':
                     $tos = end($stack);
-                    if ($tos === null || $tos === []) {
+                    if ($tos === null || $tos === array()) {
                         $iter->seek($arg);
                         continue 2;
                     }
@@ -119,7 +119,7 @@ class Interpreter
                     $tos1 = array_pop($stack);
 
                     if (!is_array($tos1)) {
-                        $stack[] = [];
+                        $stack[] = array();
                     } else {
                         if ($arg === null) {
                             $tos1[] = $tos;
@@ -132,10 +132,11 @@ class Interpreter
 
                 case 'merge':
                     $tos = array_pop($stack);
-                    $result = [];
-                    if (is_array($tos)) {
+                    $result = array();
+                    if ($tos && is_array($tos)) {
                         foreach ($tos as $values) {
-                            if (is_array($values) && array_keys($values)[0] === 0) {
+                            // Only merge up arrays lists and not hashes
+                            if (is_array($values) && isset($values[0])) {
                                 $result = array_merge($result, $values);
                             } else {
                                 $result[] = $values;
@@ -173,16 +174,16 @@ class Interpreter
                         continue 2;
                     } elseif (!$tos) {
                         // The array is empty so push an empty list and skip iteration
-                        $stack[] = [];
+                        $stack[] = array();
                         $iter->seek($arg);
                         continue 2;
                     } else {
                         // It can be iterated so track the iteration at the current position
-                        $eaches[$index] = [
+                        $eaches[$index] = array(
                             'iter'   => new \ArrayIterator($tos),
                             'jmp'    => $arg,
-                            'result' => []
-                        ];
+                            'result' => array()
+                        );
                         $stack[] = reset($tos);
                     }
                     break;
