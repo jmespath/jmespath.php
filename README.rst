@@ -9,24 +9,23 @@ you to declaratively specify how to extract elements from a JSON document.
 It requires PHP 5.3+ and can be installed through
 `Composer <http://getcomposer.org/doc/00-intro.md>`_.
 
-```php
+.. code-block:: php
 
-require 'vendor/autoload.php';
+    require 'vendor/autoload.php';
 
-$expression = 'foo.*.baz';
+    $expression = 'foo.*.baz';
 
-$data = [
-    'foo': [
-        'bar' => ['baz' => 1],
-        'bam' => ['baz' => 2],
-        'boo' => ['baz' => 3]
-    ]
-];
+    $data = [
+        'foo': [
+            'bar' => ['baz' => 1],
+            'bam' => ['baz' => 2],
+            'boo' => ['baz' => 3]
+        ]
+    ];
 
-JmesPath\search($expression, $data);
+    JmesPath\search($expression, $data);
 
-// > [1, 2, 3]
-```
+    // > [1, 2, 3]
 
 `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
 `JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
@@ -46,23 +45,22 @@ You are, of course, free to use the underlying implementation directly if
 needed. This could be useful to add an APC driven caching layer to cache
 bytecode for a given expression across requests.
 
-```php
+.. code-block:: php
 
-require 'vendor/autoload.php';
+    require 'vendor/autoload.php';
 
-// Recommended method:
+    // Recommended method:
 
-$result = JmesPath\search($expression, $data);
+    $result = JmesPath\search($expression, $data);
 
-// Manual method:
+    // Manual method:
 
-$lexer = new JmesPath\Lexer();
-$parser = new JmesPath\Parser($lexer);
-$interpreter = new JmesPath\Interpreter();
+    $lexer = new JmesPath\Lexer();
+    $parser = new JmesPath\Parser($lexer);
+    $interpreter = new JmesPath\Interpreter();
 
-$opcodes = $parser->compile('foo.bar.{"baz": baz, bar: sub.node}');
-$result = $interpreter->execute($opcodes, $data);
-```
+    $opcodes = $parser->compile('foo.bar.{"baz": baz, bar: sub.node}');
+    $result = $interpreter->execute($opcodes, $data);
 
 Testing
 =======
