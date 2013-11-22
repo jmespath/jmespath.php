@@ -39,8 +39,14 @@ PHP Usage
 =========
 
 After installing through Composer, jmespath.php will autoload a convenient
-`search` function in the `JmesPath` namespace. This function should be used for
-almost every case when using the library.
+``search`` function in the ``JmesPath`` namespace: ``JmesPath\search()``. This
+function should be used for almost every case when using the library.
+
+.. code-block:: php
+
+    require 'vendor/autoload.php';
+
+    $result = JmesPath\search($expression, $data);
 
 You are, of course, free to use the underlying implementation directly if
 needed. This could be useful to add an APC driven caching layer to cache
@@ -49,12 +55,6 @@ bytecode for a given expression across requests.
 .. code-block:: php
 
     require 'vendor/autoload.php';
-
-    // Recommended method:
-
-    $result = JmesPath\search($expression, $data);
-
-    // Manual method:
 
     $lexer = new JmesPath\Lexer();
     $parser = new JmesPath\Parser($lexer);
