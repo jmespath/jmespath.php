@@ -11,7 +11,7 @@
 
     <testsuites>
         <testsuite>
-            <directory>./tests/JmesPath/Tests</directory>
+            <directory>./tests/JmesPath</directory>
         </testsuite>
     </testsuites>
 
