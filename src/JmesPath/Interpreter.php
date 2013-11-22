@@ -13,6 +13,9 @@ class Interpreter
     /** @var bool */
     private $debug;
 
+    /**
+     * @param bool $debug Set to true to output debug information
+     */
     public function __construct($debug = false)
     {
         $this->debug = $debug;
