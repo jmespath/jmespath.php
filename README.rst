@@ -2,8 +2,8 @@
 jmespath.php
 ============
 
-`JMESPath <https://github.com/boto/jmespath>`_ (pronounced "jaymz path") allows
-you to declaratively specify how to extract elements from a JSON document.
+JMESPath (pronounced "jaymz path") allows you to declaratively specify how to
+extract elements from a JSON document.
 
 *jmespath.php* allows you to use JMESPath in PHP applications with PHP arrays.
 It requires PHP 5.3+ and can be installed through
@@ -27,12 +27,13 @@ It requires PHP 5.3+ and can be installed through
 
     // > [1, 2, 3]
 
-`JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
-`JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
-
 A comprehensive list of test cases can be found at https://github.com/boto/jmespath/tree/develop/tests/compliance.
 These compliance tests are utilized by jmespath.php to ensure consistency with
 other implementations, and can serve as examples of the language.
+
+- `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
+- `JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
+- `JMESPath Python libary <https://github.com/boto/jmespath>`_
 
 PHP Usage
 =========
