@@ -2,9 +2,6 @@
 
 namespace JmesPath\Tests;
 
-/**
- * @covers JmesPath\search
- */
 class functionsTest extends \PHPUnit_Framework_TestCase
 {
     public function testSearchesInput()
