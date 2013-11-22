@@ -55,7 +55,8 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $result = $p->compile('foo[1, 2]');
         $this->assertSame(array(
             array("field", "foo"),
-            array("jump_if_false", 14),
+            array("is_empty"),
+            array("jump_if_true", 15),
             array("dup_top"),
             array("push", array()),
             array("rot_two"),
@@ -89,22 +90,23 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $result = $p->compile('foo.*[1, 2]');
         $this->assertEquals(array(
             0  => array('field', 'foo'),
-            1  => array('each', 16),
-            2  => array('jump_if_false', 15),
-            3  => array('dup_top'),
-            4  => array('push', array()),
-            5  => array('rot_two'),
-            6  => array('index', 1),
-            7  => array('store_key', null),
-            8  => array('rot_two'),
-            9  => array('dup_top'),
-            10 => array('rot_three'),
-            11 => array('index', 2),
-            12 => array('store_key', null),
-            13 => array('rot_two'),
-            14 => array('pop'),
-            15 => array('goto', 1),
-            16 => array('stop')
+            1  => array('each', 17),
+            2  => array("is_empty"),
+            3  => array('jump_if_true', 16),
+            4  => array('dup_top'),
+            5  => array('push', array()),
+            6  => array('rot_two'),
+            7  => array('index', 1),
+            8  => array('store_key', null),
+            9  => array('rot_two'),
+            10  => array('dup_top'),
+            11 => array('rot_three'),
+            12 => array('index', 2),
+            13 => array('store_key', null),
+            14 => array('rot_two'),
+            15 => array('pop'),
+            16 => array('goto', 1),
+            17 => array('stop')
         ), $result);
     }
 }

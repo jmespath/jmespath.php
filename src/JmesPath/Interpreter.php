@@ -54,25 +54,33 @@ class Interpreter
             switch ($op) {
 
                 case 'push':
+                    // Pushes the given operand onto TOS
                     $stack[] = $arg;
                     break;
 
                 case 'pop':
+                    // Pops and discards TOS
                     array_pop($stack);
                     break;
 
                 case 'dup_top':
-                    $tos = array_pop($stack);
-                    $stack[] = $tos;
-                    $stack[] = $tos;
+                    // Duplicates the TOS and pushes the duplicate to the TOS
+                    $stack[] = end($stack);
                     break;
 
                 case 'field':
+                    // Descends into a specific field at the given operand into
+                    // the TOS then pushes the result onto the stack. If the
+                    // field does not exist, null is pushed onto TOS.
                     $tos = array_pop($stack);
                     $stack[] = is_array($tos) && isset($tos[$arg]) ? $tos[$arg] : null;
                     break;
 
                 case 'index':
+                    // Descends into a specific index at the given operand into
+                    // the TOS then pushes the result onto the stack. If the
+                    // index does not exist, null is pushed onto TOS. This
+                    // opcode also resolves negative indices.
                     $tos = array_pop($stack);
                     if (!is_array($tos)) {
                         $stack[] = null;
@@ -83,6 +91,7 @@ class Interpreter
                     break;
 
                 case 'rot_two':
+                    // Swaps the top two items on the stack
                     $tos = array_pop($stack);
                     $tos1 = array_pop($stack);
                     $stack[] = $tos;
@@ -90,6 +99,8 @@ class Interpreter
                     break;
 
                 case 'rot_three':
+                    // Lifts second and third stack item one position up, moves
+                    // TOS down to position three.
                     $tos = array_pop($stack);
                     $tos1 = array_pop($stack);
                     $tos2 = array_pop($stack);
@@ -98,26 +109,39 @@ class Interpreter
                     $stack[] = $tos1;
                     break;
 
+                case 'is_empty':
+                    // Pushes TRUE or FALSE on to TOS if TOS is null or an empty
+                    // array.
+                    $tos = end($stack);
+                    $stack[] = $tos === null || $tos === array();
+                    break;
+
                 case 'jump_if_true':
-                    if (end($stack)) {
+                    // Pops TOS and jumps to the given bytecode index if true.
+                    if (array_pop($stack) === true) {
                         $iter->seek($arg);
                         continue 2;
                     }
                     break;
 
                 case 'jump_if_false':
-                    $tos = end($stack);
-                    if ($tos === null || $tos === array()) {
+                    // Pops TOS and jumps to the given bytecode index if false.
+                    if (array_pop($stack) === false) {
                         $iter->seek($arg);
                         continue 2;
                     }
                     break;
 
                 case 'goto':
+                    // Jumps to the bytecode index using the given operand
                     $iter->seek($arg);
                     continue 2;
 
                 case 'store_key':
+                    // Pops two items off of the stack, TOS and TOS1. Then
+                    // pushes TOS1 back onto the stack after setting
+                    // TOS1[$arg] = TOS. If no operand, $arg, is provided, the
+                    // TOS is appended to TOS1 using an incremental index.
                     $tos = array_pop($stack);
                     $tos1 = array_pop($stack);
 
@@ -134,6 +158,10 @@ class Interpreter
                     break;
 
                 case 'merge':
+                    // Pops TOS. If TOS is an array that contains nested arrays,
+                    // the nested arrays are merged into TOS. Anything that is
+                    // not a nested array (i.e., hash or scalar) is appended to
+                    // the end of TOS. The resulting array is added to the TOS.
                     $tos = array_pop($stack);
                     $result = array();
                     if ($tos && is_array($tos)) {
@@ -150,6 +178,23 @@ class Interpreter
                     break;
 
                 case 'each':
+                    // Pops the TOS and iterates over each element. If TOS is
+                    // not an array, null is pushed onto TOS. Is TOS is an
+                    // empty array, an empty array is pushed onto TOS.
+                    //
+                    // If TOS is an iterable array, then the following occurs:
+                    // 1. Check if an eaches hash exists at the given index
+                    // 1.a. If it exists, append TOS to the array result if not
+                    //      empty. Increment the iterator for the eaches array.
+                    // 1.b. If it does not exist and TOS is not an array, jump
+                    //      to the given operand index the bytecode.
+                    // 1.c. If the array does not exist and TOS is an array, the
+                    //      VM creates a new eaches entry, pops the TOS, and
+                    //      pushes the first key of the array on TOS.
+                    // 2.a. If the iterator is valid, push the current iterator
+                    //      element onto TOS
+                    // 2.b. If the iterator is invalid, pop TOS, push the result
+                    //      onto TOS, and jump to the jump position ('jmp').
                     $index = $iter->key();
                     $tos = array_pop($stack);
 
@@ -191,7 +236,9 @@ class Interpreter
                     }
                     break;
 
-                case 'stop': break;
+                case 'stop':
+                    // Halts execution
+                    break;
 
                 default:
                     throw new \RuntimeException('Unknown opcode {$op}');

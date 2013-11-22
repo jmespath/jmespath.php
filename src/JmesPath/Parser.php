@@ -127,7 +127,8 @@ class Parser
     {
         // Parse until the next terminal condition
         $token = $this->match(self::$firstTokens);
-        $this->stack[] = array('jump_if_true', null);
+        $this->stack[] = array('is_empty');
+        $this->stack[] = array('jump_if_false', null);
         $index = count($this->stack) - 1;
         $this->stack[] = array('pop');
 
@@ -278,7 +279,8 @@ class Parser
     private function prepareMultiBranch()
     {
         ++$this->inMultiBranch;
-        $this->stack[] = array('jump_if_false', null);
+        $this->stack[] = array('is_empty');
+        $this->stack[] = array('jump_if_true', null);
         $this->stack[] = array('dup_top');
         $this->stack[] = array('push', array());
         $this->stack[] = array('rot_two');
