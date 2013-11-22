@@ -10,15 +10,17 @@ class Interpreter
     /** @var array Array of known opcodes */
     private $methods;
 
-    /** @var bool */
+    /** @var resource */
     private $debug;
 
     /**
-     * @param bool $debug Set to true to output debug information
+     * @param bool|resource $debug Set to a resource as returned by fopen to
+     *                             output debug information. Set to true to
+     *                             write to STDOUT.
      */
     public function __construct($debug = false)
     {
-        $this->debug = $debug;
+        $this->debug = $debug === true ? STDOUT : $debug;
         $this->methods = array_fill_keys(get_class_methods($this), true);
     }
 
@@ -146,7 +148,7 @@ class Interpreter
                     $tos1 = array_pop($stack);
 
                     if (!is_array($tos1)) {
-                        $stack[] = array();
+                        throw new \RuntimeException('Invalid stack for store_key');
                     } else {
                         if ($arg === null) {
                             $tos1[] = $tos;
@@ -241,7 +243,7 @@ class Interpreter
                     break;
 
                 default:
-                    throw new \RuntimeException('Unknown opcode {$op}');
+                    throw new \RuntimeException("Unknown opcode {$op}");
                     break;
             }
 
@@ -253,6 +255,11 @@ class Interpreter
 
     private function debugInit(array $opcodes, array $data)
     {
+        if (!is_resource($this->debug)) {
+            throw new \InvalidArgumentException('debug must be a resource');
+        }
+
+        ob_start();
         echo "Bytecode\n=========\n\n";
         foreach ($opcodes as $id => $code) {
             echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
@@ -261,10 +268,12 @@ class Interpreter
         }
         echo "\nData\n====\n\n" . json_encode($data, JSON_PRETTY_PRINT) . "\n\n";
         echo "Execution stack\n===============\n\n";
+        fwrite($this->debug, ob_get_clean());
     }
 
     private function debugLine($key, $stack, $op)
     {
+        ob_start();
         $arg = 'op_' . $op[0];
         $opLine = '> ' .    str_pad($key, 3, ' ', STR_PAD_RIGHT) . ' ';
         $opLine .= str_pad($arg, 17, ' ') . '   ';
@@ -282,5 +291,6 @@ class Interpreter
             echo "\n";
         }
         echo "\n\n";
+        fwrite($this->debug, ob_get_clean());
     }
 }
