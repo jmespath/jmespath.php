@@ -266,7 +266,7 @@ class Interpreter
             echo str_pad($code[0], 17, ' ') . '  ';
             echo ((isset($code[1])) ? json_encode($code[1]) : '') . "\n";
         }
-        echo "\nData\n====\n\n" . json_encode($data, JSON_PRETTY_PRINT) . "\n\n";
+        echo "\nData\n====\n\n" . $this->prettyJson($data) . "\n\n";
         echo "Execution stack\n===============\n\n";
         fwrite($this->debug, ob_get_clean());
     }
@@ -292,5 +292,14 @@ class Interpreter
         }
         echo "\n\n";
         fwrite($this->debug, ob_get_clean());
+    }
+
+    private function prettyJson($json)
+    {
+        if (defined('JSON_PRETTY_PRINT')) {
+            return json_encode($json, JSON_PRETTY_PRINT);
+        }
+
+        return json_encode($json);
     }
 }

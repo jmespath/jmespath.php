@@ -50,7 +50,13 @@ $t = microtime(true);
 $result = $interpreter->execute($opcodes, $data);
 $interpretTime = (microtime(true) - $t) * 1000;
 
-echo sprintf("Result\n======\n\n%s\n\n", json_encode($result, JSON_PRETTY_PRINT));
+if (defined('JSON_PRETTY_PRINT')) {
+    $jsonData = json_encode($result, JSON_PRETTY_PRINT);
+} else {
+    $jsonData = json_encode($result);
+}
+
+echo sprintf("Result\n======\n\n%s\n\n", $jsonData);
 echo "Time\n====\n\n";
 echo "Parse time:     {$parseTime} ms\n";
 echo "Interpret time: {$interpretTime} ms\n";

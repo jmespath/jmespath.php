@@ -23,10 +23,10 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         $failure = "\nphp jp.php {$file} {$suite} {$case}\n"
             . "\n$expression\n"
-            . "\n\nInput: " . json_encode($data, JSON_PRETTY_PRINT)
-            . "\n\nResult: " . json_encode($parsed, JSON_PRETTY_PRINT)
-            . "\n\nExpected: " . json_encode($result, JSON_PRETTY_PRINT)
-            . "\n\nopcodes: " . json_encode($opcodes, JSON_PRETTY_PRINT);
+            . "\n\nInput: " . $this->prettyJson($data)
+            . "\n\nResult: " . $this->prettyJson($parsed)
+            . "\n\nExpected: " . $this->prettyJson($result)
+            . "\n\nopcodes: " . $this->prettyJson($opcodes);
 
         $this->assertEquals(
             $result,
@@ -50,5 +50,14 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         }
 
         return $cases;
+    }
+
+    private function prettyJson($json)
+    {
+        if (defined('JSON_PRETTY_PRINT')) {
+            return json_encode($json, JSON_PRETTY_PRINT);
+        }
+
+        return json_encode($json);
     }
 }
