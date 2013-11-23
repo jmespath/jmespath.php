@@ -21,6 +21,12 @@ class Lexer implements \IteratorAggregate
     const T_IGNORE = 'T_IGNORE';
     const T_UNKNOWN = 'T_UNKNOWN';
     const T_COLON = 'T_COLON';
+    const T_OPERATOR = 'T_OPERATOR';
+    const T_PRIMITIVE = 'T_PRIMITIVE';
+    const T_AT = 'T_AT';
+    const T_FUNCTION = 'T_FUNCTION';
+    const T_LPARENS = 'T_LPARENS';
+    const T_RPARENS = 'T_RPARENS';
 
     /** @var string JMESPath expression */
     private $input;
@@ -33,33 +39,50 @@ class Lexer implements \IteratorAggregate
 
     /** @var string Regular expression used to split an expression */
     private $regex = '/
-        ([A-Za-z0-9\-_]+)   # T_IDENTIFIER
-        |("(?:\\\"|[^"])*") # T_IDENTIFIER
-        |(\-?\d+)           # T_NUMBER
-        |(\.)               # T_DOT
-        |\s+                # Ignore whitespace
-        |(\*)               # T_STAR
-        |(\[)               # T_LBRACKET
-        |(\])               # T_RBRACKET
-        |(,)                # T_COMMA
-        |({)                # T_LBRACE
-        |(})                # T_RBRACE
-        |(\|\|)             # T_OR
-        |(:)                # T_COLON
-        |(.)                # T_UNKNOWN
+        ([A-Za-z0-9\-_]+)      # T_IDENTIFIER or T_PRIMITIVE
+        |("(?:\\\"|[^"])*")    # T_IDENTIFIER
+        |(\-?\d+)              # T_NUMBER
+        |(\.)                  # T_DOT
+        |\s+                   # Ignore whitespace
+        |(\*)                  # T_STAR
+        |(\[)                  # T_LBRACKET
+        |(\])                  # T_RBRACKET
+        |(,)                   # T_COMMA
+        |({)                   # T_LBRACE
+        |(})                   # T_RBRACE
+        |(:)                   # T_COLON
+        |(\()                  # T_LPARENS
+        |(\))                  # T_RPARENS
+        |(@)                   # T_AT
+        |(<|>|!=|=|>=|<=)      # T_OPERATOR
+        |(\#[A-Za-z\-_0-9]+)   # T_FUNCTION
+        |(\|\|)                # T_OR
+        |(.)                   # T_UNKNOWN
     /x';
 
     /** @var array Array of simple matches to token types */
     private $simpleTokens = array(
-        '.'  => self::T_DOT,
-        '*'  => self::T_STAR,
-        '['  => self::T_LBRACKET,
-        ']'  => self::T_RBRACKET,
-        '||' => self::T_OR,
-        ','  => self::T_COMMA,
-        ':'  => self::T_COLON,
-        '{'  => self::T_LBRACE,
-        '}'  => self::T_RBRACE,
+        '.'     => self::T_DOT,
+        '*'     => self::T_STAR,
+        '['     => self::T_LBRACKET,
+        ']'     => self::T_RBRACKET,
+        '||'    => self::T_OR,
+        ','     => self::T_COMMA,
+        ':'     => self::T_COLON,
+        '{'     => self::T_LBRACE,
+        '}'     => self::T_RBRACE,
+        '('     => self::T_LPARENS,
+        ')'     => self::T_RPARENS,
+        '@'     => self::T_AT,
+        '='     => self::T_OPERATOR,
+        '<'     => self::T_OPERATOR,
+        '>'     => self::T_OPERATOR,
+        '!='    => self::T_OPERATOR,
+        '>='    => self::T_OPERATOR,
+        '<='    => self::T_OPERATOR,
+        'true'  => self::T_PRIMITIVE,
+        'false' => self::T_PRIMITIVE,
+        'null'  => self::T_PRIMITIVE,
         // Common number optimizations to optimize for O(1) lookups
         '-1' => self::T_NUMBER,
         '0'  => self::T_NUMBER,
@@ -152,6 +175,12 @@ class Lexer implements \IteratorAggregate
                 $this->tokens[] = array(
                     'type'  => self::T_IDENTIFIER,
                     'value' => str_replace('\\"', '"', substr($token[0], 1, -1)),
+                    'pos'   => $token[1]
+                );
+            } elseif (substr($token[0], 0, 1) == '#') {
+                $this->tokens[] = array(
+                    'type'  => self::T_FUNCTION,
+                    'value' => substr($token[0], 1),
                     'pos'   => $token[1]
                 );
             } else {
