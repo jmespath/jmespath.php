@@ -238,6 +238,36 @@ class Interpreter
                     }
                     break;
 
+                case 'eq':
+                    // Pops TOS and TOS1 and pushed TOS1 == TOS onto the stack
+                    $stack[] = array_pop($stack) == array_pop($stack);
+                    break;
+
+                case 'not':
+                    // Pops TOS and TOS1 and pushed TOS != TOS1 onto the stack
+                    $stack[] = array_pop($stack) != array_pop($stack);
+                    break;
+
+                case 'gt':
+                    // Pops TOS and TOS1 and pushed TOS > TOS1 onto the stack
+                    $stack[] = array_pop($stack) < array_pop($stack);
+                    break;
+
+                case 'gte':
+                    // Pops TOS and TOS1 and pushed TOS >= TOS1 onto the stack
+                    $stack[] = array_pop($stack) <= array_pop($stack);
+                    break;
+
+                case 'lt':
+                    // Pops TOS and TOS1 and pushed TOS < TOS1 onto the stack
+                    $stack[] = array_pop($stack) > array_pop($stack);
+                    break;
+
+                case 'lte':
+                    // Pops TOS and TOS1 and pushed TOS <= TOS1 onto the stack
+                    $stack[] = array_pop($stack) >= array_pop($stack);
+                    break;
+
                 case 'stop':
                     // Halts execution
                     break;

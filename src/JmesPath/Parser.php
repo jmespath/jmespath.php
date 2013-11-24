@@ -28,6 +28,18 @@ class Parser
     /** @var int The number of open multi expressions */
     private $inMultiBranch = 0;
 
+    /** @var array Stack of marked tokens for speculative parsing */
+    private $markedTokens = array();
+
+    private $operators = array(
+        '='  => 'eq',
+        '!=' => 'not',
+        '>'  => 'gt',
+        '>=' => 'gte',
+        '<'  => 'lt',
+        '<=' => 'lte'
+    );
+
     /** @var array First acceptable token */
     private static $firstTokens = array(
         Lexer::T_IDENTIFIER => true,
@@ -66,7 +78,7 @@ class Parser
      */
     public function compile($path)
     {
-        $this->stack = array();
+        $this->stack = $this->markedTokens = array();
         $this->lexer->setInput($path);
         $this->tokens = $this->lexer->getIterator();
         $this->currentToken = $this->tokens->current();
@@ -169,7 +181,22 @@ class Parser
         $token = $this->match($afterStar);
         $this->stack[] = array('each', null);
         $index = count($this->stack) - 1;
+        $token = $this->consumeWildcard($token);
+        $this->stack[$index][1] = count($this->stack) + 1;
+        $this->stack[] = array('goto', $index);
 
+        return $token;
+    }
+
+    /**
+     * Consume wildcard tokens until a scope change
+     *
+     * @param array $token Current token being parsed
+     *
+     * @return array Returns the next token
+     */
+    private function consumeWildcard(array $token)
+    {
         while (!isset(self::$scope[$token['type']])) {
             // Don't continue the original project in a subprojection for "[]"
             $peek = $this->peek();
@@ -178,9 +205,6 @@ class Parser
             }
             $token = $this->parseInstruction($token);
         }
-
-        $this->stack[$index][1] = count($this->stack) + 1;
-        $this->stack[] = array('goto', $index);
 
         return $token;
     }
@@ -191,7 +215,10 @@ class Parser
             Lexer::T_IDENTIFIER => true,
             Lexer::T_NUMBER => true,
             Lexer::T_STAR => true,
-            Lexer::T_RBRACKET => true
+            Lexer::T_RBRACKET => true,
+            Lexer::T_PRIMITIVE => true,
+            Lexer::T_FUNCTION => true,
+            Lexer::T_AT => true
         );
 
         $token = $this->match($expectedAfter);
@@ -205,16 +232,25 @@ class Parser
         $value = $token['value'];
         $nextToken = $this->peek();
 
-        if ($nextToken['type'] != Lexer::T_RBRACKET || $token['type'] == Lexer::T_IDENTIFIER) {
-            $this->parseMultiBracket($token);
-        } else {
-            // A simple extraction
-            $this->match(array(Lexer::T_RBRACKET => true));
+        // Parse simple expressions like [10] or [*]
+        if ($nextToken['type'] == Lexer::T_RBRACKET) {
+            // A simple extraction. Skip the RBRACKET
             if ($token['type'] == Lexer::T_NUMBER) {
+                $this->nextToken();
                 $this->stack[] = array('index', (int) $value);
+                return null;
             } elseif ($token['type'] == Lexer::T_STAR) {
+                $this->nextToken();
                 return $this->parse_T_STAR($token);
             }
+        }
+
+        if ($this->speculateMultiBracket($token)) {
+            return null;
+        } elseif ($token = $this->speculateFilter($token)) {
+            return $token;
+        } else {
+            throw new \RuntimeException('No viable rule found');
         }
     }
 
@@ -376,5 +412,141 @@ class Parser
         }
 
         return $this->{$method}($token) ?: $this->nextToken();
+    }
+
+    /**
+     * Marks the current token iterator position for the start of a speculative
+     * parse instruction
+     */
+    private function markToken()
+    {
+        $this->markedTokens[] = array(
+            $this->tokens->key(),
+            $this->previousToken,
+            $this->stack
+        );
+    }
+
+    /**
+     * Pops the most recent speculative parsing marked position and resets the
+     * token iterator to the marked position.
+     *
+     * @param bool $success If set to false, the state is reset to the state
+     *                      at the original marked position. If set to true,
+     *                      the mark is popped but the state remains.
+     */
+    private function resetToken($success)
+    {
+        list($position, $previous, $stack) = array_pop($this->markedTokens);
+
+        if (!$success) {
+            $this->tokens->seek($position);
+            $this->currentToken = $this->tokens->current();
+            $this->previousToken = $previous;
+            $this->stack = $stack;
+        }
+    }
+
+    /**
+     * Determines if the expression in a bracket is a multi-select
+     *
+     * @param array $token Left node in the expression
+     *
+     * @return bool Returns true if this is a multi-select or false if not
+     */
+    private function speculateMultiBracket(array $token)
+    {
+        $this->markToken();
+        $success = true;
+        try {
+            $this->parseMultiBracket($token);
+        } catch (SyntaxErrorException $e) {
+            $success = false;
+        }
+
+        $this->resetToken($success);
+
+        return $success;
+    }
+
+    /**
+     * Determines if the expression in a bracket is a filter
+     *
+     * @param array $token Left node in the expression
+     *
+     * @return bool Returns true if this is a filter or false if not
+     * @throws SyntaxErrorException
+     */
+    private function speculateFilter(array $token)
+    {
+        if ($token['type'] != Lexer::T_AT && $token['type'] != Lexer::T_FUNCTION) {
+            return false;
+        }
+
+        // @todo: Implement functions
+        $this->markToken();
+        $token = $this->nextToken();
+
+        // Create a bytecode loop
+        $this->stack[] = array('each', null);
+        $loopIndex = count($this->stack) - 1;
+        $this->stack[] = array('dup_top');
+
+        // Start collecting the filter specific opcodes
+        try {
+            // Consume left
+            do {
+                $token = $this->parseInstruction($token);
+                if ($token == Lexer::T_EOF) {
+                    throw new SyntaxErrorException('No operator was found in expression', $token, $this->lexer->getInput());
+                }
+            } while ($token['type'] != Lexer::T_OPERATOR);
+        } catch (SyntaxErrorException $e) {
+            // This is not an expression so fail the speculation
+            $this->resetToken(false);
+            return false;
+        }
+
+        // From this point on, this is an expression. All failures will actually
+        // throw. Next, consume the operator.
+        $operator = $token['value'];
+        $token = $this->nextToken();
+
+        // Consume right token
+        if ($token['type'] == Lexer::T_IDENTIFIER || $token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_PRIMITIVE) {
+            $this->stack[] = array('push', $token['value']);
+            $this->match(array(Lexer::T_RBRACKET => true));
+        } else {
+            do {
+                $token = $this->parseInstruction($token);
+                if ($token == Lexer::T_EOF) {
+                    throw new SyntaxErrorException('No closing bracket was found in expression', $token, $this->lexer->getInput());
+                }
+            } while ($token['type'] != Lexer::T_RBRACKET);
+        }
+
+        // Add the operator opcode and track the jump if false index
+        if (isset($this->operators[$operator])) {
+            $this->stack[] = array($this->operators[$operator]);
+        } else {
+            throw new SyntaxErrorException('Invalid operator', $token, $this->lexer->getInput());
+        }
+
+        // If the evaluated filter was true, then jump to the wildcard loop
+        $this->stack[] = array('jump_if_true', count($this->stack) + 4);
+        // Kill temp variables when a filter filters a node
+        $this->stack[] = array('pop');
+        $this->stack[] = array('push', null);
+        $this->stack[] = array('goto', $loopIndex);
+        // Actually yield values that matched the filter
+        $token = $this->consumeWildcard($this->nextToken());
+        // Finish the projection loop
+        $this->stack[] = array('goto', $loopIndex);
+        $this->stack[$loopIndex][1] = count($this->stack);
+
+        // Stop the token marking
+        $this->resetToken(true);
+
+        return $token;
     }
 }

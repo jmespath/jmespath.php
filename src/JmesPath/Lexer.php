@@ -54,7 +54,7 @@ class Lexer implements \IteratorAggregate
         |(\()                  # T_LPARENS
         |(\))                  # T_RPARENS
         |(@)                   # T_AT
-        |(<|>|!=|=|>=|<=)      # T_OPERATOR
+        |(<=|>=|>|<|!=|=)      # T_OPERATOR
         |(\#[A-Za-z\-_0-9]+)   # T_FUNCTION
         |(\|\|)                # T_OR
         |(.)                   # T_UNKNOWN
