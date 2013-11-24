@@ -103,6 +103,105 @@ class Parser
         return $this->stack;
     }
 
+    /**
+     * @return array Returns the next token after advancing
+     */
+    private function nextToken()
+    {
+        static $nullToken = array('type' => Lexer::T_EOF);
+        $this->previousToken = $this->currentToken;
+        $this->tokens->next();
+        $this->currentToken = $this->tokens->current() ?: $nullToken;
+
+        return $this->currentToken;
+    }
+
+    /**
+     * Match the next token against one or more types
+     *
+     * @param array $types Type to match
+     * @return array Returns a token
+     * @throws SyntaxErrorException
+     */
+    private function match(array $types)
+    {
+        $token = $this->nextToken();
+
+        if (isset($types[$token['type']])) {
+            return $token;
+        }
+
+        throw new SyntaxErrorException($types, $token, $this->lexer->getInput());
+    }
+
+    /**
+     * Grab the next lexical token without consuming it
+     *
+     * @return array
+     */
+    private function peek()
+    {
+        $nextPos = $this->tokens->key() + 1;
+
+        return isset($this->tokens[$nextPos])
+            ? $this->tokens[$nextPos]
+            : array('type' => Lexer::T_EOF, 'value' => '');
+    }
+
+    /**
+     * Call an validate a parse instruction
+     *
+     * @param array $token Token to parse
+     * @return array Returns the next token
+     * @throws SyntaxErrorException When an invalid token is encountered
+     */
+    private function parseInstruction(array $token)
+    {
+        $method = 'parse_' . $token['type'];
+        if (!isset($this->methods[$method])) {
+            throw new SyntaxErrorException(
+                'No matching opcode for ' . $token['type'],
+                $token,
+                $this->lexer->getInput()
+            );
+        }
+
+        return $this->{$method}($token) ?: $this->nextToken();
+    }
+
+    /**
+     * Marks the current token iterator position for the start of a speculative
+     * parse instruction
+     */
+    private function markToken()
+    {
+        $this->markedTokens[] = array(
+            $this->tokens->key(),
+            $this->previousToken,
+            $this->stack
+        );
+    }
+
+    /**
+     * Pops the most recent speculative parsing marked position and resets the
+     * token iterator to the marked position.
+     *
+     * @param bool $success If set to false, the state is reset to the state
+     *                      at the original marked position. If set to true,
+     *                      the mark is popped but the state remains.
+     */
+    private function resetToken($success)
+    {
+        list($position, $previous, $stack) = array_pop($this->markedTokens);
+
+        if (!$success) {
+            $this->tokens->seek($position);
+            $this->currentToken = $this->tokens->current();
+            $this->previousToken = $previous;
+            $this->stack = $stack;
+        }
+    }
+
     private function parse_T_IDENTIFIER(array $token)
     {
         $this->stack[] = array('field', $token['value']);
@@ -186,6 +285,23 @@ class Parser
         $this->stack[] = array('goto', $index);
 
         return $token;
+    }
+
+    private function parse_T_FUNCTION(array $func)
+    {
+        $this->match(array(Lexer::T_LPARENS => true));
+        $token = $this->nextToken();
+        while ($token['type'] != Lexer::T_RPARENS) {
+            if ($token['type'] == Lexer::T_EOF) {
+                throw new SyntaxErrorException('Expected T_RPARENS', $token, $this->lexer->getInput());
+            }
+            $token = $token['type'] == Lexer::T_COMMA
+                ? $this->nextToken()
+                : $this->parseInstruction($token);
+        }
+        $this->stack[] = array('fn', $func['value']);
+
+        return $this->nextToken();
     }
 
     /**
@@ -349,105 +465,6 @@ class Parser
     }
 
     /**
-     * @return array Returns the next token after advancing
-     */
-    private function nextToken()
-    {
-        static $nullToken = array('type' => Lexer::T_EOF);
-        $this->previousToken = $this->currentToken;
-        $this->tokens->next();
-        $this->currentToken = $this->tokens->current() ?: $nullToken;
-
-        return $this->currentToken;
-    }
-
-    /**
-     * Match the next token against one or more types
-     *
-     * @param array $types Type to match
-     * @return array Returns a token
-     * @throws SyntaxErrorException
-     */
-    private function match(array $types)
-    {
-        $token = $this->nextToken();
-
-        if (isset($types[$token['type']])) {
-            return $token;
-        }
-
-        throw new SyntaxErrorException($types, $token, $this->lexer->getInput());
-    }
-
-    /**
-     * Grab the next lexical token without consuming it
-     *
-     * @return array
-     */
-    private function peek()
-    {
-        $nextPos = $this->tokens->key() + 1;
-
-        return isset($this->tokens[$nextPos])
-            ? $this->tokens[$nextPos]
-            : array('type' => Lexer::T_EOF, 'value' => '');
-    }
-
-    /**
-     * Call an validate a parse instruction
-     *
-     * @param array $token Token to parse
-     * @return array Returns the next token
-     * @throws SyntaxErrorException When an invalid token is encountered
-     */
-    private function parseInstruction(array $token)
-    {
-        $method = 'parse_' . $token['type'];
-        if (!isset($this->methods[$method])) {
-            throw new SyntaxErrorException(
-                'No matching opcode for ' . $token['type'],
-                $token,
-                $this->lexer->getInput()
-            );
-        }
-
-        return $this->{$method}($token) ?: $this->nextToken();
-    }
-
-    /**
-     * Marks the current token iterator position for the start of a speculative
-     * parse instruction
-     */
-    private function markToken()
-    {
-        $this->markedTokens[] = array(
-            $this->tokens->key(),
-            $this->previousToken,
-            $this->stack
-        );
-    }
-
-    /**
-     * Pops the most recent speculative parsing marked position and resets the
-     * token iterator to the marked position.
-     *
-     * @param bool $success If set to false, the state is reset to the state
-     *                      at the original marked position. If set to true,
-     *                      the mark is popped but the state remains.
-     */
-    private function resetToken($success)
-    {
-        list($position, $previous, $stack) = array_pop($this->markedTokens);
-
-        if (!$success) {
-            $this->tokens->seek($position);
-            $this->currentToken = $this->tokens->current();
-            $this->previousToken = $previous;
-            $this->stack = $stack;
-        }
-    }
-
-    /**
      * Determines if the expression in a bracket is a multi-select
      *
      * @param array $token Left node in the expression
@@ -483,28 +500,31 @@ class Parser
             return false;
         }
 
-        // @todo: Implement functions
         $this->markToken();
-        $token = $this->nextToken();
 
         // Create a bytecode loop
         $this->stack[] = array('each', null);
         $loopIndex = count($this->stack) - 1;
         $this->stack[] = array('dup_top');
 
-        // Start collecting the filter specific opcodes
-        try {
-            // Consume left
-            do {
-                $token = $this->parseInstruction($token);
-                if ($token == Lexer::T_EOF) {
-                    throw new SyntaxErrorException('No operator was found in expression', $token, $this->lexer->getInput());
-                }
-            } while ($token['type'] != Lexer::T_OPERATOR);
-        } catch (SyntaxErrorException $e) {
-            // This is not an expression so fail the speculation
-            $this->resetToken(false);
-            return false;
+        if ($token['type'] == Lexer::T_FUNCTION) {
+            $token = $this->parse_T_FUNCTION($token);
+        } else {
+            $token = $this->nextToken();
+            // Start collecting the filter specific opcodes
+            try {
+                // Consume left
+                do {
+                    $token = $this->parseInstruction($token);
+                    if ($token == Lexer::T_EOF) {
+                        throw new SyntaxErrorException('No operator was found in expression', $token, $this->lexer->getInput());
+                    }
+                } while ($token['type'] != Lexer::T_OPERATOR);
+            } catch (SyntaxErrorException $e) {
+                // This is not an expression so fail the speculation
+                $this->resetToken(false);
+                return false;
+            }
         }
 
         // From this point on, this is an expression. All failures will actually

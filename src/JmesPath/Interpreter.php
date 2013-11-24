@@ -240,7 +240,7 @@ class Interpreter
 
                 case 'eq':
                     // Pops TOS and TOS1 and pushed TOS1 == TOS onto the stack
-                    $stack[] = array_pop($stack) == array_pop($stack);
+                    $stack[] = array_pop($stack) === array_pop($stack);
                     break;
 
                 case 'not':
@@ -250,22 +250,46 @@ class Interpreter
 
                 case 'gt':
                     // Pops TOS and TOS1 and pushed TOS > TOS1 onto the stack
-                    $stack[] = array_pop($stack) < array_pop($stack);
+                    $tos = array_pop($stack);
+                    $tos1 = array_pop($stack);
+                    $stack[] = is_numeric($tos) && is_numeric($tos1) && $tos1 > $tos;
                     break;
 
                 case 'gte':
                     // Pops TOS and TOS1 and pushed TOS >= TOS1 onto the stack
-                    $stack[] = array_pop($stack) <= array_pop($stack);
+                    $tos = array_pop($stack);
+                    $tos1 = array_pop($stack);
+                    $stack[] = is_numeric($tos) && is_numeric($tos1) && $tos1 >= $tos;
                     break;
 
                 case 'lt':
                     // Pops TOS and TOS1 and pushed TOS < TOS1 onto the stack
-                    $stack[] = array_pop($stack) > array_pop($stack);
+                    $tos = array_pop($stack);
+                    $tos1 = array_pop($stack);
+                    $stack[] = is_numeric($tos) && is_numeric($tos1) && $tos1 < $tos;
                     break;
 
                 case 'lte':
                     // Pops TOS and TOS1 and pushed TOS <= TOS1 onto the stack
-                    $stack[] = array_pop($stack) >= array_pop($stack);
+                    $tos = array_pop($stack);
+                    $tos1 = array_pop($stack);
+                    $stack[] = is_numeric($tos) && is_numeric($tos1) && $tos1 <= $tos;
+                    break;
+
+                case 'fn':
+                    switch ($arg) {
+                        case 'count':
+                            $tos = array_pop($stack);
+                            $stack[] = is_array($tos) ? count($tos) : null;
+                            break;
+                        case 'len':
+                            $tos = array_pop($stack);
+                            $stack[] = is_string($tos) ? strlen($tos) : null;
+                            break;
+                        default:
+                            throw new \RuntimeException('Unknown function: ' . $arg);
+                            break;
+                    }
                     break;
 
                 case 'stop':

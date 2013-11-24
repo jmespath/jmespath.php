@@ -79,22 +79,13 @@ class Lexer implements \IteratorAggregate
         '>'     => self::T_OPERATOR,
         '!='    => self::T_OPERATOR,
         '>='    => self::T_OPERATOR,
-        '<='    => self::T_OPERATOR,
-        'true'  => self::T_PRIMITIVE,
-        'false' => self::T_PRIMITIVE,
-        'null'  => self::T_PRIMITIVE,
-        // Common number optimizations to optimize for O(1) lookups
-        '-1' => self::T_NUMBER,
-        '0'  => self::T_NUMBER,
-        '1'  => self::T_NUMBER,
-        '2'  => self::T_NUMBER,
-        '3'  => self::T_NUMBER,
-        '4'  => self::T_NUMBER,
-        '5'  => self::T_NUMBER,
-        '6'  => self::T_NUMBER,
-        '7'  => self::T_NUMBER,
-        '8'  => self::T_NUMBER,
-        '9'  => self::T_NUMBER
+        '<='    => self::T_OPERATOR
+    );
+
+    private $primitiveTokens = array(
+        'true'  => true,
+        'false' => false,
+        'null'  => null
     );
 
     /**
@@ -158,6 +149,13 @@ class Lexer implements \IteratorAggregate
                 $this->tokens[] = array(
                     'type'  => self::T_NUMBER,
                     'value' => (int) $token[0],
+                    'pos'   => $token[1]
+                );
+            } elseif (array_key_exists($token[0], $this->primitiveTokens)) {
+                // Parse primitive tokens (true, false, null) into PHP types
+                $this->tokens[] = array(
+                    'type'  => Lexer::T_PRIMITIVE,
+                    'value' => $this->primitiveTokens[$token[0]],
                     'pos'   => $token[1]
                 );
             } elseif (strlen($token[0]) == strspn($token[0], $this->identifier)) {
