@@ -379,7 +379,8 @@ class Interpreter
         foreach ($opcodes as $id => $code) {
             echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
             echo str_pad($code[0], 17, ' ') . '  ';
-            echo ((isset($code[1])) ? json_encode($code[1]) : '') . "\n";
+            echo str_pad(isset($code[1]) ? json_encode($code[1]) : '', 12, ' ');
+            echo (isset($code[2]) ? json_encode($code[2]) : '') . "\n";
         }
         echo "\nData\n====\n\n" . $this->prettyJson($data) . "\n\n";
         echo "Execution stack\n===============\n\n";
