@@ -351,6 +351,10 @@ class Interpreter
             $iter->next();
         }
 
+        if ($this->debug) {
+            $this->debugFinal($stack, $currentNode);
+        }
+
         return array_pop($stack);
     }
 
@@ -372,16 +376,54 @@ class Interpreter
         fwrite($this->debug, ob_get_clean());
     }
 
+    /**
+     * Prints debug information for a single line, including the opcodes & stack
+     *
+     * @param $key
+     * @param $stack
+     * @param $op
+     */
     private function debugLine($key, $stack, $op)
     {
         ob_start();
         $arg = 'op_' . $op[0];
         $opLine = '> ' .    str_pad($key, 3, ' ', STR_PAD_RIGHT) . ' ';
         $opLine .= str_pad($arg, 17, ' ') . '   ';
-        $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 12, ' ');
+        $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 14, ' ');
+        $opLine .= isset($op[2]) ? json_encode($op[2]) : null;
         echo $opLine . "\n";
         echo str_repeat('-', strlen($opLine)) . "\n\n";
+        $this->dumpStack($stack);
+        fwrite($this->debug, ob_get_clean());
+    }
 
+    /**
+     * Prints debug out for the stack and current node scopes IF they are not
+     * in the ideal state, indicating extra stuff on the stack or unpopped
+     * scopes.
+     *
+     * @param array $stack
+     * @param array $currentNode
+     */
+    private function debugFinal(array $stack, array $currentNode)
+    {
+        if (count($stack) > 2 || count($currentNode) > 1) {
+            ob_start();
+            echo "Final state\n===========\n\n";
+            echo 'Stack: ';
+            $this->dumpStack($stack);
+            echo 'Current node: ' . json_encode($currentNode) . "\n\n";
+            fwrite($this->debug, ob_get_clean());
+        }
+    }
+
+    /**
+     * Dumps the stack using a modified JSON output
+     *
+     * @param array $stack
+     */
+    private function dumpStack(array $stack)
+    {
         foreach (array_reverse($stack) as $index => $stack) {
             $json = json_encode($stack);
             echo '    ' . str_pad($index, 3, ' ', STR_PAD_LEFT) . ': ';
@@ -392,7 +434,6 @@ class Interpreter
             echo "\n";
         }
         echo "\n\n";
-        fwrite($this->debug, ob_get_clean());
     }
 
     private function prettyJson($json)
