@@ -47,7 +47,8 @@ class Parser
         Lexer::T_STAR => true,
         Lexer::T_LBRACKET => true,
         Lexer::T_LBRACE => true,
-        Lexer::T_EOF => true
+        Lexer::T_EOF => true,
+        Lexer::T_FUNCTION => true
     );
 
     /** @var array Scope changes */
@@ -55,6 +56,7 @@ class Parser
         Lexer::T_COMMA => true,
         Lexer::T_OR => true,
         Lexer::T_RBRACE => true,
+        Lexer::T_RPARENS => true,
         Lexer::T_RBRACKET => true,
         Lexer::T_EOF => true
     );
@@ -409,7 +411,11 @@ class Parser
                 $token = $this->parseInstruction($token);
             } else {
                 $this->storeMultiBranchKey(null);
-                $token = $this->parseInstruction($this->match(self::$firstTokens));
+                $next = $this->match(self::$firstTokens);
+                if ($next['type'] == Lexer::T_FUNCTION) {
+                    $this->stack[] = array('pop');
+                }
+                $token = $this->parseInstruction($next);
             }
         } while ($token['type'] != Lexer::T_RBRACKET);
 

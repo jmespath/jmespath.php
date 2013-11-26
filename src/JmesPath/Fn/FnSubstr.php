@@ -24,8 +24,8 @@ class FnSubstr extends AbstractFn
         'arity' => 3,
         'args'  => array(
             0 => array('type' => 'string', 'failure' => 'null'),
-            1 => array('type' => 'int'),
-            2 => array('type' => 'int')
+            1 => array('type' => 'integer'),
+            2 => array('type' => 'integer')
         )
     );
 

@@ -72,8 +72,8 @@ class Interpreter
     {
         $iter = new \ArrayIterator($opcodes);
         $stack = array(&$data, &$data);
+        $currentNode = array(&$data);
         $eaches = array();
-        $currentNode = array();
 
         if ($this->debug) {
             $this->debugInit($opcodes, $data);
