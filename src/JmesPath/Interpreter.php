@@ -13,6 +13,9 @@ class Interpreter
     /** @var resource */
     private $debug;
 
+    /** @var array Array of functions */
+    private $fn = array();
+
     /**
      * @param bool|resource $debug Set to a resource as returned by fopen to
      *                             output debug information. Set to true to
@@ -20,8 +23,40 @@ class Interpreter
      */
     public function __construct($debug = false)
     {
+        static $defaultFunctions = array(
+            'count' => 'JmesPath\Fn\FnCount',
+            'regex' => 'JmesPath\Fn\FnRegex',
+            'strlen' => 'JmesPath\Fn\FnStrlen',
+            'substr' => 'JmesPath\Fn\FnSubstr',
+        );
+
         $this->debug = $debug === true ? STDOUT : $debug;
         $this->methods = array_fill_keys(get_class_methods($this), true);
+
+        // Register default functions
+        foreach ($defaultFunctions as $name => $className) {
+            $this->fn[$name] = new $className;
+        }
+    }
+
+    /**
+     * Register a custom function with the interpreter.
+     *
+     * A function must be callable, receives an array of arguments, and returns
+     * a function return value.
+     *
+     * @param string   $name Name of the function
+     * @param callable $fn   Function
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function registerFunction($name, $fn)
+    {
+        if (!is_callable($fn)) {
+            throw new \InvalidArgumentException('Function must be callable');
+        }
+
+        $this->fn[$name] = $fn;
     }
 
     /**
@@ -295,9 +330,8 @@ class Interpreter
                     break;
 
                 case 'call':
-                    $funcName = 'fn_' . $arg;
-                    if (!isset($this->methods['fn_' . $arg])) {
-                        throw new \RuntimeException('Unknown function: ' . $arg);
+                    if (!isset($this->fn[$arg])) {
+                        throw new \RuntimeException("Unknown function: {$arg}");
                     }
 
                     // Pop function arguments
@@ -305,7 +339,7 @@ class Interpreter
                     for ($i = 0; $i < $arg2; $i++) {
                         array_unshift($funcArgs, array_pop($stack));
                     }
-                    $stack[] = $this->{$funcName}($funcArgs);
+                    $stack[] = call_user_func($this->fn[$arg], $funcArgs);
 
                     break;
 
@@ -318,34 +352,6 @@ class Interpreter
         }
 
         return array_pop($stack);
-    }
-
-    private function fn_count(array $args)
-    {
-        return is_array($args[0]) ? count($args[0]) : null;
-    }
-
-    private function fn_strlen(array $args)
-    {
-        return is_string($args[0]) ? strlen($args[0]) : null;
-    }
-
-    private function fn_regex(array $args)
-    {
-        if (!is_string($args[0])) {
-            throw new \RuntimeException('regex search must use a string regular expression pattern');
-        }
-
-        return is_string($args[1]) ? ((bool) preg_match($args[0], $args[1])) : null;
-    }
-
-    private function fn_substr(array $args)
-    {
-        if (!is_string($args[0])) {
-            return null;
-        }
-
-        return substr($args[0], $args[1], $args[2]);
     }
 
     private function debugInit(array $opcodes, array $data)

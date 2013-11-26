@@ -31,7 +31,7 @@ class Parser
     /** @var array Stack of marked tokens for speculative parsing */
     private $markedTokens = array();
 
-    private $operators = array(
+    private static $operators = array(
         '='  => 'eq',
         '!=' => 'not',
         '>'  => 'gt',
@@ -551,8 +551,8 @@ class Parser
         $this->parseFilterExpression($this->nextToken(), Lexer::T_RBRACKET);
 
         // Add the operator opcode and track the jump if false index
-        if (isset($this->operators[$operator])) {
-            $this->stack[] = array($this->operators[$operator]);
+        if (isset(self::$operators[$operator])) {
+            $this->stack[] = array(self::$operators[$operator]);
         } else {
             throw new SyntaxErrorException('Invalid operator', $operatorToken, $this->lexer->getInput());
         }
