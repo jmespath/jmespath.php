@@ -317,11 +317,14 @@ class Parser
                         $token = $this->parseInstruction($token);
                         break;
                     case Lexer::T_AT:
+                        $token = $this->nextToken();
+                        // When in a multi-branch, you must pop the TOS
+                        if ($this->inMultiBranch) {
+                            //$this->stack[] = array('pop');
+                        }
                         $this->stack[] = array('push_current');
                         $inNode = true;
-                        // Skip the @ token and begin parsing into the current node
-                        $token = $this->parseInstruction($this->nextToken());
-                        // Fall through to default
+                        break;
                     default:
                         if ($inNode) {
                             $token = $this->parseInstruction($token);
@@ -404,6 +407,23 @@ class Parser
         }
     }
 
+    private function parse_T_LBRACE(array $token)
+    {
+        $token = $this->match(array(Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true));
+        $value = $token['value'];
+        $nextToken = $this->peek();
+
+        if ($nextToken['type'] == Lexer::T_RBRACE &&
+            ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
+        ) {
+            // A simple index extraction
+            $this->stack[] = array('field', $value);
+            $this->nextToken();
+        } else {
+            $this->parseMultiBrace($token);
+        }
+    }
+
     private function parseMultiBracket(array $token)
     {
         $index = $this->prepareMultiBranch();
@@ -422,23 +442,6 @@ class Parser
         } while ($token['type'] != Lexer::T_RBRACKET);
 
         $this->finishMultiBranch($index, null);
-    }
-
-    private function parse_T_LBRACE(array $token)
-    {
-        $token = $this->match(array(Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true));
-        $value = $token['value'];
-        $nextToken = $this->peek();
-
-        if ($nextToken['type'] == Lexer::T_RBRACE &&
-            ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
-        ) {
-            // A simple index extraction
-            $this->stack[] = array('field', $value);
-            $this->nextToken();
-        } else {
-            $this->parseMultiBrace($token);
-        }
     }
 
     private function parseMultiBrace(array $token)
@@ -607,11 +610,10 @@ class Parser
                 case Lexer::T_EOF:
                     throw new SyntaxErrorException('Invalid expression', $token, $this->lexer->getInput());
                 case Lexer::T_AT:
+                    $token = $this->nextToken();
                     $this->stack[] = array('push_current');
                     $inNode = true;
-                    // Skip the @ token and begin parsing into the current node
-                    $token = $this->parseInstruction($this->nextToken());
-                    // Fall through to default
+                    break;
                 default:
                     if ($inNode) {
                         $token = $this->parseInstruction($token);
