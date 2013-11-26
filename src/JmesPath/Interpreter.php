@@ -318,18 +318,28 @@ class Interpreter
                     break;
 
                 case 'mark_current':
+                    // Pushes the TOS onto the current node stack so that any
+                    // usage of the @ token will use value at TOS
                     $currentNode[] = end($stack);
                     break;
 
                 case 'push_current':
+                    // Pushes the top of the current node stack onto the top
+                    // of the operand stack.
                     $stack[] = end($currentNode);
                     break;
 
                 case 'pop_current':
+                    // Pops the top of the current node stack
                     array_pop($currentNode);
                     break;
 
                 case 'call':
+                    // Invokes a function. First pops arguments off of the stack
+                    // then pushes the result of the function onto TOS. This
+                    // opcode requires two operands:
+                    // 1: Function name as a string
+                    // 2: Number of arguments to pop off of the stack
                     if (!isset($this->fn[$arg])) {
                         throw new \RuntimeException("Unknown function: {$arg}");
                     }

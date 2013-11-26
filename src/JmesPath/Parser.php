@@ -345,6 +345,7 @@ class Parser
      */
     private function consumeWildcard(array $token)
     {
+        $this->stack[] = array('mark_current');
         while (!isset(self::$scope[$token['type']])) {
             // Don't continue the original project in a subprojection for "[]"
             $peek = $this->peek();
@@ -353,6 +354,7 @@ class Parser
             }
             $token = $this->parseInstruction($token);
         }
+        $this->stack[] = array('pop_current');
 
         return $token;
     }
