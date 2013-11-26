@@ -40,7 +40,7 @@ class Lexer implements \IteratorAggregate
     /** @var string Regular expression used to split an expression */
     private $regex = '/
         ("(?:\\\"|[^"])*")       # T_IDENTIFIER
-        |([A-Za-z_]+\().*\)       # T_FUNCTION
+        |([A-Za-z_]+\()          # T_FUNCTION
         |([A-Za-z0-9\-_]+)       # T_IDENTIFIER or T_PRIMITIVE
         |(\-?\d+)                # T_NUMBER
         |(\.)                    # T_DOT

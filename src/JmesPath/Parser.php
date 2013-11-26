@@ -287,75 +287,51 @@ class Parser
         return $token;
     }
 
+    /**
+     * Parses a function, it's arguments, and manages scalar vs node arguments
+     *
+     * @param array $func Function token being parsed
+     *
+     * @throws SyntaxErrorException When EOF is encountered before ")"
+     */
     private function parse_T_FUNCTION(array $func)
-    {
-        $funcName = 'parse_fn_' . $func['value'];
-        if (!isset($this->methods[$funcName])) {
-            throw new \RuntimeException('Unknown function: ' . $funcName);
-        }
-
-        $this->{$funcName}();
-    }
-
-    private function parseFunctionArgs($name, $arity)
     {
         $found = 0;
         $token = $this->nextToken();
+        $inNode = false;
 
         if ($token['type'] != Lexer::T_RPARENS) {
-            $found = 1;
-            $inNode = false;
+            $found++;
             do {
-                if ($token['type'] == Lexer::T_EOF) {
-                    throw new SyntaxErrorException('Expected T_RPARENS', $token, $this->lexer->getInput());
-                }
-                if ($token['type'] == Lexer::T_COMMA) {
-                    $inNode = false;
-                    $token = $this->nextToken();
-                    $found++;
-                } else {
-                    if ($token['type'] == Lexer::T_AT) {
+                switch ($token['type']) {
+                    case Lexer::T_EOF:
+                        throw new SyntaxErrorException('Expected T_RPARENS', $token, $this->lexer->getInput());
+                    case Lexer::T_COMMA:
+                        $found++;
+                        $inNode = false;
+                        $token = $this->nextToken();
+                        break;
+                    case Lexer::T_FUNCTION:
+                        $token = $this->parseInstruction($token);
+                        break;
+                    case Lexer::T_AT:
+                        $this->stack[] = array('push_current');
                         $inNode = true;
                         // Skip the @ token and begin parsing into the current node
                         $token = $this->parseInstruction($this->nextToken());
-                    }
-                    if ($inNode) {
-                        $token = $this->parseInstruction($token);
-                    } else {
-                        $this->stack[] = array('push', $token['value']);
-                        $token = $this->nextToken();
-                    }
+                        // Fall through to default
+                    default:
+                        if ($inNode) {
+                            $token = $this->parseInstruction($token);
+                        } else {
+                            $this->stack[] = array('push', $token['value']);
+                            $token = $this->nextToken();
+                        }
                 }
-                var_export($token);
             } while ($token['type'] != Lexer::T_RPARENS);
         }
 
-        if ($found != $arity) {
-            throw new SyntaxErrorException(sprintf(
-                'The %s function expects %d arguments but was supplied %d arguments',
-                $name,
-                $arity,
-                $found
-            ), $token, $this->lexer->getInput());
-        }
-    }
-
-    private function parse_fn_count()
-    {
-        $this->parseFunctionArgs('count', 1);
-        $this->stack[] = array('fncount');
-    }
-
-    private function parse_fn_len()
-    {
-        $this->parseFunctionArgs('len', 1);
-        $this->stack[] = array('fnlen');
-    }
-
-    private function parse_fn_regex()
-    {
-        $this->parseFunctionArgs('regex', 2);
-        $this->stack[] = array('fnregex');
+        $this->stack[] = array('call', $func['value'], $found);
     }
 
     /**
@@ -555,7 +531,7 @@ class Parser
         // Create a bytecode loop
         $this->stack[] = array('each', null);
         $loopIndex = count($this->stack) - 1;
-        $this->stack[] = array('dup_top');
+        $this->stack[] = array('mark_current');
 
         try {
             // Parse the right hand part of the expression until a T_OPERATOR
@@ -582,6 +558,7 @@ class Parser
         }
 
         // If the evaluated filter was true, then jump to the wildcard loop
+        $this->stack[] = array('pop_current');
         $this->stack[] = array('jump_if_true', count($this->stack) + 4);
         // Kill temp variables when a filter filters a node
         $this->stack[] = array('pop');
@@ -599,29 +576,41 @@ class Parser
         return $token;
     }
 
+
+    /**
+     * Parse part of a filter expression until a specific node is encountered
+     *
+     * @param array $token     Starting token
+     * @param int   $untilType Parse until a token of this type is encountered
+     * @return array Returns the last token
+     *
+     * @throws SyntaxErrorException When EOF is encountered before the "until"
+     */
     private function parseFilterExpression(array $token, $untilType)
     {
-        if ($token['type'] == Lexer::T_FUNCTION) {
-            $this->parse_T_FUNCTION($token);
-            return $this->match(array($untilType => true));
-        }
-
         $inNode = false;
 
         do {
-            if ($token['type'] == Lexer::T_EOF) {
-                throw new SyntaxErrorException('Invalid expression', $token, $this->lexer->getInput());
-            }
-            if ($token['type'] == Lexer::T_AT) {
-                $inNode = true;
-                // Skip the @ token and begin parsing into the current node
-                $token = $this->parseInstruction($this->nextToken());
-            }
-            if ($inNode) {
-                $token = $this->parseInstruction($token);
-            } else {
-                $this->stack[] = array('push', $token['value']);
-                $token = $this->nextToken();
+            switch ($token['type']) {
+                case Lexer::T_FUNCTION:
+                    $this->parse_T_FUNCTION($token);
+                    $token = $this->nextToken();
+                    break;
+                case Lexer::T_EOF:
+                    throw new SyntaxErrorException('Invalid expression', $token, $this->lexer->getInput());
+                case Lexer::T_AT:
+                    $this->stack[] = array('push_current');
+                    $inNode = true;
+                    // Skip the @ token and begin parsing into the current node
+                    $token = $this->parseInstruction($this->nextToken());
+                    // Fall through to default
+                default:
+                    if ($inNode) {
+                        $token = $this->parseInstruction($token);
+                    } else {
+                        $this->stack[] = array('push', $token['value']);
+                        $token = $this->nextToken();
+                    }
             }
         } while ($token['type'] != $untilType);
 

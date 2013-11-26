@@ -38,6 +38,7 @@ class Interpreter
         $iter = new \ArrayIterator($opcodes);
         $stack = array(&$data, &$data);
         $eaches = array();
+        $currentNode = array();
 
         if ($this->debug) {
             $this->debugInit($opcodes, $data);
@@ -48,6 +49,7 @@ class Interpreter
             $opArray = $iter->current();
             $op = $opArray[0];
             $arg = isset($opArray[1]) ? $opArray[1] : null;
+            $arg2 = isset($opArray[2]) ? $opArray[2] : null;
 
             if ($this->debug) {
                 $this->debugLine($iter->key(), $stack, $opArray);
@@ -280,23 +282,31 @@ class Interpreter
                     // Halts execution
                     break;
 
-                case 'fncount':
-                    $tos = array_pop($stack);
-                    $stack[] = is_array($tos) ? count($tos) : null;
+                case 'mark_current':
+                    $currentNode[] = end($stack);
                     break;
 
-                case 'fnlen':
-                    $tos = array_pop($stack);
-                    $stack[] = is_string($tos) ? strlen($tos) : null;
+                case 'push_current':
+                    $stack[] = end($currentNode);
                     break;
 
-                case 'fnregex':
-                    $pattern = array_pop($stack);
-                    if (!is_string($pattern)) {
-                        throw new \RuntimeException('regex search must use a string regular expression pattern');
+                case 'pop_current':
+                    array_pop($currentNode);
+                    break;
+
+                case 'call':
+                    $funcName = 'fn_' . $arg;
+                    if (!isset($this->methods['fn_' . $arg])) {
+                        throw new \RuntimeException('Unknown function: ' . $arg);
                     }
-                    $search = array_pop($stack);
-                    $stack[] = is_string($pattern) ? ((bool) preg_match($pattern, $search)) : null;
+
+                    // Pop function arguments
+                    $funcArgs = array();
+                    for ($i = 0; $i < $arg2; $i++) {
+                        array_unshift($funcArgs, array_pop($stack));
+                    }
+                    $stack[] = $this->{$funcName}($funcArgs);
+
                     break;
 
                 default:
@@ -308,6 +318,34 @@ class Interpreter
         }
 
         return array_pop($stack);
+    }
+
+    private function fn_count(array $args)
+    {
+        return is_array($args[0]) ? count($args[0]) : null;
+    }
+
+    private function fn_strlen(array $args)
+    {
+        return is_string($args[0]) ? strlen($args[0]) : null;
+    }
+
+    private function fn_regex(array $args)
+    {
+        if (!is_string($args[0])) {
+            throw new \RuntimeException('regex search must use a string regular expression pattern');
+        }
+
+        return is_string($args[1]) ? ((bool) preg_match($args[0], $args[1])) : null;
+    }
+
+    private function fn_substr(array $args)
+    {
+        if (!is_string($args[0])) {
+            return null;
+        }
+
+        return substr($args[0], $args[1], $args[2]);
     }
 
     private function debugInit(array $opcodes, array $data)
