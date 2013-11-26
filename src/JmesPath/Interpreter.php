@@ -276,24 +276,27 @@ class Interpreter
                     $stack[] = is_numeric($tos) && is_numeric($tos1) && $tos1 <= $tos;
                     break;
 
-                case 'fn':
-                    switch ($arg) {
-                        case 'count':
-                            $tos = array_pop($stack);
-                            $stack[] = is_array($tos) ? count($tos) : null;
-                            break;
-                        case 'len':
-                            $tos = array_pop($stack);
-                            $stack[] = is_string($tos) ? strlen($tos) : null;
-                            break;
-                        default:
-                            throw new \RuntimeException('Unknown function: ' . $arg);
-                            break;
-                    }
-                    break;
-
                 case 'stop':
                     // Halts execution
+                    break;
+
+                case 'fncount':
+                    $tos = array_pop($stack);
+                    $stack[] = is_array($tos) ? count($tos) : null;
+                    break;
+
+                case 'fnlen':
+                    $tos = array_pop($stack);
+                    $stack[] = is_string($tos) ? strlen($tos) : null;
+                    break;
+
+                case 'fnregex':
+                    $pattern = array_pop($stack);
+                    if (!is_string($pattern)) {
+                        throw new \RuntimeException('regex search must use a string regular expression pattern');
+                    }
+                    $search = array_pop($stack);
+                    $stack[] = is_string($pattern) ? ((bool) preg_match($pattern, $search)) : null;
                     break;
 
                 default:
