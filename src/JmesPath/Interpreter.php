@@ -386,8 +386,7 @@ class Interpreter
         $opLine .= str_pad((isset($op[2]) ? json_encode($op[2]) : null), 14, ' ');
         $opLine .= ' Frames: ';
         $opLine .= implode(' | ', array_map(function ($frame) { return json_encode($frame); }, array_reverse($currentStack)));
-        echo $opLine . "\n";
-        echo str_repeat('-', strlen($opLine)) . "\n\n";
+        echo $opLine . "\n" . str_repeat('-', strlen($opLine)) . "\n\n";
         $this->dumpStack($stack);
         fwrite($this->debug, ob_get_clean());
     }
@@ -404,8 +403,7 @@ class Interpreter
     {
         if (count($stack) > 2 || count($currentStack) > 1) {
             ob_start();
-            echo "Final state\n===========\n\n";
-            echo 'Stack: ';
+            echo "Final state\n===========\n\nStack: ";
             $this->dumpStack($stack);
             echo 'Current stack: ' . json_encode($currentStack) . "\n\n";
             fwrite($this->debug, ob_get_clean());
@@ -433,10 +431,6 @@ class Interpreter
 
     private function prettyJson($json)
     {
-        if (defined('JSON_PRETTY_PRINT')) {
-            return json_encode($json, JSON_PRETTY_PRINT);
-        }
-
-        return json_encode($json);
+        return defined('JSON_PRETTY_PRINT') ? json_encode($json, JSON_PRETTY_PRINT) : json_encode($json);
     }
 }
