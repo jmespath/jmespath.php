@@ -85,56 +85,6 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function testRotatesStackTwice()
-    {
-        $i = new Interpreter();
-        $this->assertEquals(
-            'bar',
-            $i->execute(array(
-                array('push', 'bar'),
-                array('push', 'foo'),
-                array('rot_two')
-            ), array())
-        );
-    }
-
-    public function testRotatesStackThrice()
-    {
-        $i = new Interpreter();
-        $this->assertEquals(
-            'baz',
-            $i->execute(array(
-                array('push', 'foo'),
-                array('push', 'baz'),
-                array('push', 'bar'),
-                array('rot_three')
-            ), array())
-        );
-
-        $this->assertEquals(
-            'foo',
-            $i->execute(array(
-                array('push', 'foo'),
-                array('push', 'baz'),
-                array('push', 'bar'),
-                array('rot_three'),
-                array('rot_three')
-            ), array())
-        );
-
-        $this->assertEquals(
-            'bar',
-            $i->execute(array(
-                array('push', 'foo'),
-                array('push', 'baz'),
-                array('push', 'bar'),
-                array('rot_three'),
-                array('rot_three'),
-                array('rot_three')
-            ), array())
-        );
-    }
-
     public function testDescendsIntoIndex()
     {
         $i = new Interpreter();

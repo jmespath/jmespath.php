@@ -101,11 +101,6 @@ class Interpreter
                     array_pop($stack);
                     break;
 
-                case 'dup_top':
-                    // Duplicates the TOS and pushes the duplicate to the TOS
-                    $stack[] = end($stack);
-                    break;
-
                 case 'field':
                     // Descends into a specific field at the given operand into
                     // the TOS then pushes the result onto the stack. If the
@@ -126,25 +121,6 @@ class Interpreter
                         $arg = $arg < 0 ? count($tos) + $arg : $arg;
                         $stack[] = isset($tos[$arg]) ? $tos[$arg] : null;
                     }
-                    break;
-
-                case 'rot_two':
-                    // Swaps the top two items on the stack
-                    $tos = array_pop($stack);
-                    $tos1 = array_pop($stack);
-                    $stack[] = $tos;
-                    $stack[] = $tos1;
-                    break;
-
-                case 'rot_three':
-                    // Lifts second and third stack item one position up, moves
-                    // TOS down to position three.
-                    $tos = array_pop($stack);
-                    $tos1 = array_pop($stack);
-                    $tos2 = array_pop($stack);
-                    $stack[] = $tos;
-                    $stack[] = $tos2;
-                    $stack[] = $tos1;
                     break;
 
                 case 'is_empty':
