@@ -13,12 +13,6 @@ class Parser
     /** @var \ArrayIterator */
     private $tokens;
 
-    /** @var array */
-    private $currentToken;
-
-    /** @var array */
-    private $previousToken;
-
     /** @var array opcode stack*/
     private $stack;
 
@@ -79,19 +73,18 @@ class Parser
         $this->stack = $this->markedTokens = array();
         $this->lexer->setInput($path);
         $this->tokens = $this->lexer->getIterator();
-        $this->currentToken = $this->tokens->current();
-        $this->previousToken = null;
+        $currentToken = $this->tokens->current();
 
         // Ensure that the first token is valid
-        if (!isset(self::$firstTokens[$this->currentToken['type']])) {
+        if (!isset(self::$firstTokens[$currentToken['type']])) {
             throw new SyntaxErrorException(
                 self::$firstTokens,
-                $this->currentToken,
+                $currentToken,
                 $this->lexer->getInput()
             );
         }
 
-        $token = $this->currentToken;
+        $token = $currentToken;
         while ($token['type'] !== Lexer::T_EOF) {
             $token = $this->parseInstruction($token);
         }
@@ -107,11 +100,9 @@ class Parser
     private function nextToken()
     {
         static $nullToken = array('type' => Lexer::T_EOF);
-        $this->previousToken = $this->currentToken;
         $this->tokens->next();
-        $this->currentToken = $this->tokens->current() ?: $nullToken;
 
-        return $this->currentToken;
+        return $this->tokens->current() ?: $nullToken;
     }
 
     /**
@@ -175,7 +166,6 @@ class Parser
     {
         $this->markedTokens[] = array(
             $this->tokens->key(),
-            $this->previousToken,
             $this->stack
         );
     }
@@ -190,12 +180,10 @@ class Parser
      */
     private function resetToken($success)
     {
-        list($position, $previous, $stack) = array_pop($this->markedTokens);
+        list($position, $stack) = array_pop($this->markedTokens);
 
         if (!$success) {
             $this->tokens->seek($position);
-            $this->currentToken = $this->tokens->current();
-            $this->previousToken = $previous;
             $this->stack = $stack;
         }
     }
@@ -207,7 +195,10 @@ class Parser
 
     private function parse_T_NUMBER(array $token)
     {
-        if ($this->previousToken && $this->previousToken['type'] == Lexer::T_DOT) {
+        $index = $this->tokens->key();
+        $previous = $index > 0 ? $this->tokens[$index - 1] : null;
+
+        if ($previous && $previous['type'] == Lexer::T_DOT) {
             // Account for "foo.-1"
             $this->stack[] = array('field', $token['value']);
         } else {
@@ -390,6 +381,7 @@ class Parser
             }
         }
 
+        $speculateToken = $token;
         if ($this->speculateMultiBracket($token)) {
             return null;
         } elseif ($token = $this->speculateFilter($token)) {
@@ -397,7 +389,7 @@ class Parser
         } else {
             throw new SyntaxErrorException(
                 'Expression is not a multi-expression or a filter expression. No viable rule found',
-                $this->currentToken,
+                $speculateToken,
                 $this->lexer->getInput()
             );
         }
