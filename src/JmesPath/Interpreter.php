@@ -71,8 +71,7 @@ class Interpreter
     public function execute(array $opcodes, array $data)
     {
         $iter = new \ArrayIterator($opcodes);
-        $stack = array(&$data, &$data);
-        $currentNode = array(&$data);
+        $stack = $currentStack = array(&$data);
         $eaches = array();
 
         if ($this->debug) {
@@ -87,7 +86,7 @@ class Interpreter
             $arg2 = isset($opArray[2]) ? $opArray[2] : null;
 
             if ($this->debug) {
-                $this->debugLine($iter->key(), $stack, $opArray);
+                $this->debugLine($iter->key(), $stack, $currentStack, $opArray);
             }
 
             switch ($op) {
@@ -320,18 +319,18 @@ class Interpreter
                 case 'mark_current':
                     // Pushes the TOS onto the current node stack so that any
                     // usage of the @ token will use value at TOS
-                    $currentNode[] = end($stack);
+                    $currentStack[] = &$stack[count($stack) - 1];
                     break;
 
                 case 'push_current':
                     // Pushes the top of the current node stack onto the top
                     // of the operand stack.
-                    $stack[] = end($currentNode);
+                    $stack[] = &$currentStack[count($currentStack) - 1];
                     break;
 
                 case 'pop_current':
                     // Pops the top of the current node stack
-                    array_pop($currentNode);
+                    array_pop($currentStack);
                     break;
 
                 case 'call':
@@ -362,7 +361,7 @@ class Interpreter
         }
 
         if ($this->debug) {
-            $this->debugFinal($stack, $currentNode);
+            $this->debugFinal($stack, $currentStack);
         }
 
         return array_pop($stack);
@@ -392,16 +391,19 @@ class Interpreter
      *
      * @param $key
      * @param $stack
+     * @param $currentStack
      * @param $op
      */
-    private function debugLine($key, $stack, $op)
+    private function debugLine($key, $stack, $currentStack, $op)
     {
         ob_start();
         $arg = 'op_' . $op[0];
         $opLine = '> ' .    str_pad($key, 3, ' ', STR_PAD_RIGHT) . ' ';
         $opLine .= str_pad($arg, 17, ' ') . '   ';
         $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 14, ' ');
-        $opLine .= isset($op[2]) ? json_encode($op[2]) : null;
+        $opLine .= str_pad((isset($op[2]) ? json_encode($op[2]) : null), 14, ' ');
+        $opLine .= ' Frames: ';
+        $opLine .= implode(' | ', array_map(function ($frame) { return json_encode($frame); }, array_reverse($currentStack)));
         echo $opLine . "\n";
         echo str_repeat('-', strlen($opLine)) . "\n\n";
         $this->dumpStack($stack);
@@ -414,16 +416,16 @@ class Interpreter
      * scopes.
      *
      * @param array $stack
-     * @param array $currentNode
+     * @param array $currentStack
      */
-    private function debugFinal(array $stack, array $currentNode)
+    private function debugFinal(array $stack, array $currentStack)
     {
-        if (count($stack) > 2 || count($currentNode) > 1) {
+        if (count($stack) > 2 || count($currentStack) > 1) {
             ob_start();
             echo "Final state\n===========\n\n";
             echo 'Stack: ';
             $this->dumpStack($stack);
-            echo 'Current node: ' . json_encode($currentNode) . "\n\n";
+            echo 'Current stack: ' . json_encode($currentStack) . "\n\n";
             fwrite($this->debug, ob_get_clean());
         }
     }

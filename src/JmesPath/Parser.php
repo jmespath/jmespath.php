@@ -25,9 +25,6 @@ class Parser
     /** @var array Known opcodes of the parser */
     private $methods;
 
-    /** @var int The number of open multi expressions */
-    private $inMultiBranch = 0;
-
     /** @var array Stack of marked tokens for speculative parsing */
     private $markedTokens = array();
 
@@ -243,13 +240,13 @@ class Parser
         $this->stack[] = array('is_empty');
         $this->stack[] = array('jump_if_false', null);
         $index = count($this->stack) - 1;
+
+        // Pop the empty variable at TOS
         $this->stack[] = array('pop');
 
-        // Special stack handling when an OR is inside of a multi branch
-        if ($this->inMultiBranch) {
-            $this->stack[] = array('rot_two');
-            $this->stack[] = array('dup_top');
-            $this->stack[] = array('rot_three');
+        // Push the current node onto the stack if needed
+        if ($token['type'] != Lexer::T_FUNCTION) {
+            $this->stack[] = array('push_current');
         }
 
         do {
@@ -318,10 +315,6 @@ class Parser
                         break;
                     case Lexer::T_AT:
                         $token = $this->nextToken();
-                        // When in a multi-branch, you must pop the TOS
-                        if ($this->inMultiBranch) {
-                            //$this->stack[] = array('pop');
-                        }
                         $this->stack[] = array('push_current');
                         $inNode = true;
                         break;
@@ -428,14 +421,18 @@ class Parser
     {
         $index = $this->prepareMultiBranch();
 
+        if ($token['type'] != Lexer::T_FUNCTION) {
+            $this->stack[] = array('push_current');
+        }
+
         do {
             if ($token['type'] != Lexer::T_COMMA) {
                 $token = $this->parseInstruction($token);
             } else {
                 $this->storeMultiBranchKey(null);
                 $next = $this->match(self::$firstTokens);
-                if ($next['type'] == Lexer::T_FUNCTION) {
-                    $this->stack[] = array('pop');
+                if ($next['type'] != Lexer::T_FUNCTION) {
+                    $this->stack[] = array('push_current');
                 }
                 $token = $this->parseInstruction($next);
             }
@@ -451,6 +448,10 @@ class Parser
         $this->match(array(Lexer::T_COLON => true));
         $token = $this->match(self::$firstTokens);
 
+        if ($token['type'] != Lexer::T_FUNCTION) {
+            $this->stack[] = array('push_current');
+        }
+
         do {
             if ($token['type'] != Lexer::T_COMMA) {
                 $token = $this->parseInstruction($token);
@@ -459,7 +460,12 @@ class Parser
                 $token = $this->match(array(Lexer::T_IDENTIFIER => true));
                 $this->match(array(Lexer::T_COLON => true));
                 $currentKey = $token['value'];
-                $token = $this->parseInstruction($this->match(self::$firstTokens));
+                // Parse the next instruction and handle TOS if not a function
+                $next = $this->match(self::$firstTokens);
+                if ($next['type'] != Lexer::T_FUNCTION) {
+                    $this->stack[] = array('push_current');
+                }
+                $token = $this->parseInstruction($next);
             }
         } while ($token['type'] != Lexer::T_RBRACE);
 
@@ -471,12 +477,11 @@ class Parser
      */
     private function prepareMultiBranch()
     {
-        ++$this->inMultiBranch;
         $this->stack[] = array('is_empty');
         $this->stack[] = array('jump_if_true', null);
-        $this->stack[] = array('dup_top');
+        $this->stack[] = array('mark_current');
+        $this->stack[] = array('pop');
         $this->stack[] = array('push', array());
-        $this->stack[] = array('rot_two');
 
         return count($this->stack) - 4;
     }
@@ -487,9 +492,6 @@ class Parser
     private function storeMultiBranchKey($key)
     {
         $this->stack[] = array('store_key', $key);
-        $this->stack[] = array('rot_two');
-        $this->stack[] = array('dup_top');
-        $this->stack[] = array('rot_three');
     }
 
     /**
@@ -499,10 +501,8 @@ class Parser
     private function finishMultiBranch($index, $key)
     {
         $this->stack[] = array('store_key', $key);
-        $this->stack[] = array('rot_two');
-        $this->stack[] = array('pop');
+        $this->stack[] = array('pop_current');
         $this->stack[$index][1] = count($this->stack);
-        --$this->inMultiBranch;
     }
 
     /**

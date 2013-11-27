@@ -53,23 +53,21 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     {
         $p = new Parser(new Lexer());
         $result = $p->compile('foo[1, 2]');
-        $this->assertSame(array(
-            array("field", "foo"),
-            array("is_empty"),
-            array("jump_if_true", 15),
-            array("dup_top"),
-            array("push", array()),
-            array("rot_two"),
-            array("index", 1),
-            array("store_key", null),
-            array("rot_two"),
-            array("dup_top"),
-            array("rot_three"),
-            array("index", 2),
-            array("store_key", null),
-            array("rot_two"),
-            array("pop"),
-            array("stop")
+        $this->assertSame(array (
+            0 => array('field', 'foo'),
+            1 => array('is_empty'),
+            2 => array('jump_if_true', 13),
+            3 => array('mark_current'),
+            4 => array('pop'),
+            5 => array('push', array()),
+            6 => array('push_current'),
+            7 => array('index', 1),
+            8 => array('store_key', null),
+            9 => array('push_current'),
+            10 => array('index', 2,),
+            11 => array('store_key', 1 => null),
+            12 =>array('pop_current'),
+            13 => array('stop'),
         ), $result);
     }
 
@@ -88,23 +86,25 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     {
         $p = new Parser(new Lexer());
         $result = $p->compile('foo.*[1, 2]');
+
+        var_export($result);
         $this->assertEquals(array(
             0  => array('field', 'foo'),
             1  => array('each', 17),
-            2  => array("is_empty"),
-            3  => array('jump_if_true', 16),
-            4  => array('dup_top'),
-            5  => array('push', array()),
-            6  => array('rot_two'),
-            7  => array('index', 1),
-            8  => array('store_key', null),
-            9  => array('rot_two'),
-            10  => array('dup_top'),
-            11 => array('rot_three'),
+            2  => array('mark_current'),
+            3  => array('is_empty'),
+            4  => array('jump_if_true', 15),
+            5  => array('mark_current'),
+            6  => array('pop'),
+            7  => array('push', array()),
+            8  => array('push_current'),
+            9  => array('index', 1),
+            10 => array('store_key', null),
+            11 => array('push_current'),
             12 => array('index', 2),
             13 => array('store_key', null),
-            14 => array('rot_two'),
-            15 => array('pop'),
+            14 => array('pop_current'),
+            15 => array('pop_current'),
             16 => array('goto', 1),
             17 => array('stop')
         ), $result);
