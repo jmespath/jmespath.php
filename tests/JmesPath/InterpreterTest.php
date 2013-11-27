@@ -165,4 +165,38 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         $orig = array(array('foo' => 'bar'), array('foo' => 'baz'));
         $this->assertEquals($orig, $i->execute(array(array('merge')), $orig));
     }
+
+    public function testCanRegisterCustomFunctions()
+    {
+        $i = new Interpreter();
+        $args = null;
+        $i->registerFunction('foo', function ($a) use (&$args) {
+            $args = $a;
+        });
+        $i->execute(array(
+            array('push', 1),
+            array('push', 2),
+            array('call', 'foo', 2)
+        ), array());
+        $this->assertEquals(array(1, 2), $args);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testValidatesFunctionsAreCallable()
+    {
+        $i = new Interpreter();
+        $i->registerFunction('foo', 'baz');
+    }
+
+    /**
+     * @expectedExceptionMessage Unknown function
+     * @expectedException \RuntimeException
+     */
+    public function testValidatesFunctionsExist()
+    {
+        $i = new Interpreter();
+        $i->execute(array(array('call', 'foo', 0)), array());
+    }
 }
