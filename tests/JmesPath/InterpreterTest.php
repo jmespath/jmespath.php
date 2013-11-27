@@ -59,6 +59,20 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('foo', $contents);
     }
 
+    public function testShowsIfFinalStateIsBorked()
+    {
+        $r = fopen('php://temp', 'r+');
+        $i = new Interpreter($r);
+        $ref = new \ReflectionMethod($i, 'debugFinal');
+        $ref->setAccessible(true);
+        $ref->invoke($i, array('abc', '123'), array('def', '456'));
+        rewind($r);
+        $this->assertContains('abc', stream_get_contents($r));
+        rewind($r);
+        $this->assertContains('456', stream_get_contents($r));
+        fclose($r);
+    }
+
     public function testTrimsDebugJsonWhenTooLarge()
     {
         $repeated = str_repeat('@', 1000);
@@ -121,27 +135,28 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function testChecksIfEmpty()
+    public function emptyOrFalseProvider()
+    {
+        return array(
+            array(0, false, false),
+            array(' ', false, false),
+            array('', false, false),
+            array(false, false, true),
+            array(null, true, true),
+            array(array(), true, false),
+        );
+    }
+
+    /**
+     * @dataProvider emptyOrFalseProvider
+     */
+    public function testChecksIfEmptyOrFalse($check, $resultEmpty, $resultFalse)
     {
         $i = new Interpreter();
-        $this->assertTrue($i->execute(array(array('is_empty')), array()));
-        $this->assertFalse($i->execute(array(array('is_empty')), array(1)));
-        $this->assertFalse($i->execute(array(
-            array('field', 'foo'),
-            array('is_empty')
-        ), array('foo' => false)));
-        $this->assertFalse($i->execute(array(
-            array('field', 'foo'),
-            array('is_empty')
-        ), array('foo' => 0)));
-        $this->assertFalse($i->execute(array(
-            array('field', 'foo'),
-            array('is_empty')
-        ), array('foo' => '')));
-        $this->assertTrue($i->execute(array(
-            array('field', 'foo'),
-            array('is_empty')
-        ), array('foo' => null)));
+        $codes = array(array('index', 0), array('is_empty'));
+        $this->assertEquals($resultEmpty, $i->execute($codes, array($check)));
+        $codes = array(array('index', 0), array('is_falsey'));
+        $this->assertEquals($resultFalse, $i->execute($codes, array($check)));
     }
 
     public function testMergesTos()
