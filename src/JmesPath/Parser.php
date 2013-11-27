@@ -73,18 +73,17 @@ class Parser
         $this->stack = $this->markedTokens = array();
         $this->lexer->setInput($path);
         $this->tokens = $this->lexer->getIterator();
-        $currentToken = $this->tokens->current();
+        $token = $this->tokens->current();
 
         // Ensure that the first token is valid
-        if (!isset(self::$firstTokens[$currentToken['type']])) {
+        if (!isset(self::$firstTokens[$token['type']])) {
             throw new SyntaxErrorException(
                 self::$firstTokens,
-                $currentToken,
+                $token,
                 $this->lexer->getInput()
             );
         }
 
-        $token = $currentToken;
         while ($token['type'] !== Lexer::T_EOF) {
             $token = $this->parseInstruction($token);
         }
