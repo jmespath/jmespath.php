@@ -53,7 +53,6 @@ class Parser
         Lexer::T_COMMA => true,
         Lexer::T_OR => true,
         Lexer::T_RBRACE => true,
-        Lexer::T_RPARENS => true,
         Lexer::T_RBRACKET => true,
         Lexer::T_EOF => true
     );
@@ -396,7 +395,11 @@ class Parser
         } elseif ($token = $this->speculateFilter($token)) {
             return $token;
         } else {
-            throw new \RuntimeException('No viable rule found');
+            throw new SyntaxErrorException(
+                'Expression is not a multi-expression or a filter expression. No viable rule found',
+                $this->currentToken,
+                $this->lexer->getInput()
+            );
         }
     }
 
@@ -545,27 +548,10 @@ class Parser
         $this->stack[] = array('mark_current');
 
         try {
-            // Parse the right hand part of the expression until a T_OPERATOR
-            $token = $this->parseFilterExpression($token, Lexer::T_OPERATOR);
+            $this->parseFullExpression($token);
         } catch (SyntaxErrorException $e) {
-            // This is not an expression so fail the speculation
             $this->resetToken(false);
             return false;
-        }
-
-        // From this point on, this is an expression. All failures will actually
-        // throw. Next, consume the operator.
-        $operator = $token['value'];
-        $operatorToken = $token;
-
-        // Parse the right hand part of the expression until a T_RBRACKET
-        $this->parseFilterExpression($this->nextToken(), Lexer::T_RBRACKET);
-
-        // Add the operator opcode and track the jump if false index
-        if (isset(self::$operators[$operator])) {
-            $this->stack[] = array(self::$operators[$operator]);
-        } else {
-            throw new SyntaxErrorException('Invalid operator', $operatorToken, $this->lexer->getInput());
         }
 
         // If the evaluated filter was true, then jump to the wildcard loop
@@ -587,17 +573,49 @@ class Parser
         return $token;
     }
 
+    /**
+     * Parse an entire filter expression including the left, operator, and right
+     */
+    private function parseFullExpression(array $token)
+    {
+        // Parse the left hand part of the expression until a T_OPERATOR
+        $operatorToken = $this->parseFilterExpression($token, array(Lexer::T_OPERATOR => true));
+
+        // Parse the right hand part of the expression until a T_RBRACKET
+        $afterExpression = $this->parseFilterExpression($this->nextToken(), array(
+            Lexer::T_RBRACKET => true,
+            Lexer::T_OR => true
+        ));
+
+        // Add the operator opcode and track the jump if false index
+        if (isset(self::$operators[$operatorToken['value']])) {
+            $this->stack[] = array(self::$operators[$operatorToken['value']]);
+        } else {
+            throw new SyntaxErrorException('Invalid operator', $operatorToken, $this->lexer->getInput());
+        }
+
+        if ($afterExpression['type'] == Lexer::T_OR) {
+            $token = $this->match(self::$firstTokens);
+            $this->stack[] = array('is_falsey');
+            $this->stack[] = array('jump_if_false', null);
+            $index = count($this->stack) - 1;
+            $this->stack[] = array('pop');
+            $this->parseFullExpression($token);
+            $this->stack[$index][1] = count($this->stack);
+        }
+    }
 
     /**
-     * Parse part of a filter expression until a specific node is encountered
+     * Parse either the left or right part of a filter expression until a
+     * specific node is encountered.
      *
      * @param array $token     Starting token
-     * @param int   $untilType Parse until a token of this type is encountered
+     * @param array $untilTypes Parse until a token of this type is encountered
      * @return array Returns the last token
      *
      * @throws SyntaxErrorException When EOF is encountered before the "until"
      */
-    private function parseFilterExpression(array $token, $untilType)
+    private function parseFilterExpression(array $token, array $untilTypes)
     {
         $inNode = false;
 
@@ -622,7 +640,7 @@ class Parser
                         $token = $this->nextToken();
                     }
             }
-        } while ($token['type'] != $untilType);
+        } while (!isset($untilTypes[$token['type']]));
 
         return $token;
     }

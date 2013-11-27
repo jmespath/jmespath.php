@@ -154,6 +154,12 @@ class Interpreter
                     $stack[] = $tos === null || $tos === array();
                     break;
 
+                case 'is_falsey':
+                    // Pushes TRUE or FALSE on to TOS if TOS is null or false
+                    $tos = end($stack);
+                    $stack[] = $tos === null || $tos === false;
+                    break;
+
                 case 'jump_if_true':
                     // Pops TOS and jumps to the given bytecode index if true.
                     if (array_pop($stack) === true) {
