@@ -96,7 +96,7 @@ abstract class AbstractFn
                             gettype($args[$position])
                         )
                     );
-                } elseif ($rule['failure'] == null) {
+                } elseif ($rule['failure'] == 'null') {
                     // Handle failure when set to return null
                     return false;
                 }

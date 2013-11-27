@@ -14,7 +14,7 @@ class FnCount extends AbstractFn
     protected $rules = array(
         'arity' => 1,
         'args'  => array(
-            array('type' => 'array', 'failure' => 'null')
+            0 => array('type' => 'array', 'failure' => 'null')
         )
     );
 
