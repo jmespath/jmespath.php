@@ -384,9 +384,10 @@ class Interpreter
         $opLine .= str_pad($arg, 17, ' ') . '   ';
         $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 14, ' ');
         $opLine .= str_pad((isset($op[2]) ? json_encode($op[2]) : null), 14, ' ');
-        $opLine .= ' Frames: ';
-        $opLine .= implode(' | ', array_map(function ($frame) { return json_encode($frame); }, array_reverse($currentStack)));
-        echo $opLine . "\n" . str_repeat('-', strlen($opLine)) . "\n\n";
+        echo $opLine . "\n";
+        echo '      Frames: ';
+        echo implode(' | ', array_map(function ($frame) { return substr(json_encode($frame), 0, 100); }, array_reverse($currentStack)));
+        echo "\n" . str_repeat('-', strlen($opLine)) . "\n\n";
         $this->dumpStack($stack);
         fwrite($this->debug, ob_get_clean());
     }
