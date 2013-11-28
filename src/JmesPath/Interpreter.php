@@ -32,6 +32,7 @@ class Interpreter
             'reverse' => 'JmesPath\Fn\FnReverse',
             'sort' => 'JmesPath\Fn\FnSort',
             'substring' => 'JmesPath\Fn\FnSubstring',
+            'type' => 'JmesPath\Fn\FnType',
         );
 
         $this->debug = $debug === true ? STDOUT : $debug;
