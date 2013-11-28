@@ -25,9 +25,9 @@ class Interpreter
     {
         static $defaultFunctions = array(
             'count' => 'JmesPath\Fn\FnCount',
-            'regex' => 'JmesPath\Fn\FnRegex',
-            'strlen' => 'JmesPath\Fn\FnStrlen',
-            'substr' => 'JmesPath\Fn\FnSubstr',
+            'matches' => 'JmesPath\Fn\FnMatches',
+            'length' => 'JmesPath\Fn\FnLength',
+            'substring' => 'JmesPath\Fn\FnSubstring',
         );
 
         $this->debug = $debug === true ? STDOUT : $debug;

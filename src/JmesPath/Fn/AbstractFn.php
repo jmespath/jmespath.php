@@ -58,22 +58,24 @@ abstract class AbstractFn
         $name = get_class($this);
 
         // Validate the function arity
-        if (isset($this->rules['arity']) && count($args) != $this->rules['arity']) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    '%s expects %d arguments but was passed %d',
-                    $name,
-                    $this->rules['arity'],
-                    count($args)
-                )
-            );
+        if (isset($this->rules['arity'])) {
+            $this->validateArity($name, $this->rules['arity'][0],$this->rules['arity'][1], $args);
         }
 
         // Validate arguments
         if (isset($this->rules['args'])) {
-            foreach ($this->rules['args'] as $position => $rule) {
-                if (false === $this->validateArg($name, $position, $rule, $args)) {
-                    return false;
+            foreach ($args as $position => $arg) {
+                if (isset($this->rules[$position])) {
+                    if (false === $this->validateArg(
+                            $name,
+                            $position,
+                            $this->rules[$position],
+                            $arg,
+                            $this->rules['arity']
+                        )
+                    ) {
+                        return false;
+                    }
                 }
             }
         }
@@ -81,11 +83,56 @@ abstract class AbstractFn
         return $args;
     }
 
-    private function validateArg($fnName, $position, array $rule, array &$args)
+    /**
+     * Asserts that the number of arguments provided satisfies the arity of the
+     * function.
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function validateArity($fnName, $min, $max, array $args)
     {
+        $t = count($args);
+        $eqMessage = "{$fnName} expects {$min} arguments, {$t} were provided";
+        $rnMessage = "{$fnName} expects from {$min} to {$max} arguments, {$t} were provided";
+        $s = false;
+
+        if ($t < $min) {
+            if ($max == -1) {
+                $s = "{$fnName} expects at least {$min} arguments, {$t} were provided";
+            } elseif ($max == $min) {
+                $s = $eqMessage;
+            } else {
+                $s = $rnMessage;
+            }
+        } elseif ($t > $max && $max != -1) {
+            if ($max == $min) {
+                $s = $eqMessage;
+            } else {
+                $s = $rnMessage;
+            }
+        }
+
+        if ($s) {
+            throw new \InvalidArgumentException($s);
+        }
+    }
+
+    /**
+     * Returns false if the provided argument does not satisfy the rules and the
+     * rules' failure attribute is "null".
+     *
+     * @throws \InvalidArgumentException if the provided argument does not
+     *   satisfy the rules and the rules' failure attribute is "throw".
+     */
+    private function validateArg($fnName, $position, array $rule, $arg, array $arity)
+    {
+        if (!isset($rule['failure'])) {
+            $rule['failure'] = 'throw';
+        }
+
         if (isset($rule['type'])) {
-            if (gettype($args[$position]) != $rule['type']) {
-                if (!isset($rule['failure']) || $rule['failure'] == 'throw') {
+            if (gettype($arg) != $rule['type']) {
+                if ($rule['failure'] == 'throw') {
                     // Handle failure when it should throw an exception
                     throw new \InvalidArgumentException(
                         sprintf(
@@ -93,7 +140,7 @@ abstract class AbstractFn
                             $position + 1,
                             $fnName,
                             $rule['type'],
-                            gettype($args[$position])
+                            gettype($arg)
                         )
                     );
                 } elseif ($rule['failure'] == 'null') {

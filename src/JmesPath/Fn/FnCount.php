@@ -12,7 +12,7 @@ namespace JmesPath\Fn;
 class FnCount extends AbstractFn
 {
     protected $rules = array(
-        'arity' => 1,
+        'arity' => array(1, 1),
         'args'  => array(
             0 => array('type' => 'array', 'failure' => 'null')
         )
