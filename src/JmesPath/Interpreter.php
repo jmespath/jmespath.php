@@ -135,6 +135,11 @@ class Interpreter
                     $stack[] = $tos === null || $tos === array();
                     break;
 
+                case 'is_null':
+                    // Pushes TRUE or FALSE on to TOS if TOS is null
+                    $stack[] = end($stack) === null;
+                    break;
+
                 case 'is_falsey':
                     // Pushes TRUE or FALSE on to TOS if TOS is null or false
                     $tos = end($stack);

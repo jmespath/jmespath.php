@@ -226,7 +226,7 @@ class Parser
     {
         // Parse until the next terminal condition
         $token = $this->match(self::$firstTokens);
-        $this->stack[] = array('is_empty');
+        $this->stack[] = array('is_null');
         $this->stack[] = array('jump_if_false', null);
         $index = count($this->stack) - 1;
 
