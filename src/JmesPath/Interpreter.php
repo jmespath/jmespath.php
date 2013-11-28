@@ -24,9 +24,13 @@ class Interpreter
     public function __construct($debug = false)
     {
         static $defaultFunctions = array(
+            'contains' => 'JmesPath\Fn\FnContains',
             'count' => 'JmesPath\Fn\FnCount',
+            'get' => 'JmesPath\Fn\FnGet',
             'matches' => 'JmesPath\Fn\FnMatches',
             'length' => 'JmesPath\Fn\FnLength',
+            'reverse' => 'JmesPath\Fn\FnReverse',
+            'sort' => 'JmesPath\Fn\FnSort',
             'substring' => 'JmesPath\Fn\FnSubstring',
         );
 

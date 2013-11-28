@@ -65,11 +65,11 @@ abstract class AbstractFn
         // Validate arguments
         if (isset($this->rules['args'])) {
             foreach ($args as $position => $arg) {
-                if (isset($this->rules[$position])) {
+                if (isset($this->rules['args'][$position])) {
                     if (false === $this->validateArg(
                             $name,
                             $position,
-                            $this->rules[$position],
+                            $this->rules['args'][$position],
                             $arg,
                             $this->rules['arity']
                         )
@@ -131,7 +131,12 @@ abstract class AbstractFn
         }
 
         if (isset($rule['type'])) {
-            if (gettype($arg) != $rule['type']) {
+
+            $matches = is_array($rule['type'])
+                ? in_array(gettype($arg), $rule['type'])
+                : gettype($arg) == $rule['type'];
+
+            if (!$matches) {
                 if ($rule['failure'] == 'throw') {
                     // Handle failure when it should throw an exception
                     throw new \InvalidArgumentException(
