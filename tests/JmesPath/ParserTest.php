@@ -87,7 +87,6 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $p = new Parser(new Lexer());
         $result = $p->compile('foo.*[1, 2]');
 
-        var_export($result);
         $this->assertEquals(array(
             0  => array('field', 'foo'),
             1  => array('each', 17),
