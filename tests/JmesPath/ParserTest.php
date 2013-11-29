@@ -104,7 +104,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
             13 => array('store_key', null),
             14 => array('pop_current'),
             15 => array('pop_current'),
-            16 => array('goto', 1),
+            16 => array('jump', 1),
             17 => array('stop')
         ), $result);
     }

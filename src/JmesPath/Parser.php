@@ -270,7 +270,7 @@ class Parser
         $index = count($this->stack) - 1;
         $token = $this->consumeWildcard($token);
         $this->stack[$index][1] = count($this->stack) + 1;
-        $this->stack[] = array('goto', $index);
+        $this->stack[] = array('jump', $index);
 
         return $token;
     }
@@ -551,11 +551,11 @@ class Parser
         // Kill temp variables when a filter filters a node
         $this->stack[] = array('pop');
         $this->stack[] = array('push', null);
-        $this->stack[] = array('goto', $loopIndex);
+        $this->stack[] = array('jump', $loopIndex);
         // Actually yield values that matched the filter
         $token = $this->consumeWildcard($this->nextToken());
         // Finish the projection loop
-        $this->stack[] = array('goto', $loopIndex);
+        $this->stack[] = array('jump', $loopIndex);
         $this->stack[$loopIndex][1] = count($this->stack);
 
         // Stop the token marking

@@ -128,23 +128,10 @@ class Interpreter
                     }
                     break;
 
-                case 'is_empty':
-                    // Pushes TRUE or FALSE on to TOS if TOS is null or an empty
-                    // array.
-                    $tos = end($stack);
-                    $stack[] = $tos === null || $tos === array();
-                    break;
-
-                case 'is_null':
-                    // Pushes TRUE or FALSE on to TOS if TOS is null
-                    $stack[] = end($stack) === null;
-                    break;
-
-                case 'is_falsey':
-                    // Pushes TRUE or FALSE on to TOS if TOS is null or false
-                    $tos = end($stack);
-                    $stack[] = $tos === null || $tos === false;
-                    break;
+                case 'jump':
+                    // Jumps to the bytecode index using the given operand
+                    $iter->seek($arg);
+                    continue 2;
 
                 case 'jump_if_true':
                     // Pops TOS and jumps to the given bytecode index if true.
@@ -162,50 +149,21 @@ class Interpreter
                     }
                     break;
 
-                case 'goto':
-                    // Jumps to the bytecode index using the given operand
-                    $iter->seek($arg);
-                    continue 2;
-
-                case 'store_key':
-                    // Pops two items off of the stack, TOS and TOS1. Then
-                    // pushes TOS1 back onto the stack after setting
-                    // TOS1[$arg] = TOS. If no operand, $arg, is provided, the
-                    // TOS is appended to TOS1 using an incremental index.
-                    $tos = array_pop($stack);
-                    $tos1 = array_pop($stack);
-
-                    if (!is_array($tos1)) {
-                        throw new \RuntimeException('Invalid stack for store_key');
-                    } else {
-                        if ($arg === null) {
-                            $tos1[] = $tos;
-                        } else {
-                            $tos1[$arg] = $tos;
-                        }
-                        $stack[] = $tos1;
-                    }
+                case 'mark_current':
+                    // Pushes the TOS onto the current node stack so that any
+                    // usage of the @ token will use value at TOS
+                    $currentStack[] = &$stack[count($stack) - 1];
                     break;
 
-                case 'merge':
-                    // Pops TOS. If TOS is an array that contains nested arrays,
-                    // the nested arrays are merged into TOS. Anything that is
-                    // not a nested array (i.e., hash or scalar) is appended to
-                    // the end of TOS. The resulting array is added to the TOS.
-                    static $skipElement = array();
-                    $tos = array_pop($stack);
-                    $result = array();
-                    if ($tos && is_array($tos)) {
-                        foreach ($tos as $values) {
-                            // Only merge up arrays lists and not hashes
-                            if (is_array($values) && isset($values[0])) {
-                                $result = array_merge($result, $values);
-                            } elseif ($values != $skipElement) {
-                                $result[] = $values;
-                            }
-                        }
-                    }
-                    $stack[] = $result;
+                case 'push_current':
+                    // Pushes the top of the current node stack onto the top
+                    // of the operand stack.
+                    $stack[] = &$currentStack[count($currentStack) - 1];
+                    break;
+
+                case 'pop_current':
+                    // Pops the top of the current node stack
+                    array_pop($currentStack);
                     break;
 
                 case 'each':
@@ -276,6 +234,65 @@ class Interpreter
                     }
                     break;
 
+                case 'merge':
+                    // Pops TOS. If TOS is an array that contains nested arrays,
+                    // the nested arrays are merged into TOS. Anything that is
+                    // not a nested array (i.e., hash or scalar) is appended to
+                    // the end of TOS. The resulting array is added to the TOS.
+                    static $skipElement = array();
+                    $tos = array_pop($stack);
+                    $result = array();
+                    if ($tos && is_array($tos)) {
+                        foreach ($tos as $values) {
+                            // Only merge up arrays lists and not hashes
+                            if (is_array($values) && isset($values[0])) {
+                                $result = array_merge($result, $values);
+                            } elseif ($values != $skipElement) {
+                                $result[] = $values;
+                            }
+                        }
+                    }
+                    $stack[] = $result;
+                    break;
+
+                case 'store_key':
+                    // Pops two items off of the stack, TOS and TOS1. Then
+                    // pushes TOS1 back onto the stack after setting
+                    // TOS1[$arg] = TOS. If no operand, $arg, is provided, the
+                    // TOS is appended to TOS1 using an incremental index.
+                    $tos = array_pop($stack);
+                    $tos1 = array_pop($stack);
+
+                    if (!is_array($tos1)) {
+                        throw new \RuntimeException('Invalid stack for store_key');
+                    } else {
+                        if ($arg === null) {
+                            $tos1[] = $tos;
+                        } else {
+                            $tos1[$arg] = $tos;
+                        }
+                        $stack[] = $tos1;
+                    }
+                    break;
+
+                case 'is_empty':
+                    // Pushes TRUE or FALSE on to TOS if TOS is null or an empty
+                    // array.
+                    $tos = end($stack);
+                    $stack[] = $tos === null || $tos === array();
+                    break;
+
+                case 'is_null':
+                    // Pushes TRUE or FALSE on to TOS if TOS is null
+                    $stack[] = end($stack) === null;
+                    break;
+
+                case 'is_falsey':
+                    // Pushes TRUE or FALSE on to TOS if TOS is null or false
+                    $tos = end($stack);
+                    $stack[] = $tos === null || $tos === false;
+                    break;
+
                 case 'eq':
                     // Pops TOS and TOS1 and pushed TOS1 == TOS onto the stack
                     $stack[] = array_pop($stack) === array_pop($stack);
@@ -314,27 +331,6 @@ class Interpreter
                     $stack[] = is_numeric($tos) && is_numeric($tos1) && $tos1 <= $tos;
                     break;
 
-                case 'stop':
-                    // Halts execution
-                    break;
-
-                case 'mark_current':
-                    // Pushes the TOS onto the current node stack so that any
-                    // usage of the @ token will use value at TOS
-                    $currentStack[] = &$stack[count($stack) - 1];
-                    break;
-
-                case 'push_current':
-                    // Pushes the top of the current node stack onto the top
-                    // of the operand stack.
-                    $stack[] = &$currentStack[count($currentStack) - 1];
-                    break;
-
-                case 'pop_current':
-                    // Pops the top of the current node stack
-                    array_pop($currentStack);
-                    break;
-
                 case 'call':
                     // Invokes a function. First pops arguments off of the stack
                     // then pushes the result of the function onto TOS. This
@@ -352,6 +348,10 @@ class Interpreter
                     }
                     $stack[] = call_user_func($this->fn[$arg], $funcArgs);
 
+                    break;
+
+                case 'stop':
+                    // Halts execution
                     break;
 
                 default:
