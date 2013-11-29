@@ -25,6 +25,7 @@ class Interpreter
     {
         static $defaultFunctions = array(
             'abs' => 'JmesPath\Fn\FnAbs',
+            'avg' => 'JmesPath\Fn\FnAvg',
             'ceil' => 'JmesPath\Fn\FnCeil',
             'concat' => 'JmesPath\Fn\FnConcat',
             'contains' => 'JmesPath\Fn\FnContains',
@@ -33,6 +34,8 @@ class Interpreter
             'get' => 'JmesPath\Fn\FnGet',
             'join' => 'JmesPath\Fn\FnJoin',
             'matches' => 'JmesPath\Fn\FnMatches',
+            'max' => 'JmesPath\Fn\FnMax',
+            'min' => 'JmesPath\Fn\FnMin',
             'length' => 'JmesPath\Fn\FnLength',
             'lowercase' => 'JmesPath\Fn\FnLowercase',
             'reverse' => 'JmesPath\Fn\FnReverse',
