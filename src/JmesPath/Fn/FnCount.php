@@ -3,11 +3,11 @@
 namespace JmesPath\Fn;
 
 /**
- * Returns an integer representing the number of elements in an array of hash.
+ * count($collection)
  *
- * Arguments:
- * 1. Array or hash to count. SHOULD be an array or hash. If anything else is
- *    passed, this function will return null.
+ * Returns the number of elements in the $collection argument if
+ * $collection is an Array or Object. Returns null if $collection
+ * is not an Array or Object.
  */
 class FnCount extends AbstractFn
 {

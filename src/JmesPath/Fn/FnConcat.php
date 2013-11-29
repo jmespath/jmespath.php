@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * concat($string1, $string2 [, $... ])
+ *
  * Returns each argument concatenated one after the other. Any argument that
  * is not a String or Number is excluded from the concatenated result.
  */

@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * contains($subject, $search)
+ *
  * Returns true if the given $subject contains the provided $search
  * String. The provided $search argument can be either a String or Number.
  *

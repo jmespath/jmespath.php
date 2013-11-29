@@ -3,8 +3,10 @@
 namespace JmesPath\Fn;
 
 /**
- * Returns the length of the string passed in the ``$subject`` argument. If
- * ``$subject`` is not a string, this method returns null.
+ * length($subject)
+ *
+ * Returns the length of the string passed in the $subject argument. If
+ * $subject is not a string, this method returns null.
  */
 class FnLength extends AbstractFn
 {

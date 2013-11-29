@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * max($collection)
+ *
  * Returns the highest found Number in the provided Array or Object argument.
  * If the provided argument is not an Array or Object, this method MUST return
  * null. Any element in the sequence that is not a Number MUST be ignored from

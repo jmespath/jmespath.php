@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * type($subject)
+ *
  * Returns the JavaScript type of the given $subject argument as a string
  * value. The return value MUST be one of the following:
  *

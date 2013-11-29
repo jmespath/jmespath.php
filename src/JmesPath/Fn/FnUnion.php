@@ -3,7 +3,9 @@
 namespace JmesPath\Fn;
 
 /**
- * Returns an Object (hash) containing all of the provided arguments merged into
+ * union($array1, $array2 [, $... ])
+ *
+ * Returns an Object containing all of the provided arguments merged into
  * a single Object. If a key collision occurs, the first key value is used.
  *
  * This method requires at least two arguments. If any of the provided

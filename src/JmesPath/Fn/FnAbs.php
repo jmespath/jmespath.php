@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * abs($number)
+ *
  * Returns the absolute value of the provided argument. If the provided
  * argument is not a Number, then this method MUST return null.
  */

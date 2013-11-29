@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * uppercase($subject)
+ *
  * Returns the provided argument in uppercase characters. If the provided
  * argument is not a String, this function MUST return null.
  */

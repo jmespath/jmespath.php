@@ -3,9 +3,11 @@
 namespace JmesPath\Fn;
 
 /**
- * This function accepts an Array ``$subject`` argument and returns the
- * Lexicographically sorted elements of the ``$subject`` as an Array. If the
- * provided ``$subject`` is not an Array, this function returns ``null``.
+ * sort($list)
+ *
+ * This function accepts an Array $list argument and returns the
+ * lexicographically sorted elements of the $list as an Array. If the
+ * provided $list is not an Array, this function returns null.
  *
  * Array element types are sorted in the following order (the lower the number
  * means the sooner in the list the element appears):

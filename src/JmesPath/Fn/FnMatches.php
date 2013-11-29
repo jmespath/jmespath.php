@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * matches($subject, $pattern [, $flags])
+ *
  * Returns ``true`` if the given PCRE regular expression ``$pattern`` matches
  * the provided ``$subject`` string or ``false`` if the it does not match. This
  * function returns ``null`` if the provided ``$subject`` argument is not a

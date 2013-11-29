@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * substring($subject, $start [, $length])
+ *
  * Returns a subset of the given string in the ``$subject`` argument starting
  * at the given ``$start`` position. If no ``$length`` argument is provided,
  * the function will return the entire remainder of a string after the given

@@ -3,6 +3,8 @@
 namespace JmesPath\Fn;
 
 /**
+ * floor($number)
+ *
  * Returns the next lowest integer value by rounding down if necessary.
  * This method MUST return null if the provided argument is not a Number.
  */
