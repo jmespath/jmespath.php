@@ -3,11 +3,15 @@
 namespace JmesPath\Fn;
 
 /**
- * This method accepts a variable number of arguments, and concatenates each
- * argument using the provided $join argument in position 0. The first
- * argument, $join, MUST be a string. If anything other than a string is
- * passed, this function MUST raise an error. The second argument SHOULD be an
- * Array or Object. If anything else is passed, this function MUST return null.
+ * join($glue, $stringsArray)
+ *
+ * Returns all of the elements from the provided $stringsArray Array joined
+ * together using the $glue argument as a separator between each. Any
+ * element that is not a String or Number is excluded from the joined result.
+ * If no arguments are Strings or Numbers, this method MUST return null.
+ *
+ * This function MUST raise an error if the provided $glue argument is not a
+ * String.
  */
 class FnJoin extends AbstractFn
 {
@@ -21,6 +25,8 @@ class FnJoin extends AbstractFn
 
     protected function execute(array $args)
     {
-        return implode(array_shift($args), $args[0]);
+        return implode(array_shift($args), array_filter($args, function ($arg) {
+            return is_string($arg) || is_numeric($arg);
+        }));
     }
 }
