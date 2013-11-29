@@ -42,6 +42,7 @@ class Interpreter
             'sort' => 'JmesPath\Fn\FnSort',
             'substring' => 'JmesPath\Fn\FnSubstring',
             'type' => 'JmesPath\Fn\FnType',
+            'union' => 'JmesPath\Fn\FnUnion',
             'uppercase' => 'JmesPath\Fn\FnUppercase',
         );
 
