@@ -30,10 +30,12 @@ class Interpreter
             'get' => 'JmesPath\Fn\FnGet',
             'matches' => 'JmesPath\Fn\FnMatches',
             'length' => 'JmesPath\Fn\FnLength',
+            'lowercase' => 'JmesPath\Fn\FnLowercase',
             'reverse' => 'JmesPath\Fn\FnReverse',
             'sort' => 'JmesPath\Fn\FnSort',
             'substring' => 'JmesPath\Fn\FnSubstring',
             'type' => 'JmesPath\Fn\FnType',
+            'uppercase' => 'JmesPath\Fn\FnUppercase',
         );
 
         $this->debug = $debug === true ? STDOUT : $debug;

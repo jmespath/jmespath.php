@@ -5,7 +5,7 @@ namespace JmesPath\Fn;
 /**
  * This method accepts a variable number of arguments, and concatenates each
  * argument. Each argument MUST be a String. If anything other than a String
- * is passed, this function MUST returns null.
+ * is passed in any argument, this function MUST return null.
  */
 class FnConcat extends AbstractFn
 {
