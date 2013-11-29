@@ -28,6 +28,7 @@ class Interpreter
             'contains' => 'JmesPath\Fn\FnContains',
             'count' => 'JmesPath\Fn\FnCount',
             'get' => 'JmesPath\Fn\FnGet',
+            'join' => 'JmesPath\Fn\FnJoin',
             'matches' => 'JmesPath\Fn\FnMatches',
             'length' => 'JmesPath\Fn\FnLength',
             'lowercase' => 'JmesPath\Fn\FnLowercase',
