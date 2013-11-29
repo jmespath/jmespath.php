@@ -24,6 +24,7 @@ class Interpreter
     public function __construct($debug = false)
     {
         static $defaultFunctions = array(
+            'concat' => 'JmesPath\Fn\FnConcat',
             'contains' => 'JmesPath\Fn\FnContains',
             'count' => 'JmesPath\Fn\FnCount',
             'get' => 'JmesPath\Fn\FnGet',
