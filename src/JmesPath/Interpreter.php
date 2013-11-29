@@ -192,6 +192,7 @@ class Interpreter
                     // the nested arrays are merged into TOS. Anything that is
                     // not a nested array (i.e., hash or scalar) is appended to
                     // the end of TOS. The resulting array is added to the TOS.
+                    static $skipElement = array();
                     $tos = array_pop($stack);
                     $result = array();
                     if ($tos && is_array($tos)) {
@@ -199,7 +200,7 @@ class Interpreter
                             // Only merge up arrays lists and not hashes
                             if (is_array($values) && isset($values[0])) {
                                 $result = array_merge($result, $values);
-                            } else {
+                            } elseif ($values != $skipElement) {
                                 $result[] = $values;
                             }
                         }
@@ -251,11 +252,20 @@ class Interpreter
                         $iter->seek($arg);
                         continue 2;
                     } elseif (!$tos) {
-                        // The array is empty so push an empty list and skip iteration
+                        // The array or hash is empty so push an empty list and
+                        // skip iteration
                         $stack[] = array();
                         $iter->seek($arg);
                         continue 2;
                     } else {
+                        $keys = array_keys($tos);
+                        if (($keys[0] === 0 && $arg2 == 'object') ||
+                            ($keys[0] !== 0 && $arg2 == 'array')
+                        ) {
+                            $stack[] = null;
+                            $iter->seek($arg);
+                            continue 2;
+                        }
                         // It can be iterated so track the iteration at the current position
                         $eaches[$index] = array(
                             'iter'   => new \ArrayIterator($tos),

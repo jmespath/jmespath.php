@@ -251,7 +251,7 @@ class Parser
      * Parses a wildcard expression using a bytecode loop. Parses tokens until
      * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
      */
-    private function parse_T_STAR(array $token)
+    private function parse_T_STAR(array $token, $type = 'object')
     {
         static $afterStar = array(
             Lexer::T_DOT => true,
@@ -266,7 +266,7 @@ class Parser
 
         // Create a bytecode loop
         $token = $this->match($afterStar);
-        $this->stack[] = array('each', null);
+        $this->stack[] = array('each', null, $type);
         $index = count($this->stack) - 1;
         $token = $this->consumeWildcard($token);
         $this->stack[$index][1] = count($this->stack) + 1;
@@ -361,7 +361,7 @@ class Parser
         // Don't JmesForm the data into a split array
         if ($token['type'] == Lexer::T_RBRACKET) {
             $this->stack[] = array('merge');
-            return $this->parse_T_STAR($token);
+            return $this->parse_T_STAR($token, 'array');
         }
 
         $value = $token['value'];
@@ -376,7 +376,7 @@ class Parser
                 return null;
             } elseif ($token['type'] == Lexer::T_STAR) {
                 $this->nextToken();
-                return $this->parse_T_STAR($token);
+                return $this->parse_T_STAR($token, 'array');
             }
         }
 
