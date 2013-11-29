@@ -62,18 +62,14 @@ abstract class AbstractFn
             $this->validateArity($name, $this->rules['arity'][0],$this->rules['arity'][1], $args);
         }
 
+        $defaultRule = isset($this->rules['args']['default']) ? $this->rules['args']['default'] : null;
+
         // Validate arguments
         if (isset($this->rules['args'])) {
             foreach ($args as $position => $arg) {
-                if (isset($this->rules['args'][$position])) {
-                    if (false === $this->validateArg(
-                            $name,
-                            $position,
-                            $this->rules['args'][$position],
-                            $arg,
-                            $this->rules['arity']
-                        )
-                    ) {
+                $rule = isset($this->rules['args'][$position]) ? $this->rules['args'][$position] : $defaultRule;
+                if ($rule) {
+                    if (false === $this->validateArg($name, $position, $rule, $arg, $this->rules['arity'])) {
                         return false;
                     }
                 }
