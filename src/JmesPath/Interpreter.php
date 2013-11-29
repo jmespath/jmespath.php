@@ -33,6 +33,7 @@ class Interpreter
             'floor' => 'JmesPath\Fn\FnFloor',
             'get' => 'JmesPath\Fn\FnGet',
             'join' => 'JmesPath\Fn\FnJoin',
+            'keys' => 'JmesPath\Fn\FnKeys',
             'matches' => 'JmesPath\Fn\FnMatches',
             'max' => 'JmesPath\Fn\FnMax',
             'min' => 'JmesPath\Fn\FnMin',
@@ -44,6 +45,7 @@ class Interpreter
             'type' => 'JmesPath\Fn\FnType',
             'union' => 'JmesPath\Fn\FnUnion',
             'uppercase' => 'JmesPath\Fn\FnUppercase',
+            'values' => 'JmesPath\Fn\FnValues'
         );
 
         $this->debug = $debug === true ? STDOUT : $debug;
