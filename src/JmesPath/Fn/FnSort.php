@@ -35,7 +35,7 @@ class FnSort extends AbstractFn
             return null;
         }
 
-        sort($args[0], SORT_NATURAL);
+        natsort($args[0]);
 
         return $args[0];
     }

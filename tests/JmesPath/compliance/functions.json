@@ -310,7 +310,7 @@
     },
     {
       "expression": "sort(@.arr)",
-      "result": [-1, 3, 4, 5, "100", "a"]
+      "result": [-1, 3, 4, 5, "a", "100"]
     },
     {
       "expression": "sort(@.strings)",
