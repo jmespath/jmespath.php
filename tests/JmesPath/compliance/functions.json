@@ -30,11 +30,11 @@
     },
     {
       "expression": "abs(1, 2, 3)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "abs()",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "avg(@.arr)",
@@ -90,11 +90,11 @@
     },
     {
       "expression": "concat(foo)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "concat()",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "contains(abc, a)",
@@ -118,7 +118,7 @@
     },
     {
       "expression": "contains(@.dec, false)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "count(@)",
@@ -242,7 +242,7 @@
     },
     {
       "expression": "matches(@.str, false)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "matches(@.str, \"ST\", \"im\")",
@@ -254,7 +254,7 @@
     },
     {
       "expression": "matches(str, \"str\", i, 123)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "max(@.arr)",
@@ -346,15 +346,15 @@
     },
     {
       "expression": "substring(abc, true)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "substring(abc, 1, false)",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "substring()",
-      "error": true
+      "error": "runtime"
     },
     {
       "expression": "type(abc)",
