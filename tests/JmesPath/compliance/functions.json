@@ -1,0 +1,38 @@
+[{
+  "given":
+    {
+      "foo": -1,
+      "arr": [-1, 3, 4, 5, "a"],
+      "str": "str"
+    },
+  "cases": [
+    {
+      "expression": "abs(@.foo)",
+      "result": 1
+    },
+    {
+      "expression": "abs(@.str)",
+      "result": null
+    },
+    {
+      "expression": "abs(@.arr[1])",
+      "result": 3
+    },
+    {
+      "expression": "abs(false)",
+      "result": null
+    },
+    {
+      "expression": "avg(@.arr)",
+      "result": 2.75
+    },
+    {
+      "expression": "avg(@.foo)",
+      "result": null
+    },
+    {
+      "expression": "avg(@)",
+      "result": null
+    }
+  ]
+}]
