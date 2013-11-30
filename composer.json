@@ -18,23 +18,7 @@
 
   "require-dev": {
     "phpunit/phpunit": "~3",
-    "boto/jmespath": "*@dev"
   },
-
-  "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "boto/jmespath",
-        "version": "dev",
-        "source": {
-          "type": "git",
-          "url": "https://github.com/boto/jmespath",
-          "reference": "develop"
-        }
-      }
-    }
-  ],
 
   "autoload": {
     "psr-0": {

@@ -17,7 +17,7 @@ if (!isset($argv[2])) {
     $suite = $argv[1];
     $outer = $argv[2];
     $inner = $argv[3];
-    $path = __DIR__ . "/vendor/boto/jmespath/tests/compliance/{$suite}.json";
+    $path = __DIR__ . "/tests/JmesPath/compliance/{$suite}.json";
     if (!file_exists($path)) {
         die('File not found at ' . $path);
     }

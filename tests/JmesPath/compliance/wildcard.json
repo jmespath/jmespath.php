@@ -1,0 +1,320 @@
+[{
+    "given": {
+        "foo": {
+            "bar": {
+                "baz": "one"
+            },
+            "other": {
+                "baz": "two"
+            },
+            "other2": {
+                "baz": "three"
+            },
+            "other3": {
+                "notbaz": ["a", "b", "c"]
+            },
+            "other4": {
+                "notbaz": ["d", "e", "f"]
+            },
+            "other5": {
+                "other": {
+                    "a": 1,
+                    "b": 2,
+                    "c": 3
+                }
+            }
+        }
+    },
+    "cases": [
+         {
+            "expression": "foo.*.baz",
+            "result": ["one", "two", "three"]
+         },
+         {
+            "expression": "foo.bar.*",
+            "result": ["one"]
+         },
+         {
+            "expression": "foo.*.notbaz",
+            "result": [["a", "b", "c"], ["d", "e", "f"]]
+         },
+         {
+            "expression": "foo.*.notbaz[0]",
+            "result": ["a", "d"]
+         },
+         {
+            "expression": "foo.*.notbaz[-1]",
+            "result": ["c", "f"]
+         },
+         {
+            "expression": "foo.*",
+            "result": [{"baz": "one"}, {"baz": "two"}, {"baz": "three"},
+                       {"notbaz": ["a", "b", "c"]}, {"notbaz": ["d", "e", "f"]},
+                       {"other": {"a": 1, "b": 2, "c": 3}}]
+         },
+         {
+            "expression": "foo.*.*",
+            "result": [["one"], ["two"], ["three"],
+                       [["a", "b", "c"]], [["d", "e", "f"]],
+                       [{"a": 1, "b": 2, "c": 3}]]
+         },
+         {
+            "expression": "foo.*.*.*",
+            "result": [[], [], [], [], [], [[1, 2, 3]]]
+         },
+         {
+            "expression": "foo.*.*.*.*",
+            "result": [[], [], [], [], [], [[]]]
+         }
+    ]
+}, {
+    "given": {
+        "foo": {
+            "bar": "one"
+        },
+        "other": {
+            "bar": "two"
+        },
+        "nomatch": {
+            "notbar": "three"
+        }
+    },
+    "cases": [
+         {
+            "expression": "*.bar",
+            "result": ["one", "two"]
+         }
+    ]
+}, {
+    "given": {
+        "top1": {
+            "sub1": {"foo": "one"}
+        },
+        "top2": {
+            "sub1": {"foo": "two"}
+        },
+        "top3": {
+            "sub3": {"notfoo": "notfoo"}
+        }
+    },
+    "cases": [
+         {
+            "expression": "*",
+            "result": [{"sub1": {"foo": "one"}},
+                       {"sub1": {"foo": "two"}},
+                       { "sub3": {"notfoo": "notfoo"}}]
+         },
+         {
+            "expression": "*.sub1",
+            "result": [{"foo": "one"},
+                       {"foo": "two"}]
+         },
+         {
+            "expression": "*.*",
+            "result": [[{"foo": "one"}],
+                       [{"foo": "two"}],
+                       [{"notfoo": "notfoo"}]]
+         },
+         {
+            "expression": "*.*.foo",
+            "result": [["one"], ["two"], []]
+         },
+         {
+            "expression": "*.sub1.foo",
+            "result": ["one", "two"]
+         }
+    ]
+},
+{
+    "given":
+        {"foo": [{"bar": "one"}, {"bar": "two"}, {"bar": "three"}, {"notbar": "four"}]},
+     "cases": [
+         {
+            "expression": "foo[*].bar",
+            "result": ["one", "two", "three"]
+         },
+         {
+            "expression": "foo[*].notbar",
+            "result": ["four"]
+         }
+     ]
+},
+{
+    "given": {
+        "foo": {
+            "bar": [
+                {"baz": ["one", "two", "three"]},
+                {"baz": ["four", "five", "six"]},
+                {"baz": ["seven", "eight", "nine"]}
+            ]
+        }
+    },
+     "cases": [
+         {
+            "expression": "foo.bar[*].baz",
+            "result": [["one", "two", "three"], ["four", "five", "six"], ["seven", "eight", "nine"]]
+         },
+         {
+            "expression": "foo.bar[*].baz[0]",
+            "result": ["one", "four", "seven"]
+         },
+         {
+            "expression": "foo.bar[*].baz[1]",
+            "result": ["two", "five", "eight"]
+         },
+         {
+            "expression": "foo.bar[*].baz[2]",
+            "result": ["three", "six", "nine"]
+         },
+         {
+            "expression": "foo.bar[*].baz[3]",
+            "result": []
+         }
+     ]
+},
+{
+    "given": {
+        "foo": {
+            "bar": [["one", "two"], ["three", "four"]]
+        }
+    },
+     "cases": [
+         {
+            "expression": "foo.bar[*]",
+            "result": [["one", "two"], ["three", "four"]]
+         },
+         {
+            "expression": "foo.bar[0]",
+            "result": ["one", "two"]
+         },
+         {
+            "expression": "foo.bar[0][0]",
+            "result": "one"
+         },
+         {
+            "expression": "foo.bar[0][0][0]",
+            "result": null
+         },
+         {
+            "expression": "foo.bar[0][0][0][0]",
+            "result": null
+         },
+         {
+            "expression": "foo[0][0]",
+            "result": null
+         }
+     ]
+},
+{
+    "given": {
+        "foo": [
+            {"bar": [{"kind": "basic"}, {"kind": "intermediate"}]},
+            {"bar": [{"kind": "advanced"}, {"kind": "expert"}]},
+            {"bar": "string"}
+        ]
+
+     },
+     "cases": [
+         {
+            "expression": "foo[*].bar[*].kind",
+            "result": [["basic", "intermediate"], ["advanced", "expert"]]
+         },
+         {
+            "expression": "foo[*].bar[0].kind",
+            "result": ["basic", "advanced"]
+         }
+     ]
+},
+{
+    "given": {
+        "foo": [{"bar": ["one", "two"]}, {"bar": ["three", "four"]}, {"bar": ["five"]}]
+     },
+     "cases": [
+         {
+            "expression": "foo[*].bar[0]",
+            "result": ["one", "three", "five"]
+         },
+         {
+            "expression": "foo[*].bar[1]",
+            "result": ["two", "four"]
+         },
+         {
+            "expression": "foo[*].bar[2]",
+            "result": []
+         }
+     ]
+},
+{
+    "given": {
+        "foo": [{"bar": []}, {"bar": []}, {"bar": []}]
+     },
+     "cases": [
+         {
+            "expression": "foo[*].bar[0]",
+            "result": []
+         }
+     ]
+},
+{
+    "given": {
+        "foo": [["one", "two"], ["three", "four"], ["five"]]
+     },
+     "cases": [
+         {
+            "expression": "foo[*][0]",
+            "result": ["one", "three", "five"]
+         },
+         {
+            "expression": "foo[*][1]",
+            "result": ["two", "four"]
+         }
+     ]
+},
+{
+    "given": {
+        "foo": [
+            [
+                ["one", "two"], ["three", "four"]
+            ], [
+                ["five", "six"], ["seven", "eight"]
+            ], [
+                ["nine"], ["ten"]
+            ]
+        ]
+     },
+     "cases": [
+         {
+            "expression": "foo[*][0]",
+            "result": [["one", "two"], ["five", "six"], ["nine"]]
+         },
+         {
+            "expression": "foo[*][1]",
+            "result": [["three", "four"], ["seven", "eight"], ["ten"]]
+         },
+         {
+            "expression": "foo[*][0][0]",
+            "result": ["one", "five", "nine"]
+         },
+         {
+            "expression": "foo[*][1][0]",
+            "result": ["three", "seven", "ten"]
+         },
+         {
+            "expression": "foo[*][0][1]",
+            "result": ["two", "six"]
+         },
+         {
+            "expression": "foo[*][1][1]",
+            "result": ["four", "eight"]
+         },
+         {
+            "expression": "foo[*][2]",
+            "result": []
+         },
+         {
+            "expression": "foo[*][2][2]",
+            "result": []
+         }
+     ]
+}
+]
