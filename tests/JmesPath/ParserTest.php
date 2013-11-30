@@ -71,17 +71,6 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         ), $result);
     }
 
-    public function testParsesLbraceWithSimpleExtraction()
-    {
-        $p = new Parser(new Lexer());
-        $result = $p->compile('foo.{bar}');
-        $this->assertSame(array(
-            array("field", "foo"),
-            array("field", "bar"),
-            array("stop")
-        ), $result);
-    }
-
     public function testCreatesWildcardLoop()
     {
         $p = new Parser(new Lexer());
