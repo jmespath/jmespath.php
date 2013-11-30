@@ -21,6 +21,10 @@ class FnReverse extends AbstractFn
 
     protected function execute(array $args)
     {
-        return array_reverse($args[0]);
+        if ($args[0] && !isset($args[0][0])) {
+            return null;
+        }
+
+        return !isset($args[0][0]) ? null : array_reverse($args[0]);
     }
 }

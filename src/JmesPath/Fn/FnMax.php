@@ -26,7 +26,10 @@ class FnMax extends AbstractFn
     {
         $currentMax = null;
         foreach ($args[0] as $element) {
-            if (is_numeric($element) && ($currentMax === null || $element > $currentMax)) {
+            $type = gettype($element);
+            if (($type == 'integer' || $type == 'double') &&
+                ($currentMax === null || $element > $currentMax)
+            ) {
                 $currentMax = $element;
             }
         }

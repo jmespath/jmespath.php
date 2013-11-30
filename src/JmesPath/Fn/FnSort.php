@@ -31,6 +31,10 @@ class FnSort extends AbstractFn
 
     protected function execute(array $args)
     {
+        if ($args[0] && !isset($args[0][0])) {
+            return null;
+        }
+
         sort($args[0], SORT_NATURAL);
 
         return $args[0];

@@ -34,6 +34,8 @@ class FnSubstring extends AbstractFn
 
     protected function execute(array $args)
     {
-        return substr($args[0], $args[1], $args[2]);
+        return !isset($args[2])
+            ? substr($args[0], $args[1])
+            : substr($args[0], $args[1], $args[2]);
     }
 }

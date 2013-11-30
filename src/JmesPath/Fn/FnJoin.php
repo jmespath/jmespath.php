@@ -28,7 +28,7 @@ class FnJoin extends AbstractFn
 
     protected function execute(array $args)
     {
-        return implode(array_shift($args), array_filter($args, function ($arg) {
+        return implode(array_shift($args), array_filter($args[0], function ($arg) {
             return is_string($arg) || is_numeric($arg);
         }));
     }

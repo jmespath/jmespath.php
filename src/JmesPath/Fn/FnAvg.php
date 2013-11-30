@@ -31,7 +31,8 @@ class FnAvg extends AbstractFn
         $sum = $total = 0;
 
         foreach ($args[0] as $v) {
-            if (is_numeric($v)) {
+            $type = gettype($v);
+            if ($type == 'double' || $type == 'integer') {
                 $total++;
                 $sum += $v;
             }

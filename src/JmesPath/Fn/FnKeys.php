@@ -20,12 +20,12 @@ class FnKeys extends AbstractFn
 
     protected function execute(array $args)
     {
-        if (!$args) {
+        if (!$args[0]) {
             return array();
-        } elseif (!isset($args[0][0])) {
+        } elseif (isset($args[0][0])) {
             return null;
         } else {
-            return array_keys($args[0][0]);
+            return array_keys($args[0]);
         }
     }
 }
