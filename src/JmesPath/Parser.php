@@ -397,18 +397,7 @@ class Parser
     private function parse_T_LBRACE(array $token)
     {
         $token = $this->match(array(Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true));
-        $value = $token['value'];
-        $nextToken = $this->peek();
-
-        if ($nextToken['type'] == Lexer::T_RBRACE &&
-            ($token['type'] == Lexer::T_NUMBER || $token['type'] == Lexer::T_IDENTIFIER)
-        ) {
-            // A simple index extraction
-            $this->stack[] = array('field', $value);
-            $this->nextToken();
-        } else {
-            $this->parseMultiBrace($token);
-        }
+        $this->parseMultiBrace($token);
     }
 
     private function parseMultiBracket(array $token)
