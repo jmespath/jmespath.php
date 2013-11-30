@@ -5,6 +5,7 @@ namespace JmesPath\Tests;
 use JmesPath\Parser;
 use JmesPath\Interpreter;
 use JmesPath\Lexer;
+use JmesPath\SyntaxErrorException;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
 {
@@ -18,13 +19,17 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         $parsed = null;
         $failed = false;
-        $parser = new Parser(new Lexer());
-        $opcodes = $parser->compile($expression);
+        $opcodes = array();
         $interpreter = new Interpreter();
+        $parser = new Parser(new Lexer());
+
         try {
+            $opcodes = $parser->compile($expression);
             $parsed = $interpreter->execute($opcodes, $data);
-        } catch (\Exception $e) {
-            $failed = true;
+        } catch (SyntaxErrorException $e) {
+            $failed = 'syntax';
+        } catch (\RuntimeException $e) {
+            $failed = 'runtime';
         }
 
         $failure = "\nphp jp.php {$file} {$suite} {$case}\n"
@@ -36,9 +41,9 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
             . "\n\nopcodes: " . $this->prettyJson($opcodes);
 
         $this->assertEquals(
-            $failed,
             $error,
-            $failure
+            $failed,
+            "{$expression} should have failed with a {$error} error"
         );
 
         $this->assertEquals(
@@ -52,15 +57,11 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
     {
         $cases = array();
 
-        foreach (array(
-            'basic',
-            'indices',
-            'ormatch',
-            'wildcard',
-            'escape',
-            'multiselect',
-            'functions'
-        ) as $name) {
+        $files = array_map(function ($f) {
+            return basename($f, '.json');
+        }, glob(__DIR__ . '/compliance/*.json'));
+
+        foreach ($files as $name) {
             $contents = file_get_contents(__DIR__ . "/compliance/{$name}.json");
             $json = json_decode($contents, true);
             foreach ($json as $suiteNumber => $suite) {
