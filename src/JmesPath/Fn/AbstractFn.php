@@ -26,7 +26,7 @@ abstract class AbstractFn
      * @param array $args Array of function arguments
      *
      * @return mixed Returns the function value to add to the TOS
-     * @throws \InvalidArgumentException if the arguments are invalid
+     * @throws \RuntimeException if the arguments are invalid
      */
     public function __invoke(array $args)
     {
@@ -51,7 +51,7 @@ abstract class AbstractFn
      * @param array $args Arguments to verify
      *
      * @return array Returns the validated (and perhaps coerced) arguments
-     * @throws \InvalidArgumentException If the arguments are not valid
+     * @throws \RuntimeException If the arguments are not valid
      */
     protected function validate(array $args)
     {
@@ -83,7 +83,7 @@ abstract class AbstractFn
      * Asserts that the number of arguments provided satisfies the arity of the
      * function.
      *
-     * @throws \InvalidArgumentException
+     * @throws \RuntimeException
      */
     private function validateArity($fnName, $min, $max, array $args)
     {
@@ -109,7 +109,7 @@ abstract class AbstractFn
         }
 
         if ($s) {
-            throw new \InvalidArgumentException($s);
+            throw new \RuntimeException($s);
         }
     }
 
@@ -117,7 +117,7 @@ abstract class AbstractFn
      * Returns false if the provided argument does not satisfy the rules and the
      * rules' failure attribute is "null".
      *
-     * @throws \InvalidArgumentException if the provided argument does not
+     * @throws \RuntimeException if the provided argument does not
      *   satisfy the rules and the rules' failure attribute is "throw".
      */
     private function validateArg($fnName, $position, array $rule, $arg, array $arity)
@@ -135,12 +135,12 @@ abstract class AbstractFn
             if (!$matches) {
                 if ($rule['failure'] == 'throw') {
                     // Handle failure when it should throw an exception
-                    throw new \InvalidArgumentException(
+                    throw new \RuntimeException(
                         sprintf(
                             'Argument %d of %s must be of type %s. Got %s.',
                             $position + 1,
                             $fnName,
-                            $rule['type'],
+                            json_encode($rule['type']),
                             gettype($arg)
                         )
                     );
