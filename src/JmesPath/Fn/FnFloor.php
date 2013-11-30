@@ -3,10 +3,11 @@
 namespace JmesPath\Fn;
 
 /**
- * floor($number)
+ * Number|null floor(Number $number)
  *
  * Returns the next lowest integer value by rounding down if necessary.
- * This method MUST return null if the provided argument is not a Number.
+ *
+ * This function MUST return null if the provided argument is not a Number.
  */
 class FnFloor extends AbstractFn
 {

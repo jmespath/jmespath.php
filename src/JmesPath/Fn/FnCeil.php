@@ -3,10 +3,11 @@
 namespace JmesPath\Fn;
 
 /**
- * ceil($number)
+ * Number|null ceil(Number $number)
  *
  * Returns the next highest integer value by rounding up if necessary.
- * This method MUST return null if the provided argument is not a Number.
+ *
+ * This function MUST return null if the provided argument is not a Number.
  */
 class FnCeil extends AbstractFn
 {

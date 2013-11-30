@@ -3,10 +3,12 @@
 namespace JmesPath\Fn;
 
 /**
- * type($subject)
+ * String type(mixed $subject)
  *
  * Returns the JavaScript type of the given $subject argument as a string
- * value. The return value MUST be one of the following:
+ * value.
+ *
+ * The return value MUST be one of the following:
  *
  * - Number
  * - String

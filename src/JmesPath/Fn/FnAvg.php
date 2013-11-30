@@ -3,13 +3,14 @@
 namespace JmesPath\Fn;
 
 /**
- * avg($collection)
+ * Number|null avg(Array $arr)
  *
- * Returns the average of the elements in the provided Array or Object of
- * Numbers. If the provided argument, $collection, is not an Array or Object,
- * this function MUST return null. Elements in the collection that are not
- * Numbers are excluded from the averaged result. If no elements are Numbers,
- * then this method MUST return null.
+ * Returns the average of the elements in the provided Array.
+ *
+ * Elements in the Array that are not Numbers are excluded from the averaged
+ * result. If no elements are Numbers, then this function MUST return null.
+ *
+ * If the provided argument, $arr, is not an Array, this function MUST return null.
  */
 class FnAvg extends AbstractFn
 {

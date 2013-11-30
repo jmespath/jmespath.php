@@ -3,13 +3,15 @@
 namespace JmesPath\Fn;
 
 /**
- * max($collection)
+ * Number|null max(Array $collection)
  *
- * Returns the highest found Number in the provided Array or Object argument.
- * If the provided argument is not an Array or Object, this method MUST return
- * null. Any element in the sequence that is not a Number MUST be ignored from
- * the calculated result. If no Numeric values are found, this method MUST
- * return null.
+ * Returns the highest found Number in the provided Array argument. Any element
+ * in the sequence that is not a Number MUST be ignored from the calculated
+ * result.
+ *
+ * If the provided argument is not an Array, this function MUST return null.
+ *
+ * If no Numeric values are found, this function MUST return null.
  */
 class FnMax extends AbstractFn
 {

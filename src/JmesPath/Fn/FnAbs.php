@@ -3,10 +3,12 @@
 namespace JmesPath\Fn;
 
 /**
- * abs($number)
+ * Number|null abs(Number $number)
  *
- * Returns the absolute value of the provided argument. If the provided
- * argument is not a Number, then this method MUST return null.
+ * Returns the absolute value of the provided argument.
+ *
+ * If the provided argument is not a Number, then this function MUST return
+ * null.
  */
 class FnAbs extends AbstractFn
 {

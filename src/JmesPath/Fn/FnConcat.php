@@ -3,10 +3,13 @@
 namespace JmesPath\Fn;
 
 /**
- * concat($string1, $string2 [, $... ])
+ * String|null concat(String|Number $string1, String|Number $string2 [, String|Number $... ])
  *
- * Returns each argument concatenated one after the other. Any argument that
- * is not a String or Number is excluded from the concatenated result.
+ * Returns each argument concatenated one after the other.
+ *
+ * Any argument that is not a String or Number is excluded from the
+ * concatenated result. If no arguments are Strings or Numbers, this function
+ * MUST return null.
  */
 class FnConcat extends AbstractFn
 {

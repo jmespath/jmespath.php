@@ -5,8 +5,9 @@ namespace JmesPath\Fn;
 /**
  * Array|null keys(Object $obj)
  *
- * Returns an Array containing the hash keys of the provided Object. This
- * function MUST return null if the provided argument is not an Object.
+ * Returns an Array containing the hash keys of the provided Object.
+ *
+ * This function MUST return null if the provided argument is not an Object.
  */
 class FnKeys extends AbstractFn
 {

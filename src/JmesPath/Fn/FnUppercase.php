@@ -3,10 +3,11 @@
 namespace JmesPath\Fn;
 
 /**
- * uppercase($subject)
+ * String|null uppercase(String $subject)
  *
- * Returns the provided argument in uppercase characters. If the provided
- * argument is not a String, this function MUST return null.
+ * Returns the provided $subject argument in uppercase characters.
+ *
+ * If the provided argument is not a String, this function MUST return null.
  */
 class FnUppercase extends AbstractFn
 {

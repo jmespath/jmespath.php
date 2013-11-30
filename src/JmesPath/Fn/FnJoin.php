@@ -3,12 +3,15 @@
 namespace JmesPath\Fn;
 
 /**
- * join($glue, $stringsArray)
+ * String|null join(String $glue, Array $stringsArray)
  *
  * Returns all of the elements from the provided $stringsArray Array joined
- * together using the $glue argument as a separator between each. Any
- * element that is not a String or Number is excluded from the joined result.
- * If no arguments are Strings or Numbers, this method MUST return null.
+ * together using the $glue argument as a separator between each.
+ *
+ * Any element that is not a String or Number is excluded from the joined
+ * result.
+ *
+ * This function MUST return null if $stringsArray is not an Array.
  *
  * This function MUST raise an error if the provided $glue argument is not a
  * String.

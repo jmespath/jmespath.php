@@ -3,19 +3,20 @@
 namespace JmesPath\Fn;
 
 /**
- * get($subject [, $... ])
+ * mixed|null get(mixed $subject [, mixed $... ])
  *
- * This method accepts a variable number of arguments, each of which can be of
- * any type. This method returns the first argument that is not falsey, or
- * returns null if all of the provided arguments are falsey.
+ * This function accepts a variable number of arguments, each of which can be
+ * of any type and returns the first argument that is not "falsey".
  *
- * Falsey is defined using the following semantics:
+ * This function MUST return null if all arguments are "falsey".
  *
- * 1. Boolean false
- * 2. Empty string
- * 3. null
- * 4. Empty Array
- * 5. Empty Object (hash)
+ * "Falsey" is defined using the following semantics:
+ *
+ * - Boolean false
+ * - Empty string
+ * - null
+ * - Empty Array
+ * - Empty Object (hash)
  *
  * Note that 0 is NOT a falsey value.
  */

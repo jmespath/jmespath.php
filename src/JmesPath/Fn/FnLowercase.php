@@ -3,10 +3,11 @@
 namespace JmesPath\Fn;
 
 /**
- * lowecase($subject)
+ * String|null lowercase(String $subject)
  *
- * Returns the provided argument in lowercase characters. If the provided
- * argument is not a String, this function MUST return null.
+ * Returns the provided $subject argument in lowercase characters.
+ *
+ * If the provided argument is not a String, this function MUST return null.
  */
 class FnLowercase extends AbstractFn
 {

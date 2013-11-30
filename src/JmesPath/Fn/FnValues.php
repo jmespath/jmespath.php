@@ -3,11 +3,15 @@
 namespace JmesPath\Fn;
 
 /**
- * Array|null values(Object $obj)
+ * Array|null values(Object|Array $obj)
  *
- * Returns the values of the provided Object. If the given argument is an
- * Array, this function transparently returns the given argument. If the given
- * argument is not an Object or Array, this function MUST return null.
+ * Returns the values of the provided Object.
+ *
+ * If the given argument is an Array, this function transparently returns the
+ * given argument.
+ *
+ * This function MUST return null if the given argument is not an Object or
+ * Array.
  */
 class FnValues extends AbstractFn
 {

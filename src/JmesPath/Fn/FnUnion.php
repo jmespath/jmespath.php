@@ -3,14 +3,16 @@
 namespace JmesPath\Fn;
 
 /**
- * union($array1, $array2 [, $... ])
+ * Object|null union(Object $object1, Object $object2 [, Object $... ])
  *
- * Returns an Object containing all of the provided arguments merged into
- * a single Object. If a key collision occurs, the first key value is used.
+ * Returns an Object containing all of the provided arguments merged into a
+ * single Object. If a key collision occurs, the first key value is used.
  *
- * This method requires at least two arguments. If any of the provided
- * arguments are not Objects, the argument is ignored from the resulting merged
- * object. If no Objects are found, this method MUST return null.
+ * This function requires at least two arguments. If any of the provided
+ * arguments are not Objects, those argument are ignored from the resulting
+ * merged object.
+ *
+ * If no Object arguments are found, this function MUST return null.
  */
 class FnUnion extends AbstractFn
 {

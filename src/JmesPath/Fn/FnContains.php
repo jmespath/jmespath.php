@@ -3,21 +3,22 @@
 namespace JmesPath\Fn;
 
 /**
- * contains($subject, $search)
+ * Boolean|null contains(Array|String $subject, String|Number $search)
  *
- * Returns true if the given $subject contains the provided $search
- * String. The provided $search argument can be either a String or Number.
+ * Returns true if the given $subject contains the provided $search String. The
+ * $search argument can be either a String or Number.
  *
- * If $subject is an Array or Object, this function returns true if one of the
- * elements in the Array or Object is equal to the provided $search value.
+ * If $subject is an Array, this function returns true if one of the elements
+ * in the Array is equal to the provided $search value.
  *
- * If the provided $subject is a String, this function returns true if
- * the string contains the provided $search argument. This function returns
- * null if the given $subject argument is not an Array, Object, or
+ * If the provided $subject is a String, this function returns true if the
+ * string contains the provided $search argument.
+ *
+ * This function returns null if the given $subject argument is not an Array or
  * String.
  *
- * This function MUST raise an error if the provided $search argument is not
- * a String or Number.
+ * This function MUST raise an error if the provided $search argument is not a
+ * String or Number.
  */
 class FnContains extends AbstractFn
 {

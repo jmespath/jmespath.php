@@ -3,13 +3,15 @@
 namespace JmesPath\Fn;
 
 /**
- * min($collection)
+ * Number|null min(Array $collection)
  *
- * Returns the lowest found Number in the provided Array or Object argument.
- * If the provided argument is not an Array or Object, this method MUST return
- * null. Any element in the sequence that is not a Number MUST be ignored from
- * the calculated result. If no Numeric values are found, this method MUST
- * return null.
+ * Returns the lowest found Number in the provided Array argument.
+ *
+ * Any element in the sequence that is not a Number MUST be ignored from the
+ * calculated result. If no Numeric values are found, this function MUST return
+ * null.
+ *
+ * This function MUST return null if the provided argument is not an Array.
  */
 class FnMin extends AbstractFn
 {

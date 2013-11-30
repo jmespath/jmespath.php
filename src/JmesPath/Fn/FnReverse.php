@@ -3,11 +3,12 @@
 namespace JmesPath\Fn;
 
 /**
- * reverse($list)
+ * Array|null reverse(Array $list)
  *
- * This function accepts an Array $list argument and returns the the
- * elements in reverse order. If the provided $list is not an array, this
- * function MUST return null.
+ * This function accepts an Array $list argument and returns the the elements
+ * in reverse order.
+ *
+ * This function MUST return null if the provided argument is not an Array.
  */
 class FnReverse extends AbstractFn
 {
