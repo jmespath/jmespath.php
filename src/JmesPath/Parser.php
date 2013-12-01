@@ -22,15 +22,6 @@ class Parser
     /** @var array Stack of marked tokens for speculative parsing */
     private $markedTokens = array();
 
-    private static $operators = array(
-        '='  => 'eq',
-        '!=' => 'not',
-        '>'  => 'gt',
-        '>=' => 'gte',
-        '<'  => 'lt',
-        '<=' => 'lte'
-    );
-
     /** @var array First acceptable token */
     private static $firstTokens = array(
         Lexer::T_IDENTIFIER => true,
@@ -77,11 +68,7 @@ class Parser
 
         // Ensure that the first token is valid
         if (!isset(self::$firstTokens[$token['type']])) {
-            throw new SyntaxErrorException(
-                self::$firstTokens,
-                $token,
-                $this->lexer->getInput()
-            );
+            $this->throwSyntax(self::$firstTokens);
         }
 
         while ($token['type'] !== Lexer::T_EOF) {
@@ -105,6 +92,22 @@ class Parser
     }
 
     /**
+     * Throw a syntax error exception for the current token
+     *
+     * @param $messageOrTypes
+     *
+     * @throws SyntaxErrorException
+     */
+    private function throwSyntax($messageOrTypes)
+    {
+        throw new SyntaxErrorException(
+            $messageOrTypes,
+            $this->tokens->current(),
+            $this->lexer->getInput()
+        );
+    }
+
+    /**
      * Match the next token against one or more types
      *
      * @param array $types Type to match
@@ -119,7 +122,7 @@ class Parser
             return $token;
         }
 
-        throw new SyntaxErrorException($types, $token, $this->lexer->getInput());
+        $this->throwSyntax($types);
     }
 
     /**
@@ -147,11 +150,7 @@ class Parser
     {
         $method = 'parse_' . $token['type'];
         if (!isset($this->methods[$method])) {
-            throw new SyntaxErrorException(
-                'No matching opcode for ' . $token['type'],
-                $token,
-                $this->lexer->getInput()
-            );
+            $this->throwSyntax('No matching opcode for ' . $token['type']);
         }
 
         return $this->{$method}($token) ?: $this->nextToken();
@@ -163,10 +162,7 @@ class Parser
      */
     private function markToken()
     {
-        $this->markedTokens[] = array(
-            $this->tokens->key(),
-            $this->stack
-        );
+        $this->markedTokens[] = array($this->tokens->key(), $this->stack);
     }
 
     /**
@@ -194,15 +190,7 @@ class Parser
 
     private function parse_T_NUMBER(array $token)
     {
-        $index = $this->tokens->key();
-        $previous = $index > 0 ? $this->tokens[$index - 1] : null;
-
-        if ($previous && $previous['type'] == Lexer::T_DOT) {
-            // Account for "foo.-1"
-            $this->stack[] = array('field', $token['value']);
-        } else {
-            $this->stack[] = array('index', (int) $token['value']);
-        }
+        $this->stack[] = array('index', (int) $token['value']);
     }
 
     private function parse_T_DOT(array $token)
@@ -215,7 +203,17 @@ class Parser
             Lexer::T_LBRACKET => true
         );
 
-        return $this->match($expectedAfterDot);
+        $next = $this->match($expectedAfterDot);
+        if ($next['type'] == Lexer::T_NUMBER) {
+            // Handle cases like foo.-1
+            $this->parse_T_IDENTIFIER($next);
+        } elseif ($next['type'] == Lexer::T_LBRACKET) {
+            return $this->parse_T_LBRACKET($next);
+        } elseif ($next['type'] == Lexer::T_LBRACE) {
+            $this->parse_T_LBRACE($next);
+        } else {
+            return $next;
+        }
     }
 
     /**
@@ -269,6 +267,8 @@ class Parser
         $this->stack[] = array('each', null, $type);
         $index = count($this->stack) - 1;
         $token = $this->consumeWildcard($token);
+        var_export($token);
+        die();
         $this->stack[$index][1] = count($this->stack) + 1;
         $this->stack[] = array('jump', $index);
 
@@ -293,7 +293,7 @@ class Parser
             do {
                 switch ($token['type']) {
                     case Lexer::T_EOF:
-                        throw new SyntaxErrorException('Expected T_RPARENS', $token, $this->lexer->getInput());
+                        $this->throwSyntax('Expected T_RPARENS');
                     case Lexer::T_COMMA:
                         $found++;
                         $inNode = false;
@@ -380,17 +380,14 @@ class Parser
             }
         }
 
-        $speculateToken = $token;
         if ($this->speculateMultiBracket($token)) {
             return null;
         } elseif ($token = $this->speculateFilter($token)) {
+//            var_export($token);
+  //          die();
             return $token;
         } else {
-            throw new SyntaxErrorException(
-                'Expression is not a multi-expression or a filter expression. No viable rule found',
-                $speculateToken,
-                $this->lexer->getInput()
-            );
+            $this->throwSyntax('Expression is not a multi-expression or a filter expression. No viable rule found');
         }
     }
 
@@ -558,6 +555,15 @@ class Parser
      */
     private function parseFullExpression(array $token)
     {
+        static $operators = array(
+            '='  => 'eq',
+            '!=' => 'not',
+            '>'  => 'gt',
+            '>=' => 'gte',
+            '<'  => 'lt',
+            '<=' => 'lte'
+        );
+
         // Parse the left hand part of the expression until a T_OPERATOR
         $operatorToken = $this->parseFilterExpression($token, array(Lexer::T_OPERATOR => true));
 
@@ -568,10 +574,10 @@ class Parser
         ));
 
         // Add the operator opcode and track the jump if false index
-        if (isset(self::$operators[$operatorToken['value']])) {
-            $this->stack[] = array(self::$operators[$operatorToken['value']]);
+        if (isset($operators[$operatorToken['value']])) {
+            $this->stack[] = array($operators[$operatorToken['value']]);
         } else {
-            throw new SyntaxErrorException('Invalid operator', $operatorToken, $this->lexer->getInput());
+            $this->throwSyntax('Invalid operator');
         }
 
         if ($afterExpression['type'] == Lexer::T_OR) {
@@ -606,7 +612,7 @@ class Parser
                     $token = $this->nextToken();
                     break;
                 case Lexer::T_EOF:
-                    throw new SyntaxErrorException('Invalid expression', $token, $this->lexer->getInput());
+                    $this->throwSyntax('Invalid expression');
                 case Lexer::T_AT:
                     $token = $this->nextToken();
                     $this->stack[] = array('push_current');
