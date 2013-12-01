@@ -81,17 +81,6 @@ class Parser
     }
 
     /**
-     * @return array Returns the next token after advancing
-     */
-    private function nextToken()
-    {
-        static $nullToken = array('type' => Lexer::T_EOF);
-        $this->tokens->next();
-
-        return $this->tokens->current() ?: $nullToken;
-    }
-
-    /**
      * Throw a syntax error exception for the current token
      *
      * @param $messageOrTypes
@@ -105,6 +94,17 @@ class Parser
             $this->tokens->current(),
             $this->lexer->getInput()
         );
+    }
+
+    /**
+     * @return array Returns the next token after advancing
+     */
+    private function nextToken()
+    {
+        static $nullToken = array('type' => Lexer::T_EOF);
+        $this->tokens->next();
+
+        return $this->tokens->current() ?: $nullToken;
     }
 
     /**
