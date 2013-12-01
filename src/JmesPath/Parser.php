@@ -409,8 +409,6 @@ class Parser
         if ($this->speculateMultiBracket($token)) {
             return null;
         } elseif ($token = $this->speculateFilter($token)) {
-//            var_export($token);
-  //          die();
             return $token;
         } else {
             $this->throwSyntax('Expression is not a multi-expression or a filter expression. No viable rule found');
