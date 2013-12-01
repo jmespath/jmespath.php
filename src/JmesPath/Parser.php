@@ -186,11 +186,11 @@ class Parser
      */
     private function resetToken($success)
     {
-        list($position, $stack) = array_pop($this->markedTokens);
+        $result = array_pop($this->markedTokens);
 
         if (!$success) {
-            $this->tokens->seek($position);
-            $this->stack = $stack;
+            $this->tokens->seek($result[0]);
+            $this->stack = $result[1];
         }
     }
 
