@@ -108,21 +108,49 @@ class Parser
     }
 
     /**
-     * Match the next token against one or more types
+     * Match the next token against one or more types and advance the lexer
      *
      * @param array $types Type to match
-     * @return array Returns a token
+     *
+     * @return array Returns the next token
      * @throws SyntaxErrorException
      */
     private function match(array $types)
     {
-        $token = $this->nextToken();
+        $this->validate($types, $token = $this->nextToken());
 
-        if (isset($types[$token['type']])) {
-            return $token;
+        return $token;
+    }
+
+    /**
+     * Match the peek token against one or more types
+     *
+     * @param array $types Type to match
+     *
+     * @return array Returns the next token
+     * @throws SyntaxErrorException
+     */
+    private function matchPeek(array $types)
+    {
+        $this->validate($types, $token = $this->peek());
+
+        return $token;
+    }
+
+    /**
+     * Match a token against one or more types
+     *
+     * @param array $types Type(s) to match
+     * @param array $token Token to match
+     *
+     * @return array Returns a token
+     * @throws SyntaxErrorException
+     */
+    private function validate(array $types, array $token)
+    {
+        if (!isset($types[$token['type']])) {
+            $this->throwSyntax($types);
         }
-
-        $this->throwSyntax($types);
     }
 
     /**
@@ -137,23 +165,6 @@ class Parser
         return isset($this->tokens[$nextPos])
             ? $this->tokens[$nextPos]
             : array('type' => Lexer::T_EOF, 'value' => '');
-    }
-
-    /**
-     * Call an validate a parse instruction
-     *
-     * @param array $token Token to parse
-     * @return array Returns the next token
-     * @throws SyntaxErrorException When an invalid token is encountered
-     */
-    private function parseInstruction(array $token)
-    {
-        $method = 'parse_' . $token['type'];
-        if (!isset($this->methods[$method])) {
-            $this->throwSyntax('No matching opcode for ' . $token['type']);
-        }
-
-        return $this->{$method}($token) ?: $this->nextToken();
     }
 
     /**
@@ -181,6 +192,23 @@ class Parser
             $this->tokens->seek($position);
             $this->stack = $stack;
         }
+    }
+
+    /**
+     * Call an validate a parse instruction
+     *
+     * @param array $token Token to parse
+     * @return array Returns the next token
+     * @throws SyntaxErrorException When an invalid token is encountered
+     */
+    private function parseInstruction(array $token)
+    {
+        $method = 'parse_' . $token['type'];
+        if (!isset($this->methods[$method])) {
+            $this->throwSyntax('No matching opcode for ' . $token['type']);
+        }
+
+        return $this->{$method}($token) ?: $this->nextToken();
     }
 
     private function parse_T_IDENTIFIER(array $token)
@@ -267,8 +295,6 @@ class Parser
         $this->stack[] = array('each', null, $type);
         $index = count($this->stack) - 1;
         $token = $this->consumeWildcard($token);
-        var_export($token);
-        die();
         $this->stack[$index][1] = count($this->stack) + 1;
         $this->stack[] = array('jump', $index);
 
