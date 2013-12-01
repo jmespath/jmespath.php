@@ -23,7 +23,7 @@ class Parser
     private $markedTokens = array();
 
     /** @var array First acceptable token */
-    private static $firstTokens = array(
+    private static $exprTokens = array(
         Lexer::T_IDENTIFIER => true,
         Lexer::T_NUMBER => true,
         Lexer::T_STAR => true,
@@ -67,8 +67,8 @@ class Parser
         $token = $this->tokens->current();
 
         // Ensure that the first token is valid
-        if (!isset(self::$firstTokens[$token['type']])) {
-            $this->throwSyntax(self::$firstTokens);
+        if (!isset(self::$exprTokens[$token['type']])) {
+            $this->throwSyntax(self::$exprTokens);
         }
 
         while ($token['type'] !== Lexer::T_EOF) {
@@ -117,7 +117,10 @@ class Parser
      */
     private function match(array $types)
     {
-        $this->validate($types, $token = $this->nextToken());
+        $token = $this->nextToken();
+        if (!isset($types[$token['type']])) {
+            $this->throwSyntax($types);
+        }
 
         return $token;
     }
@@ -132,25 +135,13 @@ class Parser
      */
     private function matchPeek(array $types)
     {
-        $this->validate($types, $token = $this->peek());
-
-        return $token;
-    }
-
-    /**
-     * Match a token against one or more types
-     *
-     * @param array $types Type(s) to match
-     * @param array $token Token to match
-     *
-     * @return array Returns a token
-     * @throws SyntaxErrorException
-     */
-    private function validate(array $types, array $token)
-    {
+        $token = $this->peek();
         if (!isset($types[$token['type']])) {
+            $this->nextToken();
             $this->throwSyntax($types);
         }
+
+        return $token;
     }
 
     /**
@@ -213,34 +204,59 @@ class Parser
 
     private function parse_T_IDENTIFIER(array $token)
     {
+        $this->matchPeek(array(
+            Lexer::T_LBRACE   => true, // a{foo: 0}
+            Lexer::T_LBRACKET => true, // a[0]
+            Lexer::T_RBRACE   => true, // {a: b}
+            Lexer::T_RBRACKET => true, // [a] / foo[a = substring(@, 0, 1)]
+            Lexer::T_COMMA    => true, // [a, b]
+            Lexer::T_EOF      => true, // foo,
+            Lexer::T_DOT      => true, // foo.bar
+            Lexer::T_OR       => true, // foo || bar
+            Lexer::T_OPERATOR => true, // foo[a = "a"]
+            Lexer::T_RPARENS  => true, // foo[length(abc)]
+        ));
+
         $this->stack[] = array('field', $token['value']);
     }
 
     private function parse_T_NUMBER(array $token)
     {
+        $this->matchPeek(array(
+            Lexer::T_RBRACE   => true, // {a: 1}
+            Lexer::T_RBRACKET => true, // [1] / foo[1 < 2]
+            Lexer::T_COMMA    => true, // [1, 2]
+            Lexer::T_EOF      => true, // foo.-1
+            Lexer::T_OR       => true, // foo.-1 || bar
+            Lexer::T_OPERATOR => true, // foo[1 < 2]
+            Lexer::T_RPARENS  => true, // foo[substring(@, 0, 1)]
+        ));
+
         $this->stack[] = array('index', (int) $token['value']);
     }
 
     private function parse_T_DOT(array $token)
     {
-        static $expectedAfterDot = array(
-            Lexer::T_IDENTIFIER => true,
-            Lexer::T_NUMBER => true,
-            Lexer::T_STAR => true,
-            Lexer::T_LBRACE => true,
-            Lexer::T_LBRACKET => true
-        );
+        $next = $this->matchPeek(array(
+            Lexer::T_IDENTIFIER => true, // foo.bar
+            Lexer::T_NUMBER     => true, // foo.-1
+            Lexer::T_STAR       => true, // foo.*
+            Lexer::T_LBRACE     => true, // foo[1]
+            Lexer::T_LBRACKET   => true, // foo{a: 0}
+        ));
 
-        $next = $this->match($expectedAfterDot);
-        if ($next['type'] == Lexer::T_NUMBER) {
-            // Handle cases like foo.-1
-            $this->parse_T_IDENTIFIER($next);
-        } elseif ($next['type'] == Lexer::T_LBRACKET) {
-            return $this->parse_T_LBRACKET($next);
-        } elseif ($next['type'] == Lexer::T_LBRACE) {
-            $this->parse_T_LBRACE($next);
-        } else {
-            return $next;
+        switch ($next['type']) {
+            case Lexer::T_NUMBER:
+                // Handle cases like foo.-1
+                $this->parse_T_IDENTIFIER($this->nextToken());
+                break;
+            case Lexer::T_LBRACKET:
+                // Parsing only identifiers from an Object
+                $this->parse_T_LBRACKET($this->nextToken());
+                break;
+            case Lexer::T_LBRACE:
+                // Parsing only identifiers from an Object
+                $this->parse_T_LBRACE($this->nextToken());
         }
     }
 
@@ -251,7 +267,7 @@ class Parser
     private function parse_T_OR(array $token)
     {
         // Parse until the next terminal condition
-        $token = $this->match(self::$firstTokens);
+        $token = $this->match(self::$exprTokens);
         $this->stack[] = array('is_null');
         $this->stack[] = array('jump_if_false', null);
         $index = count($this->stack) - 1;
@@ -434,7 +450,7 @@ class Parser
                 $token = $this->parseInstruction($token);
             } else {
                 $this->storeMultiBranchKey(null);
-                $next = $this->match(self::$firstTokens);
+                $next = $this->match(self::$exprTokens);
                 if ($next['type'] != Lexer::T_FUNCTION) {
                     $this->stack[] = array('push_current');
                 }
@@ -450,7 +466,7 @@ class Parser
         $index = $this->prepareMultiBranch();
         $currentKey = $token['value'];
         $this->match(array(Lexer::T_COLON => true));
-        $token = $this->match(self::$firstTokens);
+        $token = $this->match(self::$exprTokens);
 
         if ($token['type'] != Lexer::T_FUNCTION) {
             $this->stack[] = array('push_current');
@@ -465,7 +481,7 @@ class Parser
                 $this->match(array(Lexer::T_COLON => true));
                 $currentKey = $token['value'];
                 // Parse the next instruction and handle TOS if not a function
-                $next = $this->match(self::$firstTokens);
+                $next = $this->match(self::$exprTokens);
                 if ($next['type'] != Lexer::T_FUNCTION) {
                     $this->stack[] = array('push_current');
                 }
@@ -605,7 +621,7 @@ class Parser
         }
 
         if ($afterExpression['type'] == Lexer::T_OR) {
-            $token = $this->match(self::$firstTokens);
+            $token = $this->match(self::$exprTokens);
             $this->stack[] = array('is_falsey');
             $this->stack[] = array('jump_if_false', null);
             $index = count($this->stack) - 1;
