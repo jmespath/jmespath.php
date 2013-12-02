@@ -471,6 +471,7 @@ class Parser
      * certain key types.
      *
      * @param string $type Valid key types (Array or Object)
+     * @throws SyntaxErrorException
      */
     private function parseMultiBracketElement($type)
     {
@@ -603,6 +604,7 @@ class Parser
      * @param array $breakOn Stops parsing when one of these keys are hit
      *
      * @return array Returns the next peek token
+     * @throws SyntaxErrorException
      */
     private function parseFunctionArgumentOrLrExpression(array $breakOn)
     {
