@@ -133,6 +133,20 @@
     ]
   },
   {
+    "comment": "Flatten syntax",
+    "given": {},
+    "cases": [
+      {
+        "expression": "[]",
+        "result": []
+      },
+      {
+        "expression": "foo.[]",
+        "error": "syntax"
+      }
+    ]
+  },
+  {
     "comment": "Simple bracket syntax",
     "given": {},
     "cases": [
@@ -192,6 +206,16 @@
       {
         "comment": "Multi-select of a list with trailing comma",
         "expression": "foo[0, ]",
+        "error": "syntax"
+      },
+      {
+        "comment": "Multi-select of a list with trailing comma and no close",
+        "expression": "foo[0,",
+        "error": "syntax"
+      },
+      {
+        "comment": "Multi-select of a list with trailing comma and no close",
+        "expression": "foo.[a",
         "error": "syntax"
       },
       {
@@ -266,13 +290,33 @@
         "error": "syntax"
       },
       {
+        "comment": "No closing token",
+        "expression": "a{",
+        "error": "syntax"
+      },
+      {
         "comment": "Not a key value pair",
         "expression": "a{foo}",
         "error": "syntax"
       },
       {
+        "comment": "Missing value and closing character",
+        "expression": "a{foo:",
+        "error": "syntax"
+      },
+      {
+        "comment": "Missing closing character",
+        "expression": "a{foo: 0",
+        "error": "syntax"
+      },
+      {
         "comment": "Missing value",
         "expression": "a{foo:}",
+        "error": "syntax"
+      },
+      {
+        "comment": "Trailing comma and no closing character",
+        "expression": "a{foo: 0, ",
         "error": "syntax"
       },
       {

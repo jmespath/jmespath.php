@@ -97,4 +97,10 @@ class ParserTest extends \PHPUnit_Framework_TestCase
             17 => array('stop')
         ), $result);
     }
+
+    public function testHandlesEmptyExpressions()
+    {
+        $p = new Parser(new Lexer());
+        $this->assertEquals(array(), $p->compile(''));
+    }
 }

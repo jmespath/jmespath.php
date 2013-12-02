@@ -73,7 +73,7 @@ class Parser
 
         // Ensure that the first token is valid
         if (!isset(self::$exprTokens[$token['type']])) {
-            $this->throwSyntax(self::$exprTokens);
+            throw $this->syntax(self::$exprTokens);
         }
 
         do {
@@ -87,20 +87,17 @@ class Parser
     }
 
     /**
-     * Throw a syntax error exception for the current token
+     * Returns a SyntaxErrorException for the current token
      *
      * @param $messageOrTypes
      *
-     * @throws SyntaxErrorException
+     * @return SyntaxErrorException
      */
-    private function throwSyntax($messageOrTypes)
+    private function syntax($messageOrTypes)
     {
         $current = $this->tokens->current();
-        if (!$current) {
-            $current = $this->tokens[count($this->tokens) - 1];
-        }
 
-        throw new SyntaxErrorException($messageOrTypes, $current, $this->lexer->getInput());
+        return new SyntaxErrorException($messageOrTypes, $current, $this->lexer->getInput());
     }
 
     /**
@@ -126,7 +123,7 @@ class Parser
     {
         $token = $this->nextToken();
         if (!isset($types[$token['type']])) {
-            $this->throwSyntax($types);
+            throw $this->syntax($types);
         }
 
         return $token;
@@ -145,7 +142,7 @@ class Parser
         $token = $this->peek();
         if (!isset($types[$token['type']])) {
             $this->nextToken();
-            $this->throwSyntax($types);
+            throw $this->syntax($types);
         }
 
         return $token;
@@ -222,7 +219,7 @@ class Parser
     {
         $method = 'parse_' . $token['type'];
         if (!isset($this->methods[$method])) {
-            $this->throwSyntax('No matching opcode for ' . $token['type']);
+            throw $this->syntax('No matching opcode for ' . $token['type']);
         }
 
         $this->{$method}($token);
@@ -365,8 +362,6 @@ class Parser
             $token = $this->nextToken();
             if ($token['type'] == Lexer::T_COMMA) {
                 $this->parseKeyValuePair($fromType);
-            } elseif ($token['type'] == Lexer::T_EOF) {
-                $this->throwSyntax('Unexpected T_EOF');
             }
             $peek = $this->peek();
         }
@@ -380,6 +375,7 @@ class Parser
      * certain value types.
      *
      * @param string $type Valid types for values (Array or Object)
+     * @throws SyntaxErrorException
      */
     private function parseKeyValuePair($type)
     {
@@ -407,7 +403,7 @@ class Parser
         while ($peek['type'] !== Lexer::T_COMMA && $peek['type'] != Lexer::T_RBRACE) {
             $token = $this->nextToken();
             if ($token['type'] == Lexer::T_EOF) {
-                $this->throwSyntax('Unexpected T_EOF');
+                throw $this->syntax('Unexpected T_EOF');
             }
             $this->parseInstruction($token);
             $peek = $this->peek();
@@ -433,7 +429,7 @@ class Parser
         // Don't JmesForm the data into a split array when a merge occurs
         if ($peek['type'] == Lexer::T_RBRACKET) {
             if ($fromType == 'Object') {
-                $this->throwSyntax('Cannot merge from an object');
+                throw $this->syntax('Cannot merge from an object');
             }
             $token = $this->nextToken();
             $this->stack[] = array('merge');
@@ -448,12 +444,12 @@ class Parser
         ) {
             if ($peek['type'] == Lexer::T_NUMBER) {
                 if ($fromType == 'Object') {
-                    $this->throwSyntax('Cannot access Object keys using Number indices');
+                    throw $this->syntax('Cannot access Object keys using Number indices');
                 }
                 $this->parse_T_NUMBER($this->nextToken());
                 $this->nextToken();
             } elseif ($fromType == 'Object') {
-                $this->throwSyntax('Invalid Object wildcard syntax');
+                throw $this->syntax('Invalid Object wildcard syntax');
             } else {
                 $token = $this->nextToken();
                 $this->nextToken();
@@ -466,7 +462,7 @@ class Parser
         if (!$this->speculateMultiBracket($fromType) &&
             !$this->speculateFilter($fromType)
         ) {
-            $this->throwSyntax('Expected a multi-expression or a filter expression');
+            throw $this->syntax('Expected a multi-expression or a filter expression');
         }
     }
 
@@ -498,7 +494,7 @@ class Parser
         while ($peek['type'] != Lexer::T_COMMA && $peek['type'] != Lexer::T_RBRACKET) {
             $token = $this->nextToken();
             if ($token['type'] == Lexer::T_EOF) {
-                $this->throwSyntax('Unexpected T_EOF');
+                throw $this->syntax('Unexpected T_EOF');
             }
             $this->parseInstruction($token);
             $peek = $this->peek();
@@ -630,7 +626,7 @@ class Parser
         while (!isset($breakOn[$peek['type']])) {
             $token = $this->nextToken();
             if ($token['type'] == Lexer::T_EOF) {
-                $this->throwSyntax('Unexpected T_EOF');
+                throw $this->syntax('Unexpected T_EOF');
             }
             if ($inNode) {
                 $this->parseInstruction($token);
@@ -713,7 +709,7 @@ class Parser
         if (isset($operators[$operatorToken['value']])) {
             $this->stack[] = array($operators[$operatorToken['value']]);
         } else {
-            $this->throwSyntax('Invalid operator');
+            throw $this->syntax('Invalid operator');
         }
 
         $peek = $this->peek();
