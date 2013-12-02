@@ -3,7 +3,7 @@
 namespace JmesPath;
 
 /**
- * Assembler that parses tokens from a lexer into opcodes
+ * LL(k) recursive descent parser with backtracking used to assemble bytecode
  */
 class Parser
 {
@@ -29,7 +29,6 @@ class Parser
         Lexer::T_STAR => true,
         Lexer::T_LBRACKET => true,
         Lexer::T_LBRACE => true,
-        Lexer::T_EOF => true,
         Lexer::T_FUNCTION => true
     );
 
@@ -61,6 +60,10 @@ class Parser
      */
     public function compile($path)
     {
+        if (!$path) {
+            return array();
+        }
+
         $this->stack = $this->markedTokens = array();
         $this->lexer->setInput($path);
         $this->tokens = $this->lexer->getIterator();
@@ -71,9 +74,10 @@ class Parser
             $this->throwSyntax(self::$exprTokens);
         }
 
-        while ($token['type'] !== Lexer::T_EOF) {
-            $token = $this->parseInstruction($token);
-        }
+        do {
+            $this->parseInstruction($token);
+            $token = $this->nextToken();
+        } while ($token['type'] !== Lexer::T_EOF);
 
         $this->stack[] = array('stop');
 
@@ -89,11 +93,12 @@ class Parser
      */
     private function throwSyntax($messageOrTypes)
     {
-        throw new SyntaxErrorException(
-            $messageOrTypes,
-            $this->tokens->current(),
-            $this->lexer->getInput()
-        );
+        $current = $this->tokens->current();
+        if (!$current) {
+            $current = $this->tokens[count($this->tokens) - 1];
+        }
+
+        throw new SyntaxErrorException($messageOrTypes, $current, $this->lexer->getInput());
     }
 
     /**
@@ -147,11 +152,13 @@ class Parser
     /**
      * Grab the next lexical token without consuming it
      *
+     * @param int $lookAhead Number of token to lookahead
+     *
      * @return array
      */
-    private function peek()
+    private function peek($lookAhead = 1)
     {
-        $nextPos = $this->tokens->key() + 1;
+        $nextPos = $this->tokens->key() + $lookAhead;
 
         return isset($this->tokens[$nextPos])
             ? $this->tokens[$nextPos]
@@ -199,7 +206,7 @@ class Parser
             $this->throwSyntax('No matching opcode for ' . $token['type']);
         }
 
-        return $this->{$method}($token) ?: $this->nextToken();
+        $this->{$method}($token);
     }
 
     private function parse_T_IDENTIFIER(array $token)
@@ -225,11 +232,11 @@ class Parser
         $this->matchPeek(array(
             Lexer::T_RBRACE   => true, // {a: 1}
             Lexer::T_RBRACKET => true, // [1] / foo[1 < 2]
+            Lexer::T_RPARENS  => true, // foo[substring(@, 0, 1)]
             Lexer::T_COMMA    => true, // [1, 2]
-            Lexer::T_EOF      => true, // foo.-1
             Lexer::T_OR       => true, // foo.-1 || bar
             Lexer::T_OPERATOR => true, // foo[1 < 2]
-            Lexer::T_RPARENS  => true, // foo[substring(@, 0, 1)]
+            Lexer::T_EOF      => true, // foo.-1
         ));
 
         $this->stack[] = array('index', (int) $token['value']);
@@ -266,8 +273,8 @@ class Parser
      */
     private function parse_T_OR(array $token)
     {
+        $peek = $this->matchPeek(self::$exprTokens);
         // Parse until the next terminal condition
-        $token = $this->match(self::$exprTokens);
         $this->stack[] = array('is_null');
         $this->stack[] = array('jump_if_false', null);
         $index = count($this->stack) - 1;
@@ -276,17 +283,16 @@ class Parser
         $this->stack[] = array('pop');
 
         // Push the current node onto the stack if needed
-        if ($token['type'] != Lexer::T_FUNCTION) {
+        if ($peek['type'] != Lexer::T_FUNCTION) {
             $this->stack[] = array('push_current');
         }
 
-        do {
-            $token = $this->parseInstruction($token);
-        } while (!isset(self::$scope[$token['type']]));
+        while (!isset(self::$scope[$peek['type']])) {
+            $this->parseInstruction($this->nextToken());
+            $peek = $this->peek();
+        }
 
         $this->stack[$index][1] = count($this->stack);
-
-        return $token;
     }
 
     /**
@@ -295,26 +301,219 @@ class Parser
      */
     private function parse_T_STAR(array $token, $type = 'object')
     {
-        static $afterStar = array(
-            Lexer::T_DOT => true,
-            Lexer::T_EOF => true,
-            Lexer::T_LBRACKET => true,
-            Lexer::T_RBRACKET => true,
-            Lexer::T_LBRACE => true,
-            Lexer::T_RBRACE => true,
-            Lexer::T_OR => true,
-            Lexer::T_COMMA => true
-        );
+        $peek = $this->matchPeek(array(
+            Lexer::T_DOT      => true, // *.bar
+            Lexer::T_EOF      => true, // foo.*
+            Lexer::T_LBRACKET => true, // foo.*[0]
+            Lexer::T_RBRACKET => true, // foo.[a, b.*]
+            Lexer::T_LBRACE   => true, // foo.*{a: 0, b: 1}
+            Lexer::T_RBRACE   => true, // foo.{a: a, b: b.*}
+            Lexer::T_OR       => true, // foo.* || foo
+            Lexer::T_COMMA    => true, // foo.[a.*, b]
+        ));
 
         // Create a bytecode loop
-        $token = $this->match($afterStar);
         $this->stack[] = array('each', null, $type);
         $index = count($this->stack) - 1;
-        $token = $this->consumeWildcard($token);
+        $this->consumeWildcard($peek);
         $this->stack[$index][1] = count($this->stack) + 1;
         $this->stack[] = array('jump', $index);
+    }
 
-        return $token;
+    /**
+     * Consume wildcard tokens until a scope change
+     *
+     * @param array $peek
+     */
+    private function consumeWildcard(array $peek)
+    {
+        $this->stack[] = array('mark_current');
+
+        while (!isset(self::$scope[$peek['type']])) {
+            $token = $this->nextToken();
+            $peek = $this->peek();
+            // Don't continue the original project in a subprojection for "[]"
+            if ($token['type'] == Lexer::T_LBRACKET && $peek['type'] == Lexer::T_RBRACKET) {
+                $this->tokens->seek($this->tokens->key() - 1);
+                break;
+            }
+            $this->parseInstruction($token);
+            $peek = $this->peek();
+        }
+
+        $this->stack[] = array('pop_current');
+    }
+
+    private function parse_T_LBRACE(array $token)
+    {
+        $index = $this->prepareMultiBranch();
+        $this->parseKeyValuePair();
+
+        $peek = $this->peek();
+        while ($peek['type'] != Lexer::T_RBRACE) {
+            $token = $this->nextToken();
+            if ($token['type'] == Lexer::T_COMMA) {
+                $this->parseKeyValuePair();
+            }
+            $peek = $this->peek();
+        }
+
+        $this->match(array(Lexer::T_RBRACE => true));
+        $this->finishMultiBranch($index);
+    }
+
+    private function parseKeyValuePair()
+    {
+        $keyToken = $this->match(array(Lexer::T_IDENTIFIER => true));
+        $this->match(array(Lexer::T_COLON => true));
+
+        // Requires at least one value that can start an expression
+        $token = $this->match(self::$exprTokens);
+        // Account for functions that don't need a current node pushed
+        if ($token['type'] != Lexer::T_FUNCTION) {
+            $this->stack[] = array('push_current');
+        }
+        $this->parseInstruction($token);
+
+        // Parse the rest of the expression until a scope changing token
+        $peek = $this->peek();
+        while ($peek['type'] !== Lexer::T_COMMA && $peek['type'] != Lexer::T_RBRACE) {
+            $this->parseInstruction($this->nextToken());
+            $peek = $this->peek();
+        }
+
+        $this->storeMultiBranchKey($keyToken['value']);
+    }
+
+    private function parse_T_LBRACKET(array $token)
+    {
+        $peek = $this->matchPeek(array(
+            Lexer::T_IDENTIFIER => true, // [a, b]
+            Lexer::T_NUMBER     => true, // [0]
+            Lexer::T_STAR       => true, // [*]
+            Lexer::T_RBRACKET   => true, // foo[]
+            Lexer::T_PRIMITIVE  => true, // foo[true, bar]
+            Lexer::T_FUNCTION   => true, // foo[count(@)]
+            Lexer::T_AT         => true  // foo[@, 2]
+        ));
+
+        // Don't JmesForm the data into a split array when a merge occurs
+        if ($peek['type'] == Lexer::T_RBRACKET) {
+            $token = $this->nextToken();
+            $this->stack[] = array('merge');
+            $this->parse_T_STAR($token, 'array');
+            return;
+        }
+
+        // Parse simple expressions like [10] or [*]
+        $nextTwo = $this->peek(2);
+        if ($nextTwo['type'] == Lexer::T_RBRACKET &&
+            ($peek['type'] == Lexer::T_NUMBER || $peek['type'] == Lexer::T_STAR)
+        ) {
+            if ($peek['type'] == Lexer::T_NUMBER) {
+                $this->parse_T_NUMBER($this->nextToken());
+                $this->nextToken();
+            } else {
+                $token = $this->nextToken();
+                $this->nextToken();
+                $this->parse_T_STAR($token, 'array');
+            }
+            return;
+        }
+
+        if (!$this->speculateMultiBracket($token) &&
+            !$this->speculateFilter($token)
+        ) {
+            $this->throwSyntax('Expected a multi-expression or a filter expression');
+        }
+    }
+
+    private function parseMultiBracketElement()
+    {
+        $token = $this->match(self::$exprTokens);
+
+        // Push the current node onto the stack if the token is not a function
+        if ($token['type'] != Lexer::T_FUNCTION) {
+            $this->stack[] = array('push_current');
+        }
+        $this->parseInstruction($token);
+
+        // Parse the rest of the expression until a scope changing token
+        $peek = $this->peek();
+        while ($peek['type'] != Lexer::T_COMMA && $peek['type'] != Lexer::T_RBRACKET) {
+            $this->parseInstruction($this->nextToken());
+            $peek = $this->peek();
+        }
+
+        $this->storeMultiBranchKey(null);
+    }
+
+    private function parseMultiBracket(array $token)
+    {
+        $index = $this->prepareMultiBranch();
+        // Parse at least one element
+        $this->parseMultiBracketElement();
+        // Parse any remaining elements
+        $token = $this->match(array(Lexer::T_COMMA => true, Lexer::T_RBRACKET => true));
+
+        while ($token['type'] != Lexer::T_RBRACKET) {
+            $this->parseMultiBracketElement();
+            $token = $this->match(array(Lexer::T_COMMA => true, Lexer::T_RBRACKET => true));
+        }
+
+        $this->finishMultiBranch($index);
+    }
+
+    /**
+     * @return int Returns the index of the jump bytecode instruction
+     */
+    private function prepareMultiBranch()
+    {
+        $this->stack[] = array('is_empty');
+        $this->stack[] = array('jump_if_true', null);
+        $this->stack[] = array('mark_current');
+        $this->stack[] = array('pop');
+        $this->stack[] = array('push', array());
+
+        return count($this->stack) - 4;
+    }
+
+    /**
+     * @param string|null $key Key to store the result in
+     */
+    private function storeMultiBranchKey($key)
+    {
+        $this->stack[] = array('store_key', $key);
+    }
+
+    /**
+     * @param int $index Index to update for the pre-jump instruction
+     */
+    private function finishMultiBranch($index)
+    {
+        $this->stack[] = array('pop_current');
+        $this->stack[$index][1] = count($this->stack);
+    }
+
+    /**
+     * Determines if the expression in a bracket is a multi-select
+     *
+     * @param array $token Left node in the expression
+     *
+     * @return bool Returns true if this is a multi-select or false if not
+     */
+    private function speculateMultiBracket(array $token)
+    {
+        $this->markToken();
+
+        try {
+            $this->parseMultiBracket($token);
+            $this->resetToken(true);
+            return true;
+        } catch (SyntaxErrorException $e) {
+            $this->resetToken(false);
+            return false;
+        }
     }
 
     /**
@@ -361,190 +560,6 @@ class Parser
         }
 
         $this->stack[] = array('call', $func['value'], $found);
-    }
-
-    /**
-     * Consume wildcard tokens until a scope change
-     *
-     * @param array $token Current token being parsed
-     *
-     * @return array Returns the next token
-     */
-    private function consumeWildcard(array $token)
-    {
-        $this->stack[] = array('mark_current');
-        while (!isset(self::$scope[$token['type']])) {
-            // Don't continue the original project in a subprojection for "[]"
-            $peek = $this->peek();
-            if ($token['type'] == Lexer::T_LBRACKET && $peek['type'] == Lexer::T_RBRACKET) {
-                break;
-            }
-            $token = $this->parseInstruction($token);
-        }
-        $this->stack[] = array('pop_current');
-
-        return $token;
-    }
-
-    private function parse_T_LBRACKET(array $token)
-    {
-        static $expectedAfter = array(
-            Lexer::T_IDENTIFIER => true,
-            Lexer::T_NUMBER => true,
-            Lexer::T_STAR => true,
-            Lexer::T_RBRACKET => true,
-            Lexer::T_PRIMITIVE => true,
-            Lexer::T_FUNCTION => true,
-            Lexer::T_AT => true
-        );
-
-        $token = $this->match($expectedAfter);
-
-        // Don't JmesForm the data into a split array
-        if ($token['type'] == Lexer::T_RBRACKET) {
-            $this->stack[] = array('merge');
-            return $this->parse_T_STAR($token, 'array');
-        }
-
-        $value = $token['value'];
-        $nextToken = $this->peek();
-
-        // Parse simple expressions like [10] or [*]
-        if ($nextToken['type'] == Lexer::T_RBRACKET) {
-            // A simple extraction. Skip the RBRACKET
-            if ($token['type'] == Lexer::T_NUMBER) {
-                $this->nextToken();
-                $this->stack[] = array('index', (int) $value);
-                return null;
-            } elseif ($token['type'] == Lexer::T_STAR) {
-                $this->nextToken();
-                return $this->parse_T_STAR($token, 'array');
-            }
-        }
-
-        if ($this->speculateMultiBracket($token)) {
-            return null;
-        } elseif ($token = $this->speculateFilter($token)) {
-            return $token;
-        } else {
-            $this->throwSyntax('Expression is not a multi-expression or a filter expression. No viable rule found');
-        }
-    }
-
-    private function parse_T_LBRACE(array $token)
-    {
-        $token = $this->match(array(Lexer::T_IDENTIFIER => true, Lexer::T_NUMBER => true));
-        $this->parseMultiBrace($token);
-    }
-
-    private function parseMultiBracket(array $token)
-    {
-        $index = $this->prepareMultiBranch();
-
-        if ($token['type'] != Lexer::T_FUNCTION) {
-            $this->stack[] = array('push_current');
-        }
-
-        do {
-            if ($token['type'] != Lexer::T_COMMA) {
-                $token = $this->parseInstruction($token);
-            } else {
-                $this->storeMultiBranchKey(null);
-                $next = $this->match(self::$exprTokens);
-                if ($next['type'] != Lexer::T_FUNCTION) {
-                    $this->stack[] = array('push_current');
-                }
-                $token = $this->parseInstruction($next);
-            }
-        } while ($token['type'] != Lexer::T_RBRACKET);
-
-        $this->finishMultiBranch($index, null);
-    }
-
-    private function parseMultiBrace(array $token)
-    {
-        $index = $this->prepareMultiBranch();
-        $currentKey = $token['value'];
-        $this->match(array(Lexer::T_COLON => true));
-        $token = $this->match(self::$exprTokens);
-
-        if ($token['type'] != Lexer::T_FUNCTION) {
-            $this->stack[] = array('push_current');
-        }
-
-        do {
-            if ($token['type'] != Lexer::T_COMMA) {
-                $token = $this->parseInstruction($token);
-            } else {
-                $this->storeMultiBranchKey($currentKey);
-                $token = $this->match(array(Lexer::T_IDENTIFIER => true));
-                $this->match(array(Lexer::T_COLON => true));
-                $currentKey = $token['value'];
-                // Parse the next instruction and handle TOS if not a function
-                $next = $this->match(self::$exprTokens);
-                if ($next['type'] != Lexer::T_FUNCTION) {
-                    $this->stack[] = array('push_current');
-                }
-                $token = $this->parseInstruction($next);
-            }
-        } while ($token['type'] != Lexer::T_RBRACE);
-
-        $this->finishMultiBranch($index, $currentKey);
-    }
-
-    /**
-     * @return int Returns the index of the jump bytecode instruction
-     */
-    private function prepareMultiBranch()
-    {
-        $this->stack[] = array('is_empty');
-        $this->stack[] = array('jump_if_true', null);
-        $this->stack[] = array('mark_current');
-        $this->stack[] = array('pop');
-        $this->stack[] = array('push', array());
-
-        return count($this->stack) - 4;
-    }
-
-    /**
-     * @param string|null $key Key to store the result in
-     */
-    private function storeMultiBranchKey($key)
-    {
-        $this->stack[] = array('store_key', $key);
-    }
-
-    /**
-     * @param int         $index Index to update for the pre-jump instruction
-     * @param string|null $key   Key used to store the last result value
-     */
-    private function finishMultiBranch($index, $key)
-    {
-        $this->stack[] = array('store_key', $key);
-        $this->stack[] = array('pop_current');
-        $this->stack[$index][1] = count($this->stack);
-    }
-
-    /**
-     * Determines if the expression in a bracket is a multi-select
-     *
-     * @param array $token Left node in the expression
-     *
-     * @return bool Returns true if this is a multi-select or false if not
-     */
-    private function speculateMultiBracket(array $token)
-    {
-        $this->markToken();
-        $success = true;
-        try {
-            $this->parseMultiBracket($token);
-        } catch (SyntaxErrorException $e) {
-            $success = false;
-        }
-
-        $this->resetToken($success);
-
-        return $success;
     }
 
     /**
