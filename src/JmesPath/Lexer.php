@@ -27,6 +27,8 @@ class Lexer implements \IteratorAggregate
     const T_FUNCTION = 'T_FUNCTION';
     const T_LPARENS = 'T_LPARENS';
     const T_RPARENS = 'T_RPARENS';
+    const T_QUESTION = 'T_QUESTION';
+    const T_MERGE = 'T_MERGE';
 
     /** @var string JMESPath expression */
     private $input;
@@ -46,6 +48,8 @@ class Lexer implements \IteratorAggregate
         |(\.)                    # T_DOT
         |\s+                     # Ignore whitespace
         |(\*)                    # T_STAR
+        |(\[\])                  # T_MERGE
+        |(\])                    # T_RBRACKET
         |(\[)                    # T_LBRACKET
         |(\])                    # T_RBRACKET
         |(,)                     # T_COMMA
@@ -55,6 +59,7 @@ class Lexer implements \IteratorAggregate
         |(\()                    # T_LPARENS
         |(\))                    # T_RPARENS
         |(@)                     # T_AT
+        |(\?)                    # T_QUESTION
         |(<=|>=|>|<|!=|=)        # T_OPERATOR
         |(\|\|)                  # T_OR
         |(.)                     # T_UNKNOWN
@@ -74,12 +79,14 @@ class Lexer implements \IteratorAggregate
         '('      => self::T_LPARENS,
         ')'      => self::T_RPARENS,
         '@'      => self::T_AT,
+        '?'      => self::T_QUESTION,
         '='      => self::T_OPERATOR,
         '<'      => self::T_OPERATOR,
         '>'      => self::T_OPERATOR,
         '!='     => self::T_OPERATOR,
         '>='     => self::T_OPERATOR,
-        '<='     => self::T_OPERATOR
+        '<='     => self::T_OPERATOR,
+        '[]'     => self::T_MERGE,
     );
 
     private $primitiveTokens = array(
