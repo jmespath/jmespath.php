@@ -29,7 +29,8 @@ class Parser
         Lexer::T_STAR => true,
         Lexer::T_LBRACKET => true,
         Lexer::T_LBRACE => true,
-        Lexer::T_FUNCTION => true
+        Lexer::T_FUNCTION => true,
+        Lexer::T_AT => true
     );
 
     /** @var array Scope changes */
@@ -516,6 +517,34 @@ class Parser
         }
     }
 
+    private function parseFunctionArgument()
+    {
+        $peek = $this->matchPeek(self::$exprTokens);
+
+        // Functions arguments only operate on the current node when they
+        // start with the T_AT (@) token.
+        if ($inNode = $peek['type'] == Lexer::T_AT) {
+            $this->nextToken();
+            $peek = $this->matchPeek(array(
+                Lexer::T_DOT      => true, // @.foo
+                Lexer::T_LBRACKET => true, // @[0]
+                Lexer::T_LBRACE   => true, // @{a: 1}
+                Lexer::T_COMMA    => true, // foo[@, 0]
+            ));
+        }
+
+        // Parse all of the tokens of the argument expression
+        while ($peek['type'] != Lexer::T_COMMA && $peek['type'] != Lexer::T_RPARENS) {
+            $token = $this->nextToken();
+            if ($inNode) {
+                $this->parseInstruction($token);
+            } else {
+                $this->stack[] = array('push', $token['value']);
+            }
+            $peek = $this->peek();
+        }
+    }
+
     /**
      * Parses a function, it's arguments, and manages scalar vs node arguments
      *
@@ -526,39 +555,15 @@ class Parser
     private function parse_T_FUNCTION(array $func)
     {
         $found = 0;
-        $token = $this->nextToken();
-        $inNode = false;
+        $peek = $this->peek();
 
-        if ($token['type'] != Lexer::T_RPARENS) {
+        while ($peek['type'] != Lexer::T_RPARENS) {
             $found++;
-            do {
-                switch ($token['type']) {
-                    case Lexer::T_EOF:
-                        $this->throwSyntax('Expected T_RPARENS');
-                    case Lexer::T_COMMA:
-                        $found++;
-                        $inNode = false;
-                        $token = $this->nextToken();
-                        break;
-                    case Lexer::T_FUNCTION:
-                        $token = $this->parseInstruction($token);
-                        break;
-                    case Lexer::T_AT:
-                        $token = $this->nextToken();
-                        $this->stack[] = array('push_current');
-                        $inNode = true;
-                        break;
-                    default:
-                        if ($inNode) {
-                            $token = $this->parseInstruction($token);
-                        } else {
-                            $this->stack[] = array('push', $token['value']);
-                            $token = $this->nextToken();
-                        }
-                }
-            } while ($token['type'] != Lexer::T_RPARENS);
+            $this->parseFunctionArgument();
+            $peek = $this->matchPeek(array(Lexer::T_COMMA => true, Lexer::T_RPARENS => true));
         }
 
+        $this->match(array(Lexer::T_RPARENS => true));
         $this->stack[] = array('call', $func['value'], $found);
     }
 
