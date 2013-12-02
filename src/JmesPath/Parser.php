@@ -95,9 +95,11 @@ class Parser
      */
     private function syntax($messageOrTypes)
     {
-        $current = $this->tokens->current();
-
-        return new SyntaxErrorException($messageOrTypes, $current, $this->lexer->getInput());
+        return new SyntaxErrorException(
+            $messageOrTypes,
+            $this->tokens->current(),
+            $this->lexer->getInput()
+        );
     }
 
     /**
