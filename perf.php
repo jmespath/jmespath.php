@@ -14,6 +14,9 @@ $parser = new Parser(new Lexer());
 $interpreter = new Interpreter();
 $total = 0;
 
+// Warm up the runner
+$interpreter->execute($parser->compile('foo.bar'), array('foo' => array('bar' => 1)));
+
 foreach ($files as $file) {
     if (!strpos($file, 'syntax')) {
         $total += runSuite($parser, $interpreter, $file);
@@ -54,16 +57,16 @@ function runCase(
 
     for ($i = 0; $i < 1000; $i++) {
         $t = microtime(true);
-        //try {
+        try {
             $opcodes = $parser->compile($expression);
             $parseTime = (microtime(true) - $t) * 1000;
             $t = microtime(true);
             $interpreter->execute($opcodes, $given);
             $interpretTime = (microtime(true) - $t) * 1000;
-        //} catch (\Exception $e) {
-        //    $parseTime = (microtime(true) - $t) * 1000;
-        //    $interpretTime = 0;
-        //}
+        } catch (\Exception $e) {
+            $parseTime = (microtime(true) - $t) * 1000;
+            $interpretTime = 0;
+        }
         if ($parseTime < $bestParse) {
             $bestParse = $parseTime;
         }

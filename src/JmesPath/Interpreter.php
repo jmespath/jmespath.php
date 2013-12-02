@@ -88,7 +88,8 @@ class Interpreter
      */
     public function execute(array $opcodes, array $data)
     {
-        $iter = new \ArrayIterator($opcodes);
+        $opPos = 0;
+        $opTotal = count($opcodes);
         $stack = $currentStack = array(&$data);
         $eaches = array();
 
@@ -96,18 +97,24 @@ class Interpreter
             $this->debugInit($opcodes, $data);
         }
 
-        while ($iter->valid()) {
+        while ($opPos < $opTotal) {
 
-            $opArray = $iter->current();
-            $op = $opArray[0];
-            $arg = isset($opArray[1]) ? $opArray[1] : null;
-            $arg2 = isset($opArray[2]) ? $opArray[2] : null;
+            $arg = isset($opcodes[$opPos][1]) ? $opcodes[$opPos][1] : null;
+            $arg2 = isset($opcodes[$opPos][2]) ? $opcodes[$opPos][2] : null;
 
             if ($this->debug) {
-                $this->debugLine($iter->key(), $stack, $currentStack, $opArray);
+                $this->debugLine($opPos, $stack, $currentStack, $opcodes[$opPos][0]);
             }
 
-            switch ($op) {
+            switch ($opcodes[$opPos][0]) {
+
+                case 'field':
+                    // Descends into a specific field at the given operand into
+                    // the TOS then pushes the result onto the stack. If the
+                    // field does not exist, null is pushed onto TOS.
+                    $tos = array_pop($stack);
+                    $stack[] = is_array($tos) && isset($tos[$arg]) ? $tos[$arg] : null;
+                    break;
 
                 case 'push':
                     // Pushes the given operand onto TOS
@@ -117,14 +124,6 @@ class Interpreter
                 case 'pop':
                     // Pops and discards TOS
                     array_pop($stack);
-                    break;
-
-                case 'field':
-                    // Descends into a specific field at the given operand into
-                    // the TOS then pushes the result onto the stack. If the
-                    // field does not exist, null is pushed onto TOS.
-                    $tos = array_pop($stack);
-                    $stack[] = is_array($tos) && isset($tos[$arg]) ? $tos[$arg] : null;
                     break;
 
                 case 'index':
@@ -143,13 +142,13 @@ class Interpreter
 
                 case 'jump':
                     // Jumps to the bytecode index using the given operand
-                    $iter->seek($arg);
+                    $opPos = $arg;
                     continue 2;
 
                 case 'jump_if_true':
                     // Pops TOS and jumps to the given bytecode index if true.
                     if (array_pop($stack) === true) {
-                        $iter->seek($arg);
+                        $opPos = $arg;
                         continue 2;
                     }
                     break;
@@ -157,7 +156,7 @@ class Interpreter
                 case 'jump_if_false':
                     // Pops TOS and jumps to the given bytecode index if false.
                     if (array_pop($stack) === false) {
-                        $iter->seek($arg);
+                        $opPos = $arg;
                         continue 2;
                     }
                     break;
@@ -197,7 +196,7 @@ class Interpreter
                     //      element onto TOS
                     // 2.b. If the iterator is invalid, pop TOS, push the result
                     //      onto TOS, and jump to the jump position ('jmp').
-                    $index = $iter->key();
+                    $index = $opPos;
                     $tos = array_pop($stack);
 
                     if (isset($eaches[$index])) {
@@ -212,7 +211,7 @@ class Interpreter
                         } else {
                             // We're done iterating, so collect the results and push on TOS
                             $stack[] = $eaches[$index]['result'];
-                            $iter->seek($eaches[$index]['jmp']);
+                            $opPos = $eaches[$index]['jmp'];
                             unset($eaches[$index]);
                             continue 2;
                         }
@@ -220,13 +219,13 @@ class Interpreter
                     } elseif (!is_array($tos)) {
                         // The TOS cannot be iterated so break from the loop
                         $stack[] = null;
-                        $iter->seek($arg);
+                        $opPos = $arg;
                         continue 2;
                     } elseif (!$tos) {
                         // The array or hash is empty so push an empty list and
                         // skip iteration
                         $stack[] = array();
-                        $iter->seek($arg);
+                        $opPos = $arg;
                         continue 2;
                     } else {
                         $keys = array_keys($tos);
@@ -234,7 +233,7 @@ class Interpreter
                             ($keys[0] !== 0 && $arg2 == 'Array')
                         ) {
                             $stack[] = null;
-                            $iter->seek($arg);
+                            $opPos = $arg;
                             continue 2;
                         }
                         // It can be iterated so track the iteration at the current position
@@ -368,11 +367,11 @@ class Interpreter
                     break;
 
                 default:
-                    throw new \RuntimeException("Unknown opcode {$op}");
+                    throw new \RuntimeException("Unknown opcode {$opcodes[$opPos][0]}");
                     break;
             }
 
-            $iter->next();
+            $opPos++;
         }
 
         if ($this->debug) {
