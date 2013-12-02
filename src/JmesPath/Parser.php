@@ -613,22 +613,27 @@ class Parser
     {
         $this->match(array(Lexer::T_QUESTION => true));
         $this->match(array(Lexer::T_LPARENS => true));
+
         // Create a bytecode loop
         $this->stack[] = array('each', null);
         $loopIndex = count($this->stack) - 1;
         $this->stack[] = array('mark_current');
         $this->parseFullExpression();
+
         // If the evaluated filter was true, then jump to the wildcard loop
         $this->stack[] = array('pop_current');
         $this->stack[] = array('jump_if_true', count($this->stack) + 4);
+
         // Kill temp variables when a filter filters a node
         $this->stack[] = array('pop');
         $this->stack[] = array('push', null);
         $this->stack[] = array('jump', $loopIndex);
+
         // Actually yield values that matched the filter
         $this->match(array(Lexer::T_RPARENS => true));
-        $token = $this->match(array(Lexer::T_RBRACKET => true));
-        $this->consumeWildcard($token);
+        $this->match(array(Lexer::T_RBRACKET => true));
+        $this->consumeWildcard($this->peek());
+
         // Finish the projection loop
         $this->stack[] = array('jump', $loopIndex);
         $this->stack[$loopIndex][1] = count($this->stack);
