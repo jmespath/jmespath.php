@@ -78,7 +78,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(array(
             0  => array('field', 'foo'),
-            1  => array('each', 17, 'object'),
+            1  => array('each', 17, 'Object'),
             2  => array('mark_current'),
             3  => array('is_empty'),
             4  => array('jump_if_true', 15),

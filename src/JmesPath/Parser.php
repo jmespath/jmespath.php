@@ -168,6 +168,23 @@ class Parser
     }
 
     /**
+     * Returns the type of the previous token, or null if it was the start
+     *
+     * @return null|string Returns 'Array', 'Object', or null if unknown
+     */
+    private function previousType()
+    {
+        $prevPos = $this->tokens->key() - 1;
+        $prev = isset($this->tokens[$prevPos]) ? $this->tokens[$prevPos] : null;
+
+        if ($prev) {
+            return $prev['type'] == Lexer::T_DOT ? 'Object' : 'Array';
+        }
+
+        return null;
+    }
+
+    /**
      * Marks the current token iterator position for the start of a speculative
      * parse instruction
      */
@@ -254,18 +271,9 @@ class Parser
             Lexer::T_LBRACKET   => true, // foo{a: 0}
         ));
 
-        switch ($next['type']) {
-            case Lexer::T_NUMBER:
-                // Handle cases like foo.-1
-                $this->parse_T_IDENTIFIER($this->nextToken());
-                break;
-            case Lexer::T_LBRACKET:
-                // Parsing only identifiers from an Object
-                $this->parse_T_LBRACKET($this->nextToken());
-                break;
-            case Lexer::T_LBRACE:
-                // Parsing only identifiers from an Object
-                $this->parse_T_LBRACE($this->nextToken());
+        if ($next['type'] == Lexer::T_NUMBER) {
+            // Handle cases like foo.-1
+            $this->parse_T_IDENTIFIER($this->nextToken());
         }
     }
 
@@ -301,7 +309,7 @@ class Parser
      * Parses a wildcard expression using a bytecode loop. Parses tokens until
      * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
      */
-    private function parse_T_STAR(array $token, $type = 'object')
+    private function parse_T_STAR(array $token, $type = 'Object')
     {
         $peek = $this->matchPeek(array(
             Lexer::T_DOT      => true, // *.bar
@@ -348,14 +356,15 @@ class Parser
 
     private function parse_T_LBRACE(array $token)
     {
+        $fromType = $this->previousType();
         $index = $this->prepareMultiBranch();
-        $this->parseKeyValuePair();
+        $this->parseKeyValuePair($fromType);
 
         $peek = $this->peek();
         while ($peek['type'] != Lexer::T_RBRACE) {
             $token = $this->nextToken();
             if ($token['type'] == Lexer::T_COMMA) {
-                $this->parseKeyValuePair();
+                $this->parseKeyValuePair($fromType);
             } elseif ($token['type'] == Lexer::T_EOF) {
                 $this->throwSyntax('Unexpected T_EOF');
             }
@@ -366,13 +375,27 @@ class Parser
         $this->finishMultiBranch($index);
     }
 
-    private function parseKeyValuePair()
+    /**
+     * Parse a multi-brace expression key value pair while only allowing for
+     * certain value types.
+     *
+     * @param string $type Valid types for values (Array or Object)
+     */
+    private function parseKeyValuePair($type)
     {
         $keyToken = $this->match(array(Lexer::T_IDENTIFIER => true));
         $this->match(array(Lexer::T_COLON => true));
 
-        // Requires at least one value that can start an expression
-        $token = $this->match(self::$exprTokens);
+        // Requires at least one value that can start an expression, and
+        // don't allow Number indices on Objects or strings on Arrays
+        $valid = self::$exprTokens;
+        if ($type == 'Array') {
+            unset($valid[Lexer::T_IDENTIFIER]);
+        } elseif ($type == 'Object') {
+            unset($valid[Lexer::T_NUMBER]);
+        }
+        $token = $this->match($valid);
+
         // Account for functions that don't need a current node pushed
         if ($token['type'] != Lexer::T_FUNCTION) {
             $this->stack[] = array('push_current');
@@ -395,6 +418,8 @@ class Parser
 
     private function parse_T_LBRACKET(array $token)
     {
+        $fromType = $this->previousType();
+
         $peek = $this->matchPeek(array(
             Lexer::T_IDENTIFIER => true, // [a, b]
             Lexer::T_NUMBER     => true, // [0]
@@ -407,9 +432,12 @@ class Parser
 
         // Don't JmesForm the data into a split array when a merge occurs
         if ($peek['type'] == Lexer::T_RBRACKET) {
+            if ($fromType == 'Object') {
+                $this->throwSyntax('Cannot merge from an object');
+            }
             $token = $this->nextToken();
             $this->stack[] = array('merge');
-            $this->parse_T_STAR($token, 'array');
+            $this->parse_T_STAR($token, 'Array');
             return;
         }
 
@@ -419,25 +447,45 @@ class Parser
             ($peek['type'] == Lexer::T_NUMBER || $peek['type'] == Lexer::T_STAR)
         ) {
             if ($peek['type'] == Lexer::T_NUMBER) {
+                if ($fromType == 'Object') {
+                    $this->throwSyntax('Cannot access Object keys using Number indices');
+                }
                 $this->parse_T_NUMBER($this->nextToken());
                 $this->nextToken();
+            } elseif ($fromType == 'Object') {
+                $this->throwSyntax('Invalid Object wildcard syntax');
             } else {
                 $token = $this->nextToken();
                 $this->nextToken();
-                $this->parse_T_STAR($token, 'array');
+                $this->parse_T_STAR($token, 'Array');
             }
             return;
         }
 
         // Speculative parsing with backtracking
-        if (!$this->speculateMultiBracket() && !$this->speculateFilter()) {
+        if (!$this->speculateMultiBracket($fromType) &&
+            !$this->speculateFilter($fromType)
+        ) {
             $this->throwSyntax('Expected a multi-expression or a filter expression');
         }
     }
 
-    private function parseMultiBracketElement()
+    /**
+     * Parse a multi-bracket expression list element while only allowing
+     * certain key types.
+     *
+     * @param string $type Valid key types (Array or Object)
+     */
+    private function parseMultiBracketElement($type)
     {
-        $token = $this->match(self::$exprTokens);
+        // Don't allow Number indices on Objects or strings on Arrays
+        $valid = self::$exprTokens;
+        if ($type == 'Array') {
+            unset($valid[Lexer::T_IDENTIFIER]);
+        } elseif ($type == 'Object') {
+            unset($valid[Lexer::T_NUMBER]);
+        }
+        $token = $this->match($valid);
 
         // Push the current node onto the stack if the token is not a function
         if ($token['type'] != Lexer::T_FUNCTION) {
@@ -459,21 +507,36 @@ class Parser
         $this->storeMultiBranchKey(null);
     }
 
-    private function parseMultiBracket()
+    /**
+     * Determines if the expression in a bracket is a multi-select
+     *
+     * @param string $type Valid key types (Array or Object)
+     *
+     * @return bool Returns true if this is a multi-select or false if not
+     */
+    private function speculateMultiBracket($type)
     {
-        $index = $this->prepareMultiBranch();
-        // Parse at least one element
-        $this->parseMultiBracketElement();
-        // Parse any remaining elements
-        $until = array(Lexer::T_COMMA => true, Lexer::T_RBRACKET => true);
-        $token = $this->match($until);
+        $this->markToken();
 
-        while ($token['type'] != Lexer::T_RBRACKET) {
-            $this->parseMultiBracketElement();
+        try {
+            $index = $this->prepareMultiBranch();
+            // Parse at least one element
+            $this->parseMultiBracketElement($type);
+            // Parse any remaining elements
+            $until = array(Lexer::T_COMMA => true, Lexer::T_RBRACKET => true);
             $token = $this->match($until);
+            while ($token['type'] != Lexer::T_RBRACKET) {
+                $this->parseMultiBracketElement($type);
+                $token = $this->match($until);
+            }
+            $this->finishMultiBranch($index);
+            // Remove the token backtracking mark position
+            $this->resetToken(true);
+            return true;
+        } catch (SyntaxErrorException $e) {
+            $this->resetToken(false);
+            return false;
         }
-
-        $this->finishMultiBranch($index);
     }
 
     /**
@@ -505,25 +568,6 @@ class Parser
     {
         $this->stack[] = array('pop_current');
         $this->stack[$index][1] = count($this->stack);
-    }
-
-    /**
-     * Determines if the expression in a bracket is a multi-select
-     *
-     * @return bool Returns true if this is a multi-select or false if not
-     */
-    private function speculateMultiBracket()
-    {
-        $this->markToken();
-
-        try {
-            $this->parseMultiBracket();
-            $this->resetToken(true);
-            return true;
-        } catch (SyntaxErrorException $e) {
-            $this->resetToken(false);
-            return false;
-        }
     }
 
     /**

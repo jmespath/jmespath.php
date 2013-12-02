@@ -146,6 +146,10 @@
       },
       {
         "expression": "*.[0]",
+        "error": "syntax"
+      },
+      {
+        "expression": "*.[\"0\"]",
         "result": []
       },
       {
@@ -174,6 +178,16 @@
         "comment": "Valid multi-select of a list",
         "expression": "foo[0, 1]",
         "result": null
+      },
+      {
+        "comment": "Invalid Object key. Must be a string.",
+        "expression": "foo.[0]",
+        "error": "syntax"
+      },
+      {
+        "comment": "Invalid Object wildcard syntax",
+        "expression": "foo.[*]",
+        "error": "syntax"
       },
       {
         "comment": "Multi-select of a list with trailing comma",
@@ -267,8 +281,13 @@
         "error": "syntax"
       },
       {
-        "comment": "Valid multi-select hash",
+        "comment": "Accessing Array using an identifier",
         "expression": "a{foo: bar}",
+        "error": "syntax"
+      },
+      {
+        "comment": "Valid",
+        "expression": "a{foo: 0}",
         "result": null
       },
       {
