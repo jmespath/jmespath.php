@@ -7,7 +7,7 @@ use JmesPath\Lexer;
 use JmesPath\Parser;
 use JmesPath\Interpreter;
 
-$dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance' : $argv[1];
+$dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance/perf' : $argv[1];
 is_dir($dir) or die('Dir not found: ' . $dir);
 $files = glob($dir . '/*.json');
 $parser = new Parser(new Lexer());
@@ -49,22 +49,32 @@ function runCase(
     Parser $parser,
     Interpreter $interpreter
 ) {
-    $t = microtime(true);
+    $bestParse = 99999;
+    $bestInterpret = 99999;
 
-    try {
-        $opcodes = $parser->compile($expression);
-        $parseTime = (microtime(true) - $t) * 1000;
+    for ($i = 0; $i < 1000; $i++) {
         $t = microtime(true);
-        $interpreter->execute($opcodes, $given);
-        $interpretTime = (microtime(true) - $t) * 1000;
-    } catch (\Exception $e) {
-        $parseTime = (microtime(true) - $t) * 1000;
-        $interpretTime = '0';
+        //try {
+            $opcodes = $parser->compile($expression);
+            $parseTime = (microtime(true) - $t) * 1000;
+            $t = microtime(true);
+            $interpreter->execute($opcodes, $given);
+            $interpretTime = (microtime(true) - $t) * 1000;
+        //} catch (\Exception $e) {
+        //    $parseTime = (microtime(true) - $t) * 1000;
+        //    $interpretTime = 0;
+        //}
+        if ($parseTime < $bestParse) {
+            $bestParse = $parseTime;
+        }
+        if ($interpretTime < $bestInterpret) {
+            $bestInterpret = $interpretTime;
+        }
     }
 
-    $expression = str_replace("\n", '\n', $expression);
     $template = "parse_time: %fms, search_time: %fms description: %s name: %s\n";
-    printf($template, $parseTime, $interpretTime, $file, $expression);
+    $expression = str_replace("\n", '\n', $expression);
+    printf($template, $bestParse, $bestInterpret, $file, $expression);
 
-    return $parseTime + $interpretTime;
+    return $bestInterpret + $bestParse;
 }
