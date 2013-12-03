@@ -441,4 +441,31 @@
       "result": null
     }
   ]
+}, {
+  "given":
+    [
+      {"foo": "there"},
+      {"foo": "hi"},
+      {"foo": "test"},
+      "abc",
+      false,
+      [1]
+    ],
+  "cases": [
+    {
+      "expression": "sort_by(@, \"foo\")",
+      "result": [
+        {"foo": "hi"},
+        {"foo": "test"},
+        {"foo": "there"},
+        [1],
+        false,
+        "abc"
+      ]
+    },
+    {
+      "expression": "sort_by(@, \"foo\")[].foo",
+      "result": ["hi", "test", "there"]
+    }
+  ]
 }]
