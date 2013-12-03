@@ -118,11 +118,21 @@ class Lexer implements \IteratorAggregate
 
     public function getIterator()
     {
+        return new \ArrayIterator($this->getTokens());
+    }
+
+    /**
+     * Get an array of tokens
+     *
+     * @return array
+     */
+    public function getTokens()
+    {
         if (null === $this->tokens) {
             $this->tokenize();
         }
 
-        return new \ArrayIterator($this->tokens);
+        return $this->tokens;
     }
 
     /**

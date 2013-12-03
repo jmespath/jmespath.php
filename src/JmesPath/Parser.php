@@ -10,8 +10,14 @@ class Parser
     /** @var Lexer */
     private $lexer;
 
-    /** @var \ArrayIterator */
+    /** @var array Array of tokens */
     private $tokens;
+
+    /** @var int */
+    private $tokenPos;
+
+    /** @var int */
+    private $tokenCount;
 
     /** @var array opcode stack*/
     private $stack;
@@ -66,8 +72,10 @@ class Parser
 
         $this->stack = array();
         $this->lexer->setInput($path);
-        $this->tokens = $this->lexer->getIterator();
-        $token = $this->tokens->current();
+        $this->tokens = $this->lexer->getTokens();
+        $this->tokenPos = 0;
+        $this->tokenCount = count($this->tokens);
+        $token = $this->tokens[0];
 
         // Ensure that the first token is valid
         if (!isset(self::$exprTokens[$token['type']])) {
@@ -95,7 +103,7 @@ class Parser
     {
         return new SyntaxErrorException(
             $messageOrTypes,
-            $this->tokens->current(),
+            $this->tokens[$this->tokenPos],
             $this->lexer->getInput()
         );
     }
@@ -106,9 +114,12 @@ class Parser
     private function nextToken()
     {
         static $nullToken = array('type' => Lexer::T_EOF);
-        $this->tokens->next();
+        if (++$this->tokenPos > $this->tokenCount) {
+            $this->tokenPos = $this->tokenCount;
+            return $nullToken;
+        }
 
-        return $this->tokens->current() ?: $nullToken;
+        return $this->tokens[$this->tokenPos];
     }
 
     /**
@@ -157,7 +168,7 @@ class Parser
      */
     private function peek($lookAhead = 1)
     {
-        $nextPos = $this->tokens->key() + $lookAhead;
+        $nextPos = $this->tokenPos + $lookAhead;
 
         return isset($this->tokens[$nextPos])
             ? $this->tokens[$nextPos]
@@ -171,7 +182,7 @@ class Parser
      */
     private function previousType()
     {
-        $prevPos = $this->tokens->key() - 1;
+        $prevPos = $this->tokenPos - 1;
         $prev = isset($this->tokens[$prevPos]) ? $this->tokens[$prevPos] : null;
 
         if ($prev) {
