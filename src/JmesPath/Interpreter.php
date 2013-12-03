@@ -41,6 +41,7 @@ class Interpreter
             'lowercase' => 'JmesPath\Fn\FnLowercase',
             'reverse' => 'JmesPath\Fn\FnReverse',
             'sort' => 'JmesPath\Fn\FnSort',
+            'sort_by' => 'JmesPath\Fn\FnSortBy',
             'substring' => 'JmesPath\Fn\FnSubstring',
             'type' => 'JmesPath\Fn\FnType',
             'union' => 'JmesPath\Fn\FnUnion',
