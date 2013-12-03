@@ -168,7 +168,7 @@ class Lexer implements \IteratorAggregate
                     'value' => (int) $token[0],
                     'pos'   => $token[1]
                 );
-            } elseif (array_key_exists($token[0], $this->primitiveTokens)) {
+            } elseif ($token[0] == 'true' || $token[0] == 'false' || $token[0] == 'null') {
                 // Parse primitive tokens (true, false, null) into PHP types
                 $this->tokens[] = array(
                     'type'  => Lexer::T_PRIMITIVE,
