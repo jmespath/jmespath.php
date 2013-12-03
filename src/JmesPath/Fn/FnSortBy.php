@@ -11,19 +11,16 @@ namespace JmesPath\Fn;
  *
  * This function MUST return null if the provided argument is not an Array.
  *
- * If any of the elements of the given array are not Objects or the object does
- * not contain the given key, $key, the element is pushed down in the list.
+ * Elements in the resulting Array are sorted in the following order:
  *
- * Values are sorted lexicographically. When a value is not a String, the
- * element is sorted in the following order (the lower the number means the
- * sooner in the list the element appears):
- *
- * 1. Object
- * 2. Array
- * 3. null
- * 4. Boolean
- * 5. Number
- * 6. String
+ * 1. Objects that contain the ``$key`` argument sorted lexicographically by
+ *    value
+ * 2. Objects that do not contain the ``$key`` argument
+ * 3. Arrays
+ * 4. nulls
+ * 5. Booleans
+ * 6. Numbers
+ * 7. Strings
  */
 class FnSortBy extends AbstractFn
 {
