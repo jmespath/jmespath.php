@@ -1,16 +1,16 @@
 [{
   "given":
-    {
-      "foo": -1,
-      "zero": 0,
-      "arr": [-1, 3, 4, 5, "a", "100"],
-      "strings": ["a", "b", "c"],
-      "dec": [1.01, 1.9, -1.5],
-      "str": "Str",
-      "false": false,
-      "empty": [],
-      "empty2": {}
-    },
+  {
+    "foo": -1,
+    "zero": 0,
+    "arr": [-1, 3, 4, 5, "a", "100"],
+    "strings": ["a", "b", "c"],
+    "dec": [1.01, 1.9, -1.5],
+    "str": "Str",
+    "false": false,
+    "empty": [],
+    "empty2": {}
+  },
   "cases": [
     {
       "expression": "abs(@.foo)",
@@ -121,16 +121,16 @@
       "error": "runtime"
     },
     {
-      "expression": "count(@)",
+      "expression": "length(@)",
       "result": 9
     },
     {
-      "expression": "count(@.arr)",
+      "expression": "length(@.arr)",
       "result": 6
     },
     {
-      "expression": "count(@.str)",
-      "result": null
+      "expression": "length(@.str)",
+      "result": 3
     },
     {
       "expression": "floor(@.dec[0])",
