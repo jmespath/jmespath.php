@@ -25,6 +25,9 @@ class Parser
     /** @var array Known opcodes of the parser */
     private $methods;
 
+    /** @var array Null token that is reused over and over */
+    private static $nullToken = array('type' => Lexer::T_EOF, 'value' => '');
+
     /** @var array First acceptable token */
     private static $exprTokens = array(
         Lexer::T_IDENTIFIER => true,
@@ -66,26 +69,25 @@ class Parser
      */
     public function compile($path)
     {
-        if (!$path) {
-            return array();
-        }
-
         $this->stack = array();
-        $this->lexer->setInput($path);
-        $this->tokens = $this->lexer->getTokens();
-        $this->tokenPos = 0;
-        $this->tokenCount = count($this->tokens);
-        $token = $this->tokens[0];
 
-        // Ensure that the first token is valid
-        if (!isset(self::$exprTokens[$token['type']])) {
-            throw $this->syntax(self::$exprTokens);
+        if ($path) {
+            $this->lexer->setInput($path);
+            $this->tokens = $this->lexer->getTokens();
+            $this->tokenPos = 0;
+            $this->tokenCount = count($this->tokens);
+            $token = $this->tokens[0];
+
+            // Ensure that the first token is valid
+            if (!isset(self::$exprTokens[$token['type']])) {
+                throw $this->syntax(self::$exprTokens);
+            }
+
+            do {
+                $this->parseInstruction($token);
+                $token = $this->nextToken();
+            } while ($token['type'] !== Lexer::T_EOF);
         }
-
-        do {
-            $this->parseInstruction($token);
-            $token = $this->nextToken();
-        } while ($token['type'] !== Lexer::T_EOF);
 
         $this->stack[] = array('stop');
 
@@ -113,10 +115,9 @@ class Parser
      */
     private function nextToken()
     {
-        static $nullToken = array('type' => Lexer::T_EOF);
         if (++$this->tokenPos > $this->tokenCount) {
             $this->tokenPos = $this->tokenCount;
-            return $nullToken;
+            return self::$nullToken;
         }
 
         return $this->tokens[$this->tokenPos];
@@ -172,7 +173,7 @@ class Parser
 
         return isset($this->tokens[$nextPos])
             ? $this->tokens[$nextPos]
-            : array('type' => Lexer::T_EOF, 'value' => '');
+            : self::$nullToken;
     }
 
     /**
@@ -183,10 +184,8 @@ class Parser
     private function previousType()
     {
         $prevPos = $this->tokenPos - 1;
-        $prev = isset($this->tokens[$prevPos]) ? $this->tokens[$prevPos] : null;
-
-        if ($prev) {
-            return $prev['type'] == Lexer::T_DOT ? 'Object' : 'Array';
+        if (isset($this->tokens[$prevPos])) {
+            return $this->tokens[$prevPos]['type'] == Lexer::T_DOT ? 'Object' : 'Array';
         }
 
         return null;
@@ -211,7 +210,7 @@ class Parser
 
     private function parse_T_IDENTIFIER(array $token)
     {
-        $this->matchPeek(array(
+        static $nextTypes = array(
             Lexer::T_MERGE    => true, // foo[]
             Lexer::T_LBRACE   => true, // a{foo: 0}
             Lexer::T_LBRACKET => true, // a[0]
@@ -223,14 +222,16 @@ class Parser
             Lexer::T_OR       => true, // foo || bar
             Lexer::T_OPERATOR => true, // foo[a = "a"]
             Lexer::T_RPARENS  => true, // foo[length(abc)]
-        ));
+        );
+
+        $this->matchPeek($nextTypes);
 
         $this->stack[] = array('field', $token['value']);
     }
 
     private function parse_T_NUMBER(array $token)
     {
-        $this->matchPeek(array(
+        static $nextTypes = array(
             Lexer::T_RBRACE   => true, // {a: 1}
             Lexer::T_RBRACKET => true, // [1] / foo[1 < 2]
             Lexer::T_RPARENS  => true, // foo[substring(@, 0, 1)]
@@ -238,20 +239,24 @@ class Parser
             Lexer::T_OR       => true, // foo.-1 || bar
             Lexer::T_OPERATOR => true, // foo[1 < 2]
             Lexer::T_EOF      => true, // foo.-1
-        ));
+        );
+
+        $this->matchPeek($nextTypes);
 
         $this->stack[] = array('index', (int) $token['value']);
     }
 
     private function parse_T_DOT(array $token)
     {
-        $next = $this->matchPeek(array(
+        static $nextTypes = array(
             Lexer::T_IDENTIFIER => true, // foo.bar
             Lexer::T_NUMBER     => true, // foo.-1
             Lexer::T_STAR       => true, // foo.*
             Lexer::T_LBRACE     => true, // foo[1]
             Lexer::T_LBRACKET   => true, // foo{a: 0}
-        ));
+        );
+
+        $next = $this->matchPeek($nextTypes);
 
         if ($next['type'] == Lexer::T_NUMBER) {
             // Handle cases like foo.-1
@@ -293,7 +298,7 @@ class Parser
      */
     private function parse_T_STAR(array $token, $type = 'Object')
     {
-        $peek = $this->matchPeek(array(
+        static $nextTypes = array(
             Lexer::T_DOT      => true, // *.bar
             Lexer::T_EOF      => true, // foo.*
             Lexer::T_MERGE    => true, // foo.*[]
@@ -303,7 +308,9 @@ class Parser
             Lexer::T_RBRACE   => true, // foo.{a: a, b: b.*}
             Lexer::T_OR       => true, // foo.* || foo
             Lexer::T_COMMA    => true, // foo.[a.*, b]
-        ));
+        );
+
+        $peek = $this->matchPeek($nextTypes);
 
         // Create a bytecode loop
         $this->stack[] = array('each', null, $type);
@@ -405,9 +412,7 @@ class Parser
 
     private function parse_T_LBRACKET(array $token)
     {
-        $fromType = $this->previousType();
-
-        $peek = $this->matchPeek(array(
+        static $nextTypes = array(
             Lexer::T_IDENTIFIER => true, // [a, b]
             Lexer::T_NUMBER     => true, // [0]
             Lexer::T_STAR       => true, // [*]
@@ -416,7 +421,10 @@ class Parser
             Lexer::T_FUNCTION   => true, // foo[count(@)]
             Lexer::T_AT         => true, // foo[@, 2],
             Lexer::T_QUESTION   => true, // foo[?(@.bar = 10)]
-        ));
+        );
+
+        $peek = $this->matchPeek($nextTypes);
+        $fromType = $this->previousType();
 
         if ($peek['type'] == Lexer::T_QUESTION) {
             $this->parseFilterExpression();
