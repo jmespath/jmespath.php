@@ -162,7 +162,6 @@ class Lexer implements \IteratorAggregate
                     'pos' => $token[1]
                 );
             } elseif (is_numeric($token[0])) {
-                // Match less common numbers and floats
                 $this->tokens[] = array(
                     'type'  => self::T_NUMBER,
                     'value' => (int) $token[0],
