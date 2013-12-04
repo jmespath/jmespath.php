@@ -47,6 +47,24 @@ EOT;
         }
     }
 
+    public function testValidatesLiteralValues()
+    {
+        $l = new Lexer();
+        $l->setInput('_');
+        try {
+            $l->getIterator();
+            $this->fail('Did not throw');
+        } catch (SyntaxErrorException $e) {
+            $expected = <<<EOT
+Syntax error at character 0
+_
+^
+Literal token with no value
+EOT;
+            $this->assertContains($expected, $e->getMessage());
+        }
+    }
+
     public function inputProvider()
     {
         return array(
@@ -74,7 +92,10 @@ EOT;
             array('*', Lexer::T_STAR),
             array('foo', Lexer::T_IDENTIFIER),
             array('"foo"', Lexer::T_IDENTIFIER),
-            array('"1"', Lexer::T_IDENTIFIER)
+            array('_true', Lexer::T_LITERAL),
+            array('_false', Lexer::T_LITERAL),
+            array('_null', Lexer::T_LITERAL),
+            array('_"true"', Lexer::T_LITERAL)
         );
     }
 
@@ -87,5 +108,17 @@ EOT;
         $l->setInput($input);
         $tokens = iterator_to_array($l->getIterator());
         $this->assertEquals($tokens[0]['type'], $type);
+    }
+
+    public function testTokenizesJavasriptLiterals()
+    {
+        $l = new Lexer();
+        $l->setInput('_null, _false, _true, _"abc", _"ab\\"c"');
+        $tokens =  $l->getTokens();
+        $this->assertNull($tokens[0]['value']);
+        $this->assertFalse($tokens[2]['value']);
+        $this->assertTrue($tokens[4]['value']);
+        $this->assertEquals('abc', $tokens[6]['value']);
+        $this->assertEquals('ab"c', $tokens[8]['value']);
     }
 }

@@ -22,13 +22,12 @@ class Lexer implements \IteratorAggregate
     const T_UNKNOWN = 'T_UNKNOWN';
     const T_COLON = 'T_COLON';
     const T_OPERATOR = 'T_OPERATOR';
-    const T_PRIMITIVE = 'T_PRIMITIVE';
-    const T_AT = 'T_AT';
     const T_FUNCTION = 'T_FUNCTION';
     const T_LPARENS = 'T_LPARENS';
     const T_RPARENS = 'T_RPARENS';
-    const T_QUESTION = 'T_QUESTION';
     const T_MERGE = 'T_MERGE';
+    const T_LITERAL = 'T_LITERAL';
+    const T_FILTER = 'T_FILTER';
 
     /** @var string JMESPath expression */
     private $input;
@@ -38,14 +37,14 @@ class Lexer implements \IteratorAggregate
 
     /** @var string Regular expression used to split an expression */
     private $regex = '/
-        ("(?:\\\"|[^"])*")       # T_IDENTIFIER
+        |(_*"(?:\\\"|[^"])*")    # T_IDENTIFIER or T_LITERAL
         |([A-Za-z_]+\()          # T_FUNCTION
-        |([A-Za-z0-9\-_]+)       # T_IDENTIFIER or T_PRIMITIVE
-        |(\-?\d+)                # T_NUMBER
+        |([A-Za-z0-9\-_]+)       # T_IDENTIFIER or T_LITERAL or T_NUMBER
         |(\.)                    # T_DOT
         |\s+                     # Ignore whitespace
         |(\*)                    # T_STAR
         |(\[\])                  # T_MERGE
+        |(\[\?)                  # T_FILTER
         |(\])                    # T_RBRACKET
         |(\[)                    # T_LBRACKET
         |(\])                    # T_RBRACKET
@@ -55,8 +54,6 @@ class Lexer implements \IteratorAggregate
         |(:)                     # T_COLON
         |(\()                    # T_LPARENS
         |(\))                    # T_RPARENS
-        |(@)                     # T_AT
-        |(\?)                    # T_QUESTION
         |(<=|>=|>|<|!=|=)        # T_OPERATOR
         |(\|\|)                  # T_OR
         |(.)                     # T_UNKNOWN
@@ -75,8 +72,7 @@ class Lexer implements \IteratorAggregate
         '}'      => self::T_RBRACE,
         '('      => self::T_LPARENS,
         ')'      => self::T_RPARENS,
-        '@'      => self::T_AT,
-        '?'      => self::T_QUESTION,
+        '[?'     => self::T_FILTER,
         '='      => self::T_OPERATOR,
         '<'      => self::T_OPERATOR,
         '>'      => self::T_OPERATOR,
@@ -86,8 +82,8 @@ class Lexer implements \IteratorAggregate
         '[]'     => self::T_MERGE,
     );
 
-    private $primitives = array('true' => true, 'false' => true, 'null' => true);
-    private $primitiveMap = array('true' => true, 'false' => false, 'null' => null);
+    private $primitives = array('_true' => true, '_false' => true, '_null' => true);
+    private $primitiveMap = array('_true' => true, '_false' => false, '_null' => null);
 
     /**
      * Set the expression to parse and reset state
@@ -155,20 +151,19 @@ class Lexer implements \IteratorAggregate
                     'value' => $token[0],
                     'pos'   => $token[1]
                 );
-            } elseif (isset($this->primitives[$token[0]])) {
-                $this->tokens[] = array(
-                    'type' => Lexer::T_PRIMITIVE,
-                    'value' => $this->primitiveMap[$token[0]],
-                    'pos' => $token[1]
-                );
+            } elseif (substr($token[0], 0, 1) == '_' && $token[0] != '_') {
+                $value = isset($this->primitives[$token[0]])
+                    ? $this->primitiveMap[$token[0]]
+                    : json_decode(substr($token[0], 1));
+                $this->tokens[] = array('type' => Lexer::T_LITERAL, 'value' => $value, 'pos' => $token[1]);
             } elseif (is_numeric($token[0])) {
                 $this->tokens[] = array(
                     'type'  => self::T_NUMBER,
                     'value' => (int) $token[0],
                     'pos'   => $token[1]
                 );
-            } elseif (preg_match('/^[A-Za-z0-9_\-]+$/', $token[0])) {
-                // Match identifiers by comparing against a mask of valid chars
+            } elseif (preg_match('/^[A-Za-z0-9\-]+[A-Za-z0-9\-_]*$/', $token[0])) {
+                // Match identifiers (cannot start with an underscore)
                 $this->tokens[] = array(
                     'type'  => self::T_IDENTIFIER,
                     'value' => $token[0],
@@ -198,9 +193,11 @@ class Lexer implements \IteratorAggregate
                     'value' => $token[0],
                     'pos'   => $token[1]
                 );
-                // Check for an unclosed quote character (token that is a quote)
+
                 if ($token[0] == '"') {
                     throw new SyntaxErrorException('Unclosed quote character', $t, $this->input);
+                } elseif ($token[0] == '_') {
+                    throw new SyntaxErrorException('Literal token with no value', $t, $this->input);
                 }
             }
         }
