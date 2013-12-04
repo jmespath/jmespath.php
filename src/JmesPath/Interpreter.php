@@ -365,7 +365,7 @@ class Interpreter
 
                 case 'stop':
                     // Halts execution
-                    break;
+                    break 2;
 
                 default:
                     throw new \RuntimeException("Unknown opcode {$opcodes[$opPos][0]}");
