@@ -36,9 +36,6 @@ class Lexer implements \IteratorAggregate
     /** @var array Array of parsed tokens */
     private $tokens;
 
-    /** @var string Mask of valid identifier characters */
-    private $identifier = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-
     /** @var string Regular expression used to split an expression */
     private $regex = '/
         ("(?:\\\"|[^"])*")       # T_IDENTIFIER
@@ -175,7 +172,7 @@ class Lexer implements \IteratorAggregate
                     'value' => $this->primitiveTokens[$token[0]],
                     'pos'   => $token[1]
                 );
-            } elseif (strlen($token[0]) == strspn($token[0], $this->identifier)) {
+            } elseif (preg_match('/^[A-Za-z0-9_\-]+$/', $token[0])) {
                 // Match identifiers by comparing against a mask of valid chars
                 $this->tokens[] = array(
                     'type'  => self::T_IDENTIFIER,
