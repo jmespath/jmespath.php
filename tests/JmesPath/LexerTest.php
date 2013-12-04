@@ -113,12 +113,15 @@ EOT;
     public function testTokenizesJavasriptLiterals()
     {
         $l = new Lexer();
-        $l->setInput('_null, _false, _true, _"abc", _"ab\\"c"');
+        $l->setInput('_null, _false, _true, _"abc", _"ab\\"c", _0, _0.45, _-0.5');
         $tokens =  $l->getTokens();
         $this->assertNull($tokens[0]['value']);
         $this->assertFalse($tokens[2]['value']);
         $this->assertTrue($tokens[4]['value']);
         $this->assertEquals('abc', $tokens[6]['value']);
         $this->assertEquals('ab"c', $tokens[8]['value']);
+        $this->assertSame(0, $tokens[10]['value']);
+        $this->assertSame(0.45, $tokens[12]['value']);
+        $this->assertSame(-0.5, $tokens[14]['value']);
     }
 }

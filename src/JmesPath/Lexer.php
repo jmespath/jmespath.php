@@ -38,7 +38,8 @@ class Lexer implements \IteratorAggregate
     /** @var string Regular expression used to split an expression */
     private $regex = '/
         |(_*"(?:\\\"|[^"])*")    # T_IDENTIFIER or T_LITERAL
-        |([A-Za-z_]+\()          # T_FUNCTION
+        |(_\-*\d+(?:\.\d+)*)     # T_LITERAL
+        |([\w]+\()               # T_FUNCTION
         |([A-Za-z0-9\-_]+)       # T_IDENTIFIER or T_LITERAL or T_NUMBER
         |(\.)                    # T_DOT
         |\s+                     # Ignore whitespace
@@ -145,16 +146,25 @@ class Lexer implements \IteratorAggregate
 
         foreach ($tokens as $token) {
             if (isset($this->simpleTokens[$token[0]])) {
-                // Match simple tokens like '{', '.', etc
+                // Match simple tokens using a hash lookup
                 $this->tokens[] = array(
                     'type'  => $this->simpleTokens[$token[0]],
                     'value' => $token[0],
                     'pos'   => $token[1]
                 );
             } elseif (substr($token[0], 0, 1) == '_' && $token[0] != '_') {
-                $value = isset($this->primitives[$token[0]])
-                    ? $this->primitiveMap[$token[0]]
-                    : json_decode(substr($token[0], 1));
+                // Tokenize literal values
+                if (isset($this->primitives[$token[0]])) {
+                    // Parse simple literal values into primitives
+                    $value = $this->primitiveMap[$token[0]];
+                } elseif ((substr($token[0], 1, 1) == '"' && substr($token[0], -1, 1) == '"' && $token[0] != '_"') ||
+                    is_numeric(substr($token[0], 1))
+                ) {
+                    // Parse string literals and number literals
+                    $value = json_decode(substr($token[0], 1));
+                } else {
+                    throw new SyntaxErrorException('Literal token with an invalid unquoted value', $token, $this->input);
+                }
                 $this->tokens[] = array('type' => Lexer::T_LITERAL, 'value' => $value, 'pos' => $token[1]);
             } elseif (is_numeric($token[0])) {
                 $this->tokens[] = array(

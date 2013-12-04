@@ -36,8 +36,7 @@ class Parser
         Lexer::T_LBRACKET => true,
         Lexer::T_LBRACE => true,
         Lexer::T_FUNCTION => true,
-        Lexer::T_AT => true,
-        Lexer::T_PRIMITIVE => true,
+        Lexer::T_LITERAL => true,
         Lexer::T_MERGE => true,
     );
 
@@ -264,6 +263,11 @@ class Parser
         }
     }
 
+    private function parse_T_LITERAL(array $token)
+    {
+        $this->stack[] = array('push', $token['value']);
+    }
+
     /**
      * Parses an OR expression using a jump_if_true opcode. Parses tokens until
      * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
@@ -417,16 +421,15 @@ class Parser
             Lexer::T_NUMBER     => true, // [0]
             Lexer::T_STAR       => true, // [*]
             Lexer::T_RBRACKET   => true, // foo[]
-            Lexer::T_PRIMITIVE  => true, // foo[true, bar]
+            Lexer::T_LITERAL    => true, // foo[_true, bar]
             Lexer::T_FUNCTION   => true, // foo[count(@)]
-            Lexer::T_AT         => true, // foo[@, 2],
-            Lexer::T_QUESTION   => true, // foo[?(@.bar = 10)]
+            Lexer::T_FILTER     => true, // foo[?bar = 10]
         );
 
         $peek = $this->matchPeek($nextTypes);
         $fromType = $this->previousType();
 
-        if ($peek['type'] == Lexer::T_QUESTION) {
+        if ($peek['type'] == Lexer::T_FILTER) {
             $this->parseFilterExpression();
             return;
         }
@@ -592,12 +595,11 @@ class Parser
     private function parseFunctionArgumentOrLrExpression(array $breakOn)
     {
         $peek = $this->matchPeek(self::$exprTokens);
+        $inNode = $peek['type'] == Lexer::T_DOT || $peek['type'] == Lexer::T_LBRACKET;
 
-        // Functions arguments and LR expressions only operate on the current
-        // node when they start with the T_AT (@) token.
-        if ($inNode = $peek['type'] == Lexer::T_AT) {
+        // Functions arguments and LR exprs operate on the current node
+        if ($inNode) {
             $this->stack[] = array('push_current');
-            $this->nextToken(); // Consume the @ token
             // Allow @ to be by itself by using a union with the break token
             $peek = $this->matchPeek($breakOn + array(
                 Lexer::T_DOT      => true, // @.foo
@@ -630,8 +632,7 @@ class Parser
      */
     private function parseFilterExpression()
     {
-        $this->match(array(Lexer::T_QUESTION => true));
-        $this->match(array(Lexer::T_LPARENS => true));
+        $this->match(array(Lexer::T_FILTER => true));
 
         // Create a bytecode loop
         $this->stack[] = array('each', null);
@@ -649,7 +650,6 @@ class Parser
         $this->stack[] = array('jump', $loopIndex);
 
         // Actually yield values that matched the filter
-        $this->match(array(Lexer::T_RPARENS => true));
         $this->match(array(Lexer::T_RBRACKET => true));
         $this->consumeWildcard($this->peek());
 
@@ -679,8 +679,8 @@ class Parser
 
         // Parse the right hand part of the expression until a T_RPARENS
         $this->parseFunctionArgumentOrLrExpression(array(
-            Lexer::T_RPARENS => true,
-            Lexer::T_OR      => true
+            Lexer::T_RBRACKET => true,
+            Lexer::T_OR       => true
         ));
 
         // Add the operator opcode and track the jump if false index
