@@ -101,6 +101,6 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testHandlesEmptyExpressions()
     {
         $p = new Parser(new Lexer());
-        $this->assertEquals(array(), $p->compile(''));
+        $this->assertEquals(array(array('stop')), $p->compile(''));
     }
 }
