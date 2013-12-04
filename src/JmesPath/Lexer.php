@@ -86,11 +86,8 @@ class Lexer implements \IteratorAggregate
         '[]'     => self::T_MERGE,
     );
 
-    private $primitiveTokens = array(
-        'true'  => true,
-        'false' => false,
-        'null'  => null
-    );
+    private $primitives = array('true' => true, 'false' => true, 'null' => true);
+    private $primitiveMap = array('true' => true, 'false' => false, 'null' => null);
 
     /**
      * Set the expression to parse and reset state
@@ -158,18 +155,17 @@ class Lexer implements \IteratorAggregate
                     'value' => $token[0],
                     'pos'   => $token[1]
                 );
+            } elseif (isset($this->primitives[$token[0]])) {
+                $this->tokens[] = array(
+                    'type' => Lexer::T_PRIMITIVE,
+                    'value' => $this->primitiveMap[$token[0]],
+                    'pos' => $token[1]
+                );
             } elseif (is_numeric($token[0])) {
-                // Match numbers
+                // Match less common numbers and floats
                 $this->tokens[] = array(
                     'type'  => self::T_NUMBER,
                     'value' => (int) $token[0],
-                    'pos'   => $token[1]
-                );
-            } elseif ($token[0] == 'true' || $token[0] == 'false' || $token[0] == 'null') {
-                // Parse primitive tokens (true, false, null) into PHP types
-                $this->tokens[] = array(
-                    'type'  => Lexer::T_PRIMITIVE,
-                    'value' => $this->primitiveTokens[$token[0]],
                     'pos'   => $token[1]
                 );
             } elseif (preg_match('/^[A-Za-z0-9_\-]+$/', $token[0])) {
@@ -211,10 +207,6 @@ class Lexer implements \IteratorAggregate
         }
 
         // Always end the token stream with an EOF token
-        $this->tokens[] = array(
-            'type'  => self::T_EOF,
-            'value' => null,
-            'pos'   => strlen($this->input)
-        );
+        $this->tokens[] = array('type' => self::T_EOF, 'value' => null, 'pos' => strlen($this->input));
     }
 }
