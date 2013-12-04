@@ -104,7 +104,7 @@ class Interpreter
             $arg2 = isset($opcodes[$opPos][2]) ? $opcodes[$opPos][2] : null;
 
             if ($this->debug) {
-                $this->debugLine($opPos, $stack, $currentStack, $opcodes[$opPos][0]);
+                $this->debugLine($opPos, $stack, $currentStack, $opcodes[$opPos]);
             }
 
             switch ($opcodes[$opPos][0]) {
@@ -412,7 +412,7 @@ class Interpreter
     private function debugLine($key, $stack, $currentStack, $op)
     {
         ob_start();
-        $arg = 'op_' . $op[0];
+        $arg = $op[0];
         $opLine = '> ' .    str_pad($key, 3, ' ', STR_PAD_RIGHT) . ' ';
         $opLine .= str_pad($arg, 17, ' ') . '   ';
         $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 14, ' ');
