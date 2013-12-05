@@ -439,6 +439,7 @@ class Parser
             Lexer::T_IDENTIFIER => true, // [a, b]
             Lexer::T_NUMBER     => true, // [0]
             Lexer::T_STAR       => true, // [*]
+            Lexer::T_LBRACKET   => true, // foo[[0], [1]]
             Lexer::T_RBRACKET   => true, // foo[]
             Lexer::T_LITERAL    => true, // foo[_true, bar]
             Lexer::T_FUNCTION   => true, // foo[count(@)]

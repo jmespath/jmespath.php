@@ -17,7 +17,15 @@
       "result": 1
     },
     {
+      "expression": "abs(foo)",
+      "result": 1
+    },
+    {
       "expression": "abs(@.str)",
+      "result": null
+    },
+    {
+      "expression": "abs(str)",
       "result": null
     },
     {
@@ -25,7 +33,15 @@
       "result": 3
     },
     {
+      "expression": "abs(arr[1])",
+      "result": 3
+    },
+    {
       "expression": "abs(false)",
+      "result": null
+    },
+    {
+      "expression": "abs(_false)",
       "result": null
     },
     {
@@ -41,11 +57,19 @@
       "result": 2.75
     },
     {
-      "expression": "avg(\"abc\")",
+      "expression": "avg(arr)",
+      "result": 2.75
+    },
+    {
+      "expression": "avg(_\"abc\")",
       "result": null
     },
     {
       "expression": "avg(@.foo)",
+      "result": null
+    },
+    {
+      "expression": "avg(foo)",
       "result": null
     },
     {
@@ -57,7 +81,15 @@
       "result": null
     },
     {
+      "expression": "avg(strings)",
+      "result": null
+    },
+    {
       "expression": "ceil(@.dec[0])",
+      "result": 2
+    },
+    {
+      "expression": "ceil(dec[0])",
       "result": 2
     },
     {
@@ -65,7 +97,15 @@
       "result": 2
     },
     {
+      "expression": "ceil(dec[1])",
+      "result": 2
+    },
+    {
       "expression": "ceil(@.dec[2])",
+      "result": -1
+    },
+    {
+      "expression": "ceil(dec[2])",
       "result": -1
     },
     {
@@ -73,23 +113,27 @@
       "result": null
     },
     {
-      "expression": "concat(@.strings[0], @.strings[1], @.strings[2])",
-      "result": "abc"
-    },
-    {
-      "expression": "concat(@.strings[0], @.strings[1], @.strings[2], @.foo)",
-      "result": "abc-1"
-    },
-    {
-      "expression": "concat(@.strings[0], @.strings[1], @.strings[2], @)",
-      "result": "abc"
-    },
-    {
-      "expression": "concat(null, false)",
+      "expression": "ceil(_\"abc\")",
       "result": null
     },
     {
-      "expression": "concat(foo)",
+      "expression": "concat(@.strings[0], strings[1], @.strings[2])",
+      "result": "abc"
+    },
+    {
+      "expression": "concat(strings[0], strings[1], @.strings[2], foo)",
+      "result": "abc-1"
+    },
+    {
+      "expression": "concat(@.strings[0], @.strings[1], strings[2], @)",
+      "result": "abc"
+    },
+    {
+      "expression": "concat(_null, _false)",
+      "result": null
+    },
+    {
+      "expression": "concat(_\"foo\")",
       "error": "runtime"
     },
     {
@@ -97,27 +141,27 @@
       "error": "runtime"
     },
     {
-      "expression": "contains(abc, a)",
+      "expression": "contains(_\"abc\", _\"a\")",
       "result": true
     },
     {
-      "expression": "contains(abc, d)",
+      "expression": "contains(_\"abc\", _\"d\")",
       "result": false
     },
     {
-      "expression": "contains(false, d)",
+      "expression": "contains(_false, _\"d\")",
       "result": null
     },
     {
-      "expression": "contains(@.strings, a)",
+      "expression": "contains(@.strings, _\"a\")",
       "result": true
     },
     {
-      "expression": "contains(@.dec, 1.9)",
-      "result": false
+      "expression": "contains(@.dec, _1.9)",
+      "error": "runtime"
     },
     {
-      "expression": "contains(@.dec, false)",
+      "expression": "contains(@.dec, _false)",
       "error": "runtime"
     },
     {
@@ -125,7 +169,7 @@
       "result": 9
     },
     {
-      "expression": "length(@.arr)",
+      "expression": "length(arr)",
       "result": 6
     },
     {
@@ -134,6 +178,10 @@
     },
     {
       "expression": "floor(@.dec[0])",
+      "result": 1
+    },
+    {
+      "expression": "floor(dec[0])",
       "result": 1
     },
     {
@@ -157,31 +205,31 @@
       "result": -1
     },
     {
-      "expression": "get(@.zero, 10)",
+      "expression": "get(@.zero, _10)",
       "result": 0
     },
     {
-      "expression": "get(null, false, @.empty, true)",
+      "expression": "get(_null, _false, @.empty, _true)",
       "result": true
     },
     {
-      "expression": "join(\", \", @.str)",
+      "expression": "join(_\", \", str)",
       "result": null
     },
     {
-      "expression": "join(\", \", @.strings)",
+      "expression": "join(_\", \", strings)",
       "result": "a, b, c"
     },
     {
-      "expression": "join(\"|\", @.strings)",
+      "expression": "join(_\"|\", strings)",
       "result": "a|b|c"
     },
     {
-      "expression": "join(\"|\", @.dec)",
+      "expression": "join(_\"|\", @.dec)",
       "result": "1.01|1.9|-1.5"
     },
     {
-      "expression": "join(\"|\", @.empty)",
+      "expression": "join(_\"|\", @.empty)",
       "result": ""
     },
     {
@@ -197,19 +245,19 @@
       "result": null
     },
     {
-      "expression": "keys(abc)",
+      "expression": "keys(_\"abc\")",
       "result": null
     },
     {
-      "expression": "keys(false)",
+      "expression": "keys(_false)",
       "result": null
     },
     {
-      "expression": "length(abc)",
+      "expression": "length(_\"abc\")",
       "result": 3
     },
     {
-      "expression": "length(\"\")",
+      "expression": "length(_\"\")",
       "result": 0
     },
     {
@@ -221,7 +269,7 @@
       "result": 1
     },
     {
-      "expression": "length(false)",
+      "expression": "length(_false)",
       "result": null
     },
     {
@@ -229,35 +277,39 @@
       "result": "str"
     },
     {
-      "expression": "lowercase(false)",
+      "expression": "lowercase(_false)",
       "result": null
     },
     {
-      "expression": "matches(@.str, \"str\")",
+      "expression": "matches(@.str, _\"str\")",
       "result": false
     },
     {
-      "expression": "matches(@.str, \"str\", i)",
+      "expression": "matches(@.str, _\"str\", _\"i\")",
       "result": true
     },
     {
-      "expression": "matches(@.str, false)",
+      "expression": "matches(@.str, _false)",
       "error": "runtime"
     },
     {
-      "expression": "matches(@.str, \"ST\", \"im\")",
+      "expression": "matches(@.str, _\"ST\", _\"im\")",
       "result": true
     },
     {
-      "expression": "matches(false, \"str\")",
+      "expression": "matches(_false, _\"str\")",
       "result": null
     },
     {
-      "expression": "matches(str, \"str\", i, 123)",
+      "expression": "matches(_\"str\", _\"str\", _\"i\", 123)",
       "error": "runtime"
     },
     {
       "expression": "max(@.arr)",
+      "result": 5
+    },
+    {
+      "expression": "max(arr)",
       "result": 5
     },
     {
@@ -329,27 +381,27 @@
       "result": null
     },
     {
-      "expression": "substring(abc, 0, -1)",
+      "expression": "substring(_\"abc\", 0, -1)",
       "result": "ab"
     },
     {
-      "expression": "substring(abc, -2)",
+      "expression": "substring(_\"abc\", -2)",
       "result": "bc"
     },
     {
-      "expression": "substring(abc123, 1)",
+      "expression": "substring(_\"abc123\", _1)",
       "result": "bc123"
     },
     {
-      "expression": "substring(false, 1, 1)",
+      "expression": "substring(_false, 1, 1)",
       "result": null
     },
     {
-      "expression": "substring(abc, true)",
+      "expression": "substring(_\"abc\", _true)",
       "error": "runtime"
     },
     {
-      "expression": "substring(abc, 1, false)",
+      "expression": "substring(_\"abc\", 1, _false)",
       "error": "runtime"
     },
     {
@@ -357,7 +409,7 @@
       "error": "runtime"
     },
     {
-      "expression": "type(abc)",
+      "expression": "type(_\"abc\")",
       "result": "String"
     },
     {
@@ -365,19 +417,27 @@
       "result": "Number"
     },
     {
-      "expression": "type(1.2)",
+      "expression": "type(_123)",
       "result": "Number"
     },
     {
-      "expression": "type(true)",
+      "expression": "type(_1.2)",
+      "result": "Number"
+    },
+    {
+      "expression": "type(_true)",
       "result": "Boolean"
     },
     {
-      "expression": "type(false)",
+      "expression": "type(_false)",
       "result": "Boolean"
     },
     {
       "expression": "type(@.empty)",
+      "result": "Array"
+    },
+    {
+      "expression": "type(empty)",
       "result": "Array"
     },
     {
@@ -393,7 +453,7 @@
       "result": "STR"
     },
     {
-      "expression": "uppercase(false)",
+      "expression": "uppercase(_false)",
       "result": null
     }
   ]
@@ -439,33 +499,6 @@
     {
       "expression": "values(@[4])",
       "result": null
-    }
-  ]
-}, {
-  "given":
-    [
-      {"foo": "there"},
-      {"foo": "hi"},
-      {"foo": "test"},
-      "abc",
-      false,
-      [1]
-    ],
-  "cases": [
-    {
-      "expression": "sort_by(@, \"foo\")",
-      "result": [
-        {"foo": "hi"},
-        {"foo": "test"},
-        {"foo": "there"},
-        [1],
-        false,
-        "abc"
-      ]
-    },
-    {
-      "expression": "sort_by(@, \"foo\")[].foo",
-      "result": ["hi", "test", "there"]
     }
   ]
 }]

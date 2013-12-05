@@ -156,19 +156,7 @@ class Lexer implements \IteratorAggregate
                     'pos'   => $token[1]
                 );
             } elseif (substr($token[0], 0, 1) == '_' && $token[0] != '_') {
-                // Tokenize literal values
-                if (isset($this->primitives[$token[0]])) {
-                    // Parse simple literal values into primitives
-                    $value = $this->primitiveMap[$token[0]];
-                } elseif ((substr($token[0], 1, 1) == '"' && substr($token[0], -1, 1) == '"' && $token[0] != '_"') ||
-                    is_numeric(substr($token[0], 1))
-                ) {
-                    // Parse string literals and number literals
-                    $value = json_decode(substr($token[0], 1));
-                } else {
-                    throw new SyntaxErrorException('Literal token with an invalid unquoted value', $token, $this->input);
-                }
-                $this->tokens[] = array('type' => Lexer::T_LITERAL, 'value' => $value, 'pos' => $token[1]);
+                $this->parseLiteral($token);
             } elseif (is_numeric($token[0])) {
                 $this->tokens[] = array(
                     'type'  => self::T_NUMBER,
@@ -217,5 +205,35 @@ class Lexer implements \IteratorAggregate
 
         // Always end the token stream with an EOF token
         $this->tokens[] = array('type' => self::T_EOF, 'value' => null, 'pos' => strlen($this->input));
+    }
+
+    /**
+     * Parses a literal token into either a T_NUMBER or T_LITERAL
+     *
+     * @param array $token Token to parse
+     *
+     * @throws SyntaxErrorException If the literal token is invalid
+     */
+    private function parseLiteral(array $token)
+    {
+        $type = Lexer::T_LITERAL;
+
+        if (isset($this->primitives[$token[0]])) {
+            $value = $this->primitiveMap[$token[0]];
+        } else {
+            $value = json_decode(substr($token[0], 1));
+            if ($error = json_last_error()) {
+                throw new SyntaxErrorException(
+                    'Invalid literal token',
+                    array('pos' => $token[1]),
+                    $this->input
+                );
+            }
+            if (is_int($value) || is_double($value)) {
+                $type = Lexer::T_NUMBER;
+            }
+        }
+
+        $this->tokens[] = array('type' => $type, 'value' => $value, 'pos' => $token[1]);
     }
 }

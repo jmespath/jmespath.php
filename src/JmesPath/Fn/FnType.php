@@ -29,7 +29,7 @@ class FnType extends AbstractFn
             'boolean' => 'Boolean',
             'string'  => 'String',
             'NULL'    => 'null',
-            'float'   => 'Number',
+            'double'  => 'Number',
             'integer' => 'Number'
         );
 

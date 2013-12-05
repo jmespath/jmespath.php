@@ -47,7 +47,7 @@ EOT;
         }
     }
 
-    public function testValidatesLiteralValues()
+    public function testValidatesLiteralValuesAreSet()
     {
         $l = new Lexer();
         $l->setInput('_');
@@ -60,6 +60,24 @@ Syntax error at character 0
 _
 ^
 Literal token with no value
+EOT;
+            $this->assertContains($expected, $e->getMessage());
+        }
+    }
+
+    public function testValidatesLiteralValues()
+    {
+        $l = new Lexer();
+        $l->setInput('_abc');
+        try {
+            $l->getIterator();
+            $this->fail('Did not throw');
+        } catch (SyntaxErrorException $e) {
+            $expected = <<<EOT
+Syntax error at character 0
+_abc
+^
+Invalid literal token
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }

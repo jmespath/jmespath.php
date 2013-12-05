@@ -52,7 +52,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testEmitsIndexOpcodesForNestedExpressions()
     {
         $p = new Parser(new Lexer());
-        $result = $p->compile('foo[1, 2]');
+        $result = $p->compile('foo[[1], [2]]');
         $this->assertSame(array (
             0 => array('field', 'foo'),
             1 => array('is_empty'),
@@ -74,7 +74,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testCreatesWildcardLoop()
     {
         $p = new Parser(new Lexer());
-        $result = $p->compile('foo.*[1, 2]');
+        $result = $p->compile('foo.*[[1], [2]]');
 
         $this->assertEquals(array(
             0  => array('field', 'foo'),
