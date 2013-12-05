@@ -38,6 +38,7 @@ class Parser
         Lexer::T_FUNCTION => true,
         Lexer::T_LITERAL => true,
         Lexer::T_MERGE => true,
+        Lexer::T_AT => true
     );
 
     /** @var array Scope changes */
@@ -280,6 +281,12 @@ class Parser
     {
         $this->stack[] = array('push', $token['value']);
     }
+
+    /**
+     * The AT token is a no op as the current node should always already be
+     * on the stack
+     */
+    private function parse_T_AT(array $token) {}
 
     /**
      * Parses an OR expression using a jump_if_true opcode. Parses tokens until
@@ -639,7 +646,8 @@ class Parser
             $peek['type'] == Lexer::T_FUNCTION ||
             $peek['type'] == Lexer::T_LBRACKET ||
             $peek['type'] == Lexer::T_LBRACE ||
-            $peek['type'] == Lexer::T_FILTER;
+            $peek['type'] == Lexer::T_FILTER ||
+            $peek['type'] == Lexer::T_AT;
 
         // Parse all of the tokens of the argument expression
         while (!isset($breakOn[$peek['type']])) {

@@ -28,6 +28,7 @@ class Lexer implements \IteratorAggregate
     const T_MERGE = 'T_MERGE';
     const T_LITERAL = 'T_LITERAL';
     const T_FILTER = 'T_FILTER';
+    const T_AT = 'T_AT';
 
     /** @var string JMESPath expression */
     private $input;
@@ -57,6 +58,7 @@ class Lexer implements \IteratorAggregate
         |(\))                    # T_RPARENS
         |(<=|>=|>|<|!=|=)        # T_OPERATOR
         |(\|\|)                  # T_OR
+        |(@)                     # T_AT
         |(.)                     # T_UNKNOWN
     /x';
 
@@ -81,6 +83,7 @@ class Lexer implements \IteratorAggregate
         '>='     => self::T_OPERATOR,
         '<='     => self::T_OPERATOR,
         '[]'     => self::T_MERGE,
+        '@'      => self::T_AT,
     );
 
     private $primitives = array('_true' => true, '_false' => true, '_null' => true);
