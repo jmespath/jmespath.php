@@ -122,12 +122,7 @@ class Parser
      */
     private function nextToken()
     {
-        if (++$this->tokenPos > $this->tokenCount) {
-            $this->tokenPos = $this->tokenCount;
-            return self::$nullToken;
-        }
-
-        return $this->tokens[$this->tokenPos];
+        return $this->tokens[++$this->tokenPos];
     }
 
     /**
