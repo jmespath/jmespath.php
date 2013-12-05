@@ -29,7 +29,6 @@ class Interpreter
             'ceil' => 'JmesPath\Fn\FnCeil',
             'concat' => 'JmesPath\Fn\FnConcat',
             'contains' => 'JmesPath\Fn\FnContains',
-            'count' => 'JmesPath\Fn\FnCount',
             'floor' => 'JmesPath\Fn\FnFloor',
             'get' => 'JmesPath\Fn\FnGet',
             'join' => 'JmesPath\Fn\FnJoin',
