@@ -155,7 +155,7 @@ class Lexer implements \IteratorAggregate
                     'value' => $token[0],
                     'pos'   => $token[1]
                 );
-            } elseif (substr($token[0], 0, 1) == '_' && $token[0] != '_') {
+            } elseif (substr($token[0], 0, 1) == '_') {
                 $this->parseLiteral($token);
             } elseif (is_numeric($token[0])) {
                 $this->tokens[] = array(
@@ -197,8 +197,6 @@ class Lexer implements \IteratorAggregate
 
                 if ($token[0] == '"') {
                     throw new SyntaxErrorException('Unclosed quote character', $t, $this->input);
-                } elseif ($token[0] == '_') {
-                    throw new SyntaxErrorException('Literal token with no value', $t, $this->input);
                 }
             }
         }
@@ -216,24 +214,29 @@ class Lexer implements \IteratorAggregate
      */
     private function parseLiteral(array $token)
     {
-        $type = Lexer::T_LITERAL;
+        $error = false;
 
-        if (isset($this->primitives[$token[0]])) {
+        if ($token[0] == '_') {
+            $error = true;
+        } elseif (isset($this->primitives[$token[0]])) {
             $value = $this->primitiveMap[$token[0]];
         } else {
             $value = json_decode(substr($token[0], 1));
-            if ($error = json_last_error()) {
-                throw new SyntaxErrorException(
-                    'Invalid literal token',
-                    array('pos' => $token[1]),
-                    $this->input
-                );
-            }
-            if (is_int($value) || is_double($value)) {
-                $type = Lexer::T_NUMBER;
-            }
+            $error = json_last_error();
         }
 
-        $this->tokens[] = array('type' => $type, 'value' => $value, 'pos' => $token[1]);
+        if ($error) {
+            throw new SyntaxErrorException(
+                'Invalid literal token',
+                array('pos' => $token[1]),
+                $this->input
+            );
+        }
+
+        $this->tokens[] = array(
+            'type'  => Lexer::T_LITERAL,
+            'value' => $value,
+            'pos'   => $token[1]
+        );
     }
 }

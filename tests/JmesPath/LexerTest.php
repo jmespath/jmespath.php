@@ -59,7 +59,7 @@ EOT;
 Syntax error at character 0
 _
 ^
-Literal token with no value
+Invalid literal token
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }

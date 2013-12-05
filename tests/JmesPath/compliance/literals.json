@@ -1,0 +1,59 @@
+[{
+  "given":
+    {
+      "foo": {
+        "bar": 1,
+        "baz": ["a", "b"]
+      }
+    },
+  "cases": [
+    {
+      "expression": "_true",
+      "result": true
+    },
+    {
+      "expression": "_false",
+      "result": false
+    },
+    {
+      "expression": "_null",
+      "result": null
+    },
+    {
+      "expression": "_\"abc\"",
+      "result": "abc"
+    },
+    {
+      "expression": "_123",
+      "result": 123
+    },
+    {
+      "expression": "_1.24",
+      "result": 1.24
+    },
+    {
+      "expression": "_-1.24",
+      "result": -1.24
+    },
+    {
+      "expression": "_",
+      "error": "syntax"
+    },
+    {
+      "expression": "_foo",
+      "error": "syntax"
+    },
+    {
+      "expression": "_\"foo",
+      "error": "syntax"
+    },
+    {
+      "expression": "[_true, _false]",
+      "result": [true, false]
+    },
+    {
+      "expression": "[foo.bar, _true, _false, foo.baz[0]]",
+      "result": [1, true, false, "a"]
+    }
+  ]
+}]

@@ -425,10 +425,6 @@ class Parser
 
     private function parse_T_MERGE(array $token)
     {
-        if ($this->previousType() == 'Object') {
-            throw $this->syntax('Cannot merge from an object');
-        }
-
         $this->stack[] = array('merge');
         $this->parse_T_STAR($token, 'Array');
     }
