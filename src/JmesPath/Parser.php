@@ -49,6 +49,13 @@ class Parser
         Lexer::T_EOF => true
     );
 
+    private static $noPushTokens = array(
+        Lexer::T_FUNCTION => true,
+        Lexer::T_FILTER   => true,
+        Lexer::T_LITERAL  => true,
+        Lexer::T_NUMBER   => true,
+    );
+
     /**
      * @param Lexer $lexer Lexer used to tokenize paths
      */
@@ -184,7 +191,12 @@ class Parser
     {
         $prevPos = $this->tokenPos - 1;
         if (isset($this->tokens[$prevPos])) {
-            return $this->tokens[$prevPos]['type'] == Lexer::T_DOT ? 'Object' : 'Array';
+            if ($this->tokens[$prevPos]['type'] == Lexer::T_DOT) {
+                return 'Object';
+            } elseif ($this->tokens[$prevPos]['type'] != Lexer::T_OR) {
+                // Note: a previous type of 'OR' means we dunno if Array or Obj
+                return 'Array';
+            }
         }
 
         return null;
@@ -253,6 +265,7 @@ class Parser
             Lexer::T_STAR       => true, // foo.*
             Lexer::T_LBRACE     => true, // foo[1]
             Lexer::T_LBRACKET   => true, // foo{a: 0}
+            Lexer::T_FILTER     => true,
         );
 
         $next = $this->matchPeek($nextTypes);
@@ -284,7 +297,7 @@ class Parser
         $this->stack[] = array('pop');
 
         // Push the current node onto the stack if needed
-        if ($peek['type'] != Lexer::T_FUNCTION) {
+        if (!isset(self::$noPushTokens[$token['type']])) {
             $this->stack[] = array('push_current');
         }
 
@@ -384,8 +397,7 @@ class Parser
         }
         $token = $this->match($valid);
 
-        // Account for functions that don't need a current node pushed
-        if ($token['type'] != Lexer::T_FUNCTION) {
+        if (!isset(self::$noPushTokens[$token['type']])) {
             $this->stack[] = array('push_current');
         }
         $this->parseInstruction($token);
@@ -423,16 +435,11 @@ class Parser
             Lexer::T_RBRACKET   => true, // foo[]
             Lexer::T_LITERAL    => true, // foo[_true, bar]
             Lexer::T_FUNCTION   => true, // foo[count(@)]
-            Lexer::T_FILTER     => true, // foo[?bar = 10]
+            Lexer::T_FILTER     => true, // foo[[?bar = 10], baz]
         );
 
         $peek = $this->matchPeek($nextTypes);
         $fromType = $this->previousType();
-
-        if ($peek['type'] == Lexer::T_FILTER) {
-            $this->parseFilterExpression();
-            return;
-        }
 
         // Parse simple expressions like [10] or [*]
         $nextTwo = $this->peek(2);
@@ -459,42 +466,30 @@ class Parser
         $this->parseMultiBracket($fromType);
     }
 
-    /**
-     * Parse a multi-bracket expression list element while only allowing
-     * certain key types.
-     *
-     * @param string $type Valid key types (Array or Object)
-     * @throws SyntaxErrorException
-     */
-    private function parseMultiBracketElement($type)
+    private function parse_T_FILTER(array $token)
     {
-        // Don't allow Number indices on Objects or strings on Arrays
-        $valid = self::$exprTokens;
-        if ($type == 'Array') {
-            unset($valid[Lexer::T_IDENTIFIER]);
-        } elseif ($type == 'Object') {
-            unset($valid[Lexer::T_NUMBER]);
-        }
-        $token = $this->match($valid);
+        // Create a bytecode loop
+        $this->stack[] = array('each', null);
+        $loopIndex = count($this->stack) - 1;
+        $this->stack[] = array('mark_current');
+        $this->parseFullExpression();
 
-        // Push the current node onto the stack if the token is not a function
-        if ($token['type'] != Lexer::T_FUNCTION) {
-            $this->stack[] = array('push_current');
-        }
-        $this->parseInstruction($token);
+        // If the evaluated filter was true, then jump to the wildcard loop
+        $this->stack[] = array('pop_current');
+        $this->stack[] = array('jump_if_true', count($this->stack) + 4);
 
-        // Parse the rest of the expression until a scope changing token
-        $peek = $this->peek();
-        while ($peek['type'] != Lexer::T_COMMA && $peek['type'] != Lexer::T_RBRACKET) {
-            $token = $this->nextToken();
-            if ($token['type'] == Lexer::T_EOF) {
-                throw $this->syntax('Unexpected T_EOF');
-            }
-            $this->parseInstruction($token);
-            $peek = $this->peek();
-        }
+        // Kill temp variables when a filter filters a node
+        $this->stack[] = array('pop');
+        $this->stack[] = array('push', null);
+        $this->stack[] = array('jump', $loopIndex);
 
-        $this->storeMultiBranchKey(null);
+        // Actually yield values that matched the filter
+        $this->match(array(Lexer::T_RBRACKET => true));
+        $this->consumeWildcard($this->peek());
+
+        // Finish the projection loop
+        $this->stack[] = array('jump', $loopIndex);
+        $this->stack[$loopIndex][1] = count($this->stack);
     }
 
     /**
@@ -520,6 +515,45 @@ class Parser
         }
 
         $this->finishMultiBranch($index);
+    }
+
+    /**
+     * Parse a multi-bracket expression list element while only allowing
+     * certain key types.
+     *
+     * @param string $type Valid key types (Array or Object)
+     * @throws SyntaxErrorException
+     */
+    private function parseMultiBracketElement($type)
+    {
+        // Don't allow Number indices on Objects or strings on Arrays
+        $valid = self::$exprTokens;
+        if ($type == 'Array') {
+            unset($valid[Lexer::T_IDENTIFIER]);
+        } elseif ($type == 'Object') {
+            unset($valid[Lexer::T_NUMBER]);
+        }
+        $token = $this->match($valid);
+
+        // Push the current node onto the stack if the token is not a function
+        if (!isset(self::$noPushTokens[$token['type']])) {
+            $this->stack[] = array('push_current');
+        }
+
+        $this->parseInstruction($token);
+
+        // Parse the rest of the expression until a scope changing token
+        $peek = $this->peek();
+        while ($peek['type'] != Lexer::T_COMMA && $peek['type'] != Lexer::T_RBRACKET) {
+            $token = $this->nextToken();
+            if ($token['type'] == Lexer::T_EOF) {
+                throw $this->syntax('Unexpected T_EOF');
+            }
+            $this->parseInstruction($token);
+            $peek = $this->peek();
+        }
+
+        $this->storeMultiBranchKey(null);
     }
 
     /**
@@ -595,19 +629,17 @@ class Parser
     private function parseFunctionArgumentOrLrExpression(array $breakOn)
     {
         $peek = $this->matchPeek(self::$exprTokens);
-        $inNode = $peek['type'] == Lexer::T_DOT || $peek['type'] == Lexer::T_LBRACKET;
 
         // Functions arguments and LR exprs operate on the current node
-        if ($inNode) {
+        if (!isset(self::$noPushTokens[$peek['type']])) {
             $this->stack[] = array('push_current');
-            // Allow @ to be by itself by using a union with the break token
-            $peek = $this->matchPeek($breakOn + array(
-                Lexer::T_DOT      => true, // @.foo
-                Lexer::T_LBRACKET => true, // @[0]
-                Lexer::T_LBRACE   => true, // @{a: 1}
-                Lexer::T_COMMA    => true, // foo[@, 0]
-            ));
         }
+
+        $inNode = $peek['type'] == Lexer::T_IDENTIFIER ||
+            $peek['type'] == Lexer::T_FUNCTION ||
+            $peek['type'] == Lexer::T_LBRACKET ||
+            $peek['type'] == Lexer::T_LBRACE ||
+            $peek['type'] == Lexer::T_FILTER;
 
         // Parse all of the tokens of the argument expression
         while (!isset($breakOn[$peek['type']])) {
@@ -624,38 +656,6 @@ class Parser
         }
 
         return $peek;
-    }
-
-    /**
-     * Determines if the expression in a bracket is a filter
-     * @throws SyntaxErrorException
-     */
-    private function parseFilterExpression()
-    {
-        $this->match(array(Lexer::T_FILTER => true));
-
-        // Create a bytecode loop
-        $this->stack[] = array('each', null);
-        $loopIndex = count($this->stack) - 1;
-        $this->stack[] = array('mark_current');
-        $this->parseFullExpression();
-
-        // If the evaluated filter was true, then jump to the wildcard loop
-        $this->stack[] = array('pop_current');
-        $this->stack[] = array('jump_if_true', count($this->stack) + 4);
-
-        // Kill temp variables when a filter filters a node
-        $this->stack[] = array('pop');
-        $this->stack[] = array('push', null);
-        $this->stack[] = array('jump', $loopIndex);
-
-        // Actually yield values that matched the filter
-        $this->match(array(Lexer::T_RBRACKET => true));
-        $this->consumeWildcard($this->peek());
-
-        // Finish the projection loop
-        $this->stack[] = array('jump', $loopIndex);
-        $this->stack[$loopIndex][1] = count($this->stack);
     }
 
     /**
