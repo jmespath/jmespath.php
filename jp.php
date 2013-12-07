@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 require 'vendor/autoload.php';
@@ -30,9 +31,9 @@ if (!isset($argv[2])) {
 echo "Expression\n==========\n\n{$expression}\n\n";
 
 $lexer = new Lexer();
-$lexer->setInput($expression);
 echo "Tokens\n======\n\n";
-foreach ($lexer as $token) {
+$tokens = $lexer->tokenize($expression);
+foreach ($tokens as $token) {
     echo str_pad($token['pos'], 3, ' ', STR_PAD_LEFT) . '   ';
     echo str_pad($token['type'], 15, ' ') . '   ';
     echo $token['value'] . "\n";
