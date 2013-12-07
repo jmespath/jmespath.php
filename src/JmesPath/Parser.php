@@ -428,7 +428,12 @@ class Parser
     private function parse_T_MERGE(array $token)
     {
         $this->stack[] = array('merge');
-        $this->parse_T_STAR($token, 'array');
+        $peek = $this->peek();
+
+        // Short circuit the projection loop for specific scope changing tokens
+        if (!isset(self::$scope[$peek['type']])) {
+            $this->parse_T_STAR($token, 'array');
+        }
     }
 
     private function parse_T_PIPE(array $token)
