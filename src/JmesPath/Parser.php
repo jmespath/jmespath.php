@@ -50,7 +50,8 @@ class Parser
         Lexer::T_OR => true,
         Lexer::T_RBRACE => true,
         Lexer::T_RBRACKET => true,
-        Lexer::T_EOF => true
+        Lexer::T_PIPE => true,
+        Lexer::T_EOF => true,
     );
 
     private static $noPushTokens = array(
@@ -232,6 +233,7 @@ class Parser
             Lexer::T_OR       => true, // foo || bar
             Lexer::T_OPERATOR => true, // foo[a = "a"]
             Lexer::T_RPARENS  => true, // foo[length(abc)]
+            Lexer::T_PIPE     => true, // foo.*.a | [0]
         );
 
         $this->matchPeek($nextTypes);
@@ -249,6 +251,7 @@ class Parser
             Lexer::T_OR       => true, // foo.-1 || bar
             Lexer::T_OPERATOR => true, // foo[1 < 2]
             Lexer::T_EOF      => true, // foo.-1
+            Lexer::T_PIPE     => true, // foo.-1 | bar
         );
 
         $this->matchPeek($nextTypes);
@@ -329,7 +332,8 @@ class Parser
             Lexer::T_LBRACE   => true, // foo.*{a: 0, b: 1}
             Lexer::T_RBRACE   => true, // foo.{a: a, b: b.*}
             Lexer::T_OR       => true, // foo.* || foo
-            Lexer::T_COMMA    => true, // foo.[a.*, b]
+            Lexer::T_COMMA    => true, // foo.[a.*, b],
+            Lexer::T_PIPE     => true, // foo.* | [0],
         );
 
         $peek = $this->matchPeek($nextTypes);
@@ -425,6 +429,12 @@ class Parser
     {
         $this->stack[] = array('merge');
         $this->parse_T_STAR($token, 'Array');
+    }
+
+    private function parse_T_PIPE(array $token)
+    {
+        $this->stack[] = array('pop_current');
+        $this->stack[] = array('mark_current');
     }
 
     private function parse_T_LBRACKET(array $token)

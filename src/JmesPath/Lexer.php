@@ -13,6 +13,7 @@ class Lexer
     const T_STAR       = 'T_STAR';
     const T_NUMBER     = 'T_NUMBER';
     const T_OR         = 'T_OR';
+    const T_PIPE       = 'T_PIPE';
     const T_LBRACKET   = 'T_LBRACKET';
     const T_RBRACKET   = 'T_RBRACKET';
     const T_COMMA      = 'T_COMMA';
@@ -318,8 +319,13 @@ class Lexer
     {
         $this->consume();
 
+        // Check for pipe-expression vs or-expression
         if ($this->c != '|') {
-            $this->throwSyntax('Missing trailing | character');
+            return array(
+                'type'  => Lexer::T_PIPE,
+                'value' => '|',
+                'pos'   => $this->pos - 1
+            );
         }
 
         $this->consume();
