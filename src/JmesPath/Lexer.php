@@ -7,28 +7,28 @@ namespace JmesPath;
  */
 class Lexer
 {
-    const T_EOF = 'T_EOF';
+    const T_EOF        = 'T_EOF';
     const T_IDENTIFIER = 'T_IDENTIFIER';
-    const T_DOT = 'T_DOT';
-    const T_STAR = 'T_STAR';
-    const T_NUMBER = 'T_NUMBER';
-    const T_OR = 'T_OR';
-    const T_LBRACKET = 'T_LBRACKET';
-    const T_RBRACKET = 'T_RBRACKET';
-    const T_COMMA = 'T_COMMA';
-    const T_LBRACE = 'T_LBRACE';
-    const T_RBRACE = 'T_RBRACE';
+    const T_DOT        = 'T_DOT';
+    const T_STAR       = 'T_STAR';
+    const T_NUMBER     = 'T_NUMBER';
+    const T_OR         = 'T_OR';
+    const T_LBRACKET   = 'T_LBRACKET';
+    const T_RBRACKET   = 'T_RBRACKET';
+    const T_COMMA      = 'T_COMMA';
+    const T_LBRACE     = 'T_LBRACE';
+    const T_RBRACE     = 'T_RBRACE';
     const T_WHITESPACE = 'T_WHITESPACE';
-    const T_UNKNOWN = 'T_UNKNOWN';
-    const T_COLON = 'T_COLON';
-    const T_OPERATOR = 'T_OPERATOR';
-    const T_FUNCTION = 'T_FUNCTION';
-    const T_LPARENS = 'T_LPARENS';
-    const T_RPARENS = 'T_RPARENS';
-    const T_MERGE = 'T_MERGE';
-    const T_LITERAL = 'T_LITERAL';
-    const T_FILTER = 'T_FILTER';
-    const T_AT = 'T_AT';
+    const T_UNKNOWN    = 'T_UNKNOWN';
+    const T_COLON      = 'T_COLON';
+    const T_OPERATOR   = 'T_OPERATOR';
+    const T_FUNCTION   = 'T_FUNCTION';
+    const T_LPARENS    = 'T_LPARENS';
+    const T_RPARENS    = 'T_RPARENS';
+    const T_MERGE      = 'T_MERGE';
+    const T_LITERAL    = 'T_LITERAL';
+    const T_FILTER     = 'T_FILTER';
+    const T_AT         = 'T_AT';
 
     /** @var array Array of simple matches to token types */
     private static $simpleTokens = array(
@@ -59,8 +59,8 @@ class Lexer
         'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
         'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
         'X' => 1, 'Y' => 1, 'Z' => 1,  0  => 1,  1  => 1,  2  => 1,  3  => 1,
-         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1, '_' => 1,
-        '-' => 1);
+         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1,
+        '_' => 1, '-' => 1);
 
     /** @var array Valid JSON literal characters */
     private static $jsonLiterals = array(
@@ -72,8 +72,8 @@ class Lexer
         'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
         'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
         'X' => 1, 'Y' => 1, 'Z' => 1,  0  => 1,  1  => 1,  2  => 1,  3  => 1,
-         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1, '_' => 1,
-        '-' => 1, '.' => 1);
+         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1,
+        '_' => 1, '-' => 1, '.' => 1);
 
     /** @var array Letters can start an identifier */
     private static $letters = array(
