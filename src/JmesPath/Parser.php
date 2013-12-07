@@ -71,7 +71,7 @@ class Parser
     }
 
     /**
-     * Compile a JmesPath expression into an array of opcodes
+     * Compile a JMESPath expression into an array of opcodes
      *
      * @param string $path Path to parse
      *
@@ -108,7 +108,7 @@ class Parser
     /**
      * Returns a SyntaxErrorException for the current token
      *
-     * @param $messageOrTypes
+     * @param array|string $messageOrTypes
      *
      * @return SyntaxErrorException
      */
@@ -203,7 +203,7 @@ class Parser
     }
 
     /**
-     * Call an validate a parse instruction
+     * Attempts to invoke a parsing method for the given token
      *
      * @param array $token Token to parse
      * @return array Returns the next token
@@ -284,14 +284,13 @@ class Parser
     }
 
     /**
-     * The AT token is a no op as the current node should always already be
-     * on the stack
+     * The at-token is a no-op as the current node is already on the stack
      */
     private function parse_T_AT(array $token) {}
 
     /**
-     * Parses an OR expression using a jump_if_true opcode. Parses tokens until
-     * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
+     * Parses an or-expression using a jump_if_true opcode. Parses tokens until
+     * a scope changing token is found.
      */
     private function parse_T_OR(array $token)
     {
@@ -319,7 +318,7 @@ class Parser
 
     /**
      * Parses a wildcard expression using a bytecode loop. Parses tokens until
-     * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
+     * a scope changing token is found.
      */
     private function parse_T_STAR(array $token, $type = 'object')
     {
@@ -347,12 +346,12 @@ class Parser
     }
 
     /**
-     * Consume wildcard tokens until a scope change
+     * Consume wildcard tokens until a scope changing token is found
      */
     private function consumeWildcard(array $peek)
     {
         $until = self::$scope;
-        // Don't continue the original project in a subprojection for "[]"
+        // Don't continue the original projection in a subprojection for "[]"
         $until[Lexer::T_MERGE] = true;
         $this->stack[] = array('mark_current');
 
@@ -385,8 +384,7 @@ class Parser
     }
 
     /**
-     * Parse a multi-brace expression key value pair while only allowing for
-     * certain value types.
+     * Parse a multi-brace expression key value pair
      *
      * @param string $type Valid types for values (array or object)
      * @throws SyntaxErrorException
@@ -397,7 +395,7 @@ class Parser
         $this->match(array(Lexer::T_COLON => true));
 
         // Requires at least one value that can start an expression, and
-        // don't allow Number indices on objects or strings on arrays
+        // don't allow number indices on objects or strings on arrays
         $valid = self::$exprTokens;
         if ($type == 'array') {
             unset($valid[Lexer::T_IDENTIFIER]);
@@ -510,11 +508,9 @@ class Parser
     }
 
     /**
-     * Determines if the expression in a bracket is a multi-select
+     * Parses a multi-select expression
      *
      * @param string $type Valid key types (array or object)
-     *
-     * @return bool Returns true if this is a multi-select or false if not
      */
     private function parseMultiBracket($type)
     {
@@ -605,11 +601,9 @@ class Parser
     }
 
     /**
-     * Parses a function, it's arguments, and manages scalar vs node arguments
+     * Parses a function and its arguments
      *
      * @param array $func Function token being parsed
-     *
-     * @throws SyntaxErrorException When EOF is encountered before ")"
      */
     private function parse_T_FUNCTION(array $func)
     {
@@ -634,9 +628,7 @@ class Parser
 
     /**
      * Parse a function or LR expression argument until one of the break tokens
-     * is encountered. This method takes the @ token into account when parsing
-     * tokens to determine if the token is pushed onto the stack or if it
-     * descends into the current node.
+     * is encountered.
      *
      * @param array $breakOn Stops parsing when one of these keys are hit
      *
