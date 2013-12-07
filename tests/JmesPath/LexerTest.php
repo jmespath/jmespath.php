@@ -10,38 +10,18 @@ use JmesPath\SyntaxErrorException;
  */
 class LexerTest extends \PHPUnit_Framework_TestCase
 {
-    public function testHasInput()
-    {
-        $l = new Lexer();
-        $l->setInput('foo');
-        $this->assertSame('foo', $l->getInput());
-    }
-
-    public function testHasIterator()
-    {
-        $l = new Lexer();
-        $l->setInput('foo');
-        $i = $l->getIterator();
-        $this->assertInstanceOf('ArrayIterator', $i);
-        $this->assertEquals(array(
-            array('type' => 'T_IDENTIFIER', 'value' => 'foo', 'pos' => 0),
-            array ('type' => 'T_EOF', 'value' => null, 'pos' => 3),
-        ), iterator_to_array($i));
-    }
-
     public function testValidatesClosedQuotes()
     {
         $l = new Lexer();
-        $l->setInput('"foo"."baz');
         try {
-            $l->getIterator();
+            $l->tokenize('"foo"."baz');
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
-Syntax error at character 6
+Syntax error at character 10
 "foo"."baz
-      ^
-Unclosed quote character
+          ^
+Unclosed quote
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -50,16 +30,15 @@ EOT;
     public function testValidatesLiteralValuesAreSet()
     {
         $l = new Lexer();
-        $l->setInput('_');
         try {
-            $l->getIterator();
+            $l->tokenize('_');
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
 Syntax error at character 0
 _
 ^
-Invalid literal token
+Invalid JSON literal
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -68,16 +47,15 @@ EOT;
     public function testValidatesLiteralValues()
     {
         $l = new Lexer();
-        $l->setInput('_abc');
         try {
-            $l->getIterator();
+            $l->tokenize('_abc');
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
 Syntax error at character 0
 _abc
 ^
-Invalid literal token
+Error decoding JSON literal: 4
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -123,16 +101,14 @@ EOT;
     public function testTokenizesInput($input, $type)
     {
         $l = new Lexer();
-        $l->setInput($input);
-        $tokens = iterator_to_array($l->getIterator());
+        $tokens = $l->tokenize($input);
         $this->assertEquals($tokens[0]['type'], $type);
     }
 
     public function testTokenizesJavasriptLiterals()
     {
         $l = new Lexer();
-        $l->setInput('_null, _false, _true, _"abc", _"ab\\"c", _0, _0.45, _-0.5');
-        $tokens =  $l->getTokens();
+        $tokens =  $l->tokenize('_null, _false, _true, _"abc", _"ab\\"c", _0, _0.45, _-0.5');
         $this->assertNull($tokens[0]['value']);
         $this->assertFalse($tokens[2]['value']);
         $this->assertTrue($tokens[4]['value']);

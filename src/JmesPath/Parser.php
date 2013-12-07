@@ -25,6 +25,9 @@ class Parser
     /** @var array Known opcodes of the parser */
     private $methods;
 
+    /** @var string JMESPath expression */
+    private $input;
+
     /** @var array Null token that is reused over and over */
     private static $nullToken = array('type' => Lexer::T_EOF, 'value' => '');
 
@@ -77,10 +80,10 @@ class Parser
     public function compile($path)
     {
         $this->stack = array();
+        $this->input = $path;
 
         if ($path) {
-            $this->lexer->setInput($path);
-            $this->tokens = $this->lexer->getTokens();
+            $this->tokens = $this->lexer->tokenize($path);
             $this->tokenPos = 0;
             $this->tokenCount = count($this->tokens);
             $token = $this->tokens[0];
@@ -113,7 +116,7 @@ class Parser
         return new SyntaxErrorException(
             $messageOrTypes,
             $this->tokens[$this->tokenPos],
-            $this->lexer->getInput()
+            $this->input
         );
     }
 
