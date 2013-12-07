@@ -61,6 +61,11 @@ class Parser
         Lexer::T_NUMBER   => true,
     );
 
+    /** @var array Store common opcodes as statics for performance */
+    private static $popCurrent = array('pop_current');
+    private static $pushCurrent = array('push_current');
+    private static $markCurrent = array('mark_current');
+
     /**
      * @param Lexer $lexer Lexer used to tokenize paths
      */
@@ -100,7 +105,8 @@ class Parser
             } while ($token['type'] !== Lexer::T_EOF);
         }
 
-        $this->stack[] = array('stop');
+        static $stopOpcode = array('stop');
+        $this->stack[] = $stopOpcode;
 
         return $this->stack;
     }
@@ -305,7 +311,7 @@ class Parser
 
         // Push the current node onto the stack if needed
         if (!isset(self::$noPushTokens[$token['type']])) {
-            $this->stack[] = array('push_current');
+            $this->stack[] = self::$pushCurrent;
         }
 
         while (!isset(self::$scope[$peek['type']])) {
@@ -353,7 +359,7 @@ class Parser
         $until = self::$scope;
         // Don't continue the original projection in a subprojection for "[]"
         $until[Lexer::T_MERGE] = true;
-        $this->stack[] = array('mark_current');
+        $this->stack[] = self::$markCurrent;
 
         while (!isset($until[$peek['type']])) {
             $token = $this->nextToken();
@@ -361,7 +367,7 @@ class Parser
             $peek = $this->peek();
         }
 
-        $this->stack[] = array('pop_current');
+        $this->stack[] = self::$popCurrent;
     }
 
     private function parse_T_LBRACE(array $token)
@@ -405,7 +411,7 @@ class Parser
         $token = $this->match($valid);
 
         if (!isset(self::$noPushTokens[$token['type']])) {
-            $this->stack[] = array('push_current');
+            $this->stack[] = self::$pushCurrent;
         }
         $this->parseInstruction($token);
 
@@ -425,7 +431,8 @@ class Parser
 
     private function parse_T_MERGE(array $token)
     {
-        $this->stack[] = array('merge');
+        static $mergeOpcode = array('merge');
+        $this->stack[] = $mergeOpcode;
         $peek = $this->peek();
 
         // Short circuit the projection loop for specific scope changing tokens
@@ -436,8 +443,8 @@ class Parser
 
     private function parse_T_PIPE(array $token)
     {
-        $this->stack[] = array('pop_current');
-        $this->stack[] = array('mark_current');
+        $this->stack[] = self::$popCurrent;
+        $this->stack[] = self::$markCurrent;
     }
 
     private function parse_T_LBRACKET(array $token)
@@ -486,11 +493,11 @@ class Parser
         // Create a bytecode loop
         $this->stack[] = array('each', null);
         $loopIndex = count($this->stack) - 1;
-        $this->stack[] = array('mark_current');
+        $this->stack[] = self::$markCurrent;
         $this->parseFullExpression();
 
         // If the evaluated filter was true, then jump to the wildcard loop
-        $this->stack[] = array('pop_current');
+        $this->stack[] = self::$popCurrent;
         $this->stack[] = array('jump_if_true', count($this->stack) + 4);
 
         // Kill temp variables when a filter filters a node
@@ -514,17 +521,18 @@ class Parser
      */
     private function parseMultiBracket($type)
     {
+        static $untilTokens = array(Lexer::T_COMMA => true, Lexer::T_RBRACKET => true);
+
         $index = $this->prepareMultiBranch();
         // Parse at least one element
         $this->parseMultiBracketElement($type);
 
         // Parse any remaining elements
-        $until = array(Lexer::T_COMMA => true, Lexer::T_RBRACKET => true);
-        $token = $this->match($until);
+        $token = $this->match($untilTokens);
 
         while ($token['type'] != Lexer::T_RBRACKET) {
             $this->parseMultiBracketElement($type);
-            $token = $this->match($until);
+            $token = $this->match($untilTokens);
         }
 
         $this->finishMultiBranch($index);
@@ -550,7 +558,7 @@ class Parser
 
         // Push the current node onto the stack if the token is not a function
         if (!isset(self::$noPushTokens[$token['type']])) {
-            $this->stack[] = array('push_current');
+            $this->stack[] = self::$pushCurrent;
         }
 
         $this->parseInstruction($token);
@@ -576,7 +584,7 @@ class Parser
     {
         $this->stack[] = array('is_empty');
         $this->stack[] = array('jump_if_true', null);
-        $this->stack[] = array('mark_current');
+        $this->stack[] = self::$markCurrent;
         $this->stack[] = array('pop');
         $this->stack[] = array('push', array());
 
@@ -596,7 +604,7 @@ class Parser
      */
     private function finishMultiBranch($index)
     {
-        $this->stack[] = array('pop_current');
+        $this->stack[] = self::$popCurrent;
         $this->stack[$index][1] = count($this->stack);
     }
 
@@ -641,7 +649,7 @@ class Parser
 
         // Functions arguments and LR exprs operate on the current node
         if (!isset(self::$noPushTokens[$peek['type']])) {
-            $this->stack[] = array('push_current');
+            $this->stack[] = self::$pushCurrent;
         }
 
         $inNode = $peek['type'] == Lexer::T_IDENTIFIER ||
