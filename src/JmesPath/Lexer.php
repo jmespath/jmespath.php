@@ -31,7 +31,7 @@ class Lexer
     const T_AT = 'T_AT';
 
     /** @var array Array of simple matches to token types */
-    private $simpleTokens = array(
+    private static $simpleTokens = array(
         ' '  => self::T_WHITESPACE,
         "\n" => self::T_WHITESPACE,
         "\t" => self::T_WHITESPACE,
@@ -49,50 +49,51 @@ class Lexer
         '@'  => self::T_AT,
     );
 
-    private $primitives = array(
-        'true'  => true,
-        'false' => true,
-        'null'  => true
-    );
+    /** @var array Valid identifier characters */
+    private static $identifiers = array(
+        'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
+        'h' => 1, 'i' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
+        'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
+        'v' => 1, 'w' => 1, 'x' => 1, 'y' => 1, 'z' => 1, 'A' => 1, 'B' => 1,
+        'C' => 1, 'D' => 1, 'E' => 1, 'F' => 1, 'G' => 1, 'H' => 1, 'I' => 1,
+        'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
+        'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
+        'X' => 1, 'Y' => 1, 'Z' => 1,  0  => 1,  1  => 1,  2  => 1,  3  => 1,
+         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1, '_' => 1,
+        '-' => 1);
 
-    private $primitiveMap = array(
-        'true'  => true,
-        'false' => false,
-        'null'  => null
-    );
+    /** @var array Valid JSON literal characters */
+    private static $jsonLiterals = array(
+        'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
+        'h' => 1, 'i' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
+        'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
+        'v' => 1, 'w' => 1, 'x' => 1, 'y' => 1, 'z' => 1, 'A' => 1, 'B' => 1,
+        'C' => 1, 'D' => 1, 'E' => 1, 'F' => 1, 'G' => 1, 'H' => 1, 'I' => 1,
+        'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
+        'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
+        'X' => 1, 'Y' => 1, 'Z' => 1,  0  => 1,  1  => 1,  2  => 1,  3  => 1,
+         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1, '_' => 1,
+        '-' => 1, '.' => 1);
 
-    private static $numbers = array(0 => 1, 1 => 1, 2 => 1, 3 => 1, 4 => 1,
-                                    5 => 1, 6 => 1, 7 => 1, 8 => 1, 9 => 1);
+    /** @var array Letters can start an identifier */
+    private static $letters = array(
+        'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
+        'h' => 1, 'i' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
+        'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
+        'v' => 1, 'w' => 1, 'x' => 1, 'y' => 1, 'z' => 1, 'A' => 1, 'B' => 1,
+        'C' => 1, 'D' => 1, 'E' => 1, 'F' => 1, 'G' => 1, 'H' => 1, 'I' => 1,
+        'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
+        'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
+        'X' => 1, 'Y' => 1, 'Z' => 1);
 
-    private $identifiers;
-    private $firstTokenIdentifiers;
-    private $jsonLiterals;
+    /** @var array Hash of number characters */
+    private static $numbers = array('0' => 1, '1' => 1, '2' => 1, '3' => 1,
+        '4' => 1, '5' => 1, '6' => 1, '7' => 1, '8' => 1, '9' => 1);
 
     private $input;
     private $pos;
     private $len;
     private $c;
-
-    public function __construct()
-    {
-        // Create a hash of valid string and number characters
-        $this->firstTokenIdentifiers = $this->identifiers = array_fill_keys(
-            array_merge(
-                range('a', 'z'),
-                range('A', 'Z')
-            ),
-            true
-        );
-
-        // Identifiers can also include "-" and "_"
-        $this->identifiers['_'] = 1;
-        $this->identifiers['-'] = 1;
-        $this->identifiers = array_merge($this->identifiers, range(0, 9));
-
-        // JSON literal characters
-        $this->jsonLiterals = $this->identifiers;
-        $this->jsonLiterals['.'] = true;
-    }
 
     /**
      * Tokenize the JMESPath expression into an array of tokens
@@ -111,10 +112,10 @@ class Lexer
         $tokens = array();
 
         while ($this->c !== null) {
-            if (isset($this->firstTokenIdentifiers[$this->c])) {
+            if (isset(self::$letters[$this->c])) {
                 $tokens[] = $this->consumeIdentifier();
-            } elseif (isset($this->simpleTokens[$this->c])) {
-                $type = $this->simpleTokens[$this->c];
+            } elseif (isset(self::$simpleTokens[$this->c])) {
+                $type = self::$simpleTokens[$this->c];
                 if ($type != self::T_WHITESPACE) {
                     $tokens[] = array(
                         'type'  => $type,
@@ -195,7 +196,7 @@ class Lexer
         do {
             $value .= $this->c;
             $this->consume();
-        } while (isset($this->identifiers[$this->c]));
+        } while (isset(self::$identifiers[$this->c]));
 
         if ($this->c == '(') {
             $this->consume();
@@ -215,6 +216,10 @@ class Lexer
 
     private function consumeLiteral()
     {
+        // Maps common JavaScript primitives with a native PHP primitive
+        static $primitives = array('true' => 0, 'false' => 1, 'null' => 2);
+        static $primitiveMap = array(true, false, null);
+
         $pos = $this->pos;
         $this->consume();
 
@@ -222,14 +227,14 @@ class Lexer
             $value = $this->consumeQuotedString();
         } else {
             $value = '';
-            while ($this->c !== null && isset($this->jsonLiterals[$this->c])) {
+            while (isset(self::$jsonLiterals[$this->c])) {
                 $value .= $this->c;
                 $this->consume();
             }
-            if ($value === '') {
+            if (isset($primitives[$value])) {
+                $value = $primitiveMap[$primitives[$value]];
+            } elseif ($value === '') {
                 $this->throwSyntax('Invalid JSON literal', $pos);
-            } elseif (isset($this->primitives[$value])) {
-                $value = $this->primitiveMap[$value];
             } else {
                 $value = json_decode($value);
                 if ($error = json_last_error()) {
@@ -238,11 +243,7 @@ class Lexer
             }
         }
 
-        return array(
-            'type'  => Lexer::T_LITERAL,
-            'value' => $value,
-            'pos'   => $pos
-        );
+        return array('type' => self::T_LITERAL, 'value' => $value, 'pos' => $pos);
     }
 
     private function consumeQuotedString()
