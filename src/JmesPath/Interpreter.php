@@ -229,8 +229,8 @@ class Interpreter
                         continue 2;
                     } else {
                         $keys = array_keys($tos);
-                        if (($keys[0] === 0 && $arg2 == 'Object') ||
-                            ($keys[0] !== 0 && $arg2 == 'Array')
+                        if (($keys[0] === 0 && $arg2 == 'object') ||
+                            ($keys[0] !== 0 && $arg2 == 'array')
                         ) {
                             $stack[] = null;
                             $opPos = $arg;

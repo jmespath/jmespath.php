@@ -185,17 +185,17 @@ class Parser
     /**
      * Returns the type of the previous token, or null if it was the start
      *
-     * @return null|string Returns 'Array', 'Object', or null if unknown
+     * @return null|string Returns 'array', 'object', or null if unknown
      */
     private function previousType()
     {
         $prevPos = $this->tokenPos - 1;
         if (isset($this->tokens[$prevPos])) {
             if ($this->tokens[$prevPos]['type'] == Lexer::T_DOT) {
-                return 'Object';
+                return 'object';
             } elseif ($this->tokens[$prevPos]['type'] != Lexer::T_OR) {
-                // Note: a previous type of 'OR' means we dunno if Array or Obj
-                return 'Array';
+                // Note: a previous type of 'OR' means we dunno if array or Obj
+                return 'array';
             }
         }
 
@@ -321,7 +321,7 @@ class Parser
      * Parses a wildcard expression using a bytecode loop. Parses tokens until
      * a scope change (COMMA, OR, RBRACE, RBRACKET, or EOF) token is found.
      */
-    private function parse_T_STAR(array $token, $type = 'Object')
+    private function parse_T_STAR(array $token, $type = 'object')
     {
         static $nextTypes = array(
             Lexer::T_DOT      => true, // *.bar
@@ -388,7 +388,7 @@ class Parser
      * Parse a multi-brace expression key value pair while only allowing for
      * certain value types.
      *
-     * @param string $type Valid types for values (Array or Object)
+     * @param string $type Valid types for values (array or object)
      * @throws SyntaxErrorException
      */
     private function parseKeyValuePair($type)
@@ -397,11 +397,11 @@ class Parser
         $this->match(array(Lexer::T_COLON => true));
 
         // Requires at least one value that can start an expression, and
-        // don't allow Number indices on Objects or strings on Arrays
+        // don't allow Number indices on objects or strings on arrays
         $valid = self::$exprTokens;
-        if ($type == 'Array') {
+        if ($type == 'array') {
             unset($valid[Lexer::T_IDENTIFIER]);
-        } elseif ($type == 'Object') {
+        } elseif ($type == 'object') {
             unset($valid[Lexer::T_NUMBER]);
         }
         $token = $this->match($valid);
@@ -428,7 +428,7 @@ class Parser
     private function parse_T_MERGE(array $token)
     {
         $this->stack[] = array('merge');
-        $this->parse_T_STAR($token, 'Array');
+        $this->parse_T_STAR($token, 'array');
     }
 
     private function parse_T_PIPE(array $token)
@@ -459,17 +459,17 @@ class Parser
             ($peek['type'] == Lexer::T_NUMBER || $peek['type'] == Lexer::T_STAR)
         ) {
             if ($peek['type'] == Lexer::T_NUMBER) {
-                if ($fromType == 'Object') {
-                    throw $this->syntax('Cannot access Object keys using Number indices');
+                if ($fromType == 'object') {
+                    throw $this->syntax('Cannot access object keys using Number indices');
                 }
                 $this->parse_T_NUMBER($this->nextToken());
                 $this->nextToken();
-            } elseif ($fromType == 'Object') {
-                throw $this->syntax('Invalid Object wildcard syntax');
+            } elseif ($fromType == 'object') {
+                throw $this->syntax('Invalid object wildcard syntax');
             } else {
                 $token = $this->nextToken();
                 $this->nextToken();
-                $this->parse_T_STAR($token, 'Array');
+                $this->parse_T_STAR($token, 'array');
             }
             return;
         }
@@ -507,7 +507,7 @@ class Parser
     /**
      * Determines if the expression in a bracket is a multi-select
      *
-     * @param string $type Valid key types (Array or Object)
+     * @param string $type Valid key types (array or object)
      *
      * @return bool Returns true if this is a multi-select or false if not
      */
@@ -533,16 +533,16 @@ class Parser
      * Parse a multi-bracket expression list element while only allowing
      * certain key types.
      *
-     * @param string $type Valid key types (Array or Object)
+     * @param string $type Valid key types (array or object)
      * @throws SyntaxErrorException
      */
     private function parseMultiBracketElement($type)
     {
-        // Don't allow Number indices on Objects or strings on Arrays
+        // Don't allow Number indices on objects or strings on arrays
         $valid = self::$exprTokens;
-        if ($type == 'Array') {
+        if ($type == 'array') {
             unset($valid[Lexer::T_IDENTIFIER]);
-        } elseif ($type == 'Object') {
+        } elseif ($type == 'object') {
             unset($valid[Lexer::T_NUMBER]);
         }
         $token = $this->match($valid);
