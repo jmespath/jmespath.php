@@ -34,24 +34,24 @@ class Parser
     /** @var array First acceptable token */
     private static $exprTokens = array(
         Lexer::T_IDENTIFIER => true,
-        Lexer::T_NUMBER => true,
-        Lexer::T_STAR => true,
-        Lexer::T_LBRACKET => true,
-        Lexer::T_LBRACE => true,
-        Lexer::T_FUNCTION => true,
-        Lexer::T_LITERAL => true,
-        Lexer::T_MERGE => true,
-        Lexer::T_AT => true
+        Lexer::T_NUMBER     => true,
+        Lexer::T_STAR       => true,
+        Lexer::T_LBRACKET   => true,
+        Lexer::T_LBRACE     => true,
+        Lexer::T_FUNCTION   => true,
+        Lexer::T_LITERAL    => true,
+        Lexer::T_MERGE      => true,
+        Lexer::T_AT         => true,
     );
 
     /** @var array Scope changes */
     private static $scope = array(
-        Lexer::T_COMMA => true,
-        Lexer::T_OR => true,
-        Lexer::T_RBRACE => true,
+        Lexer::T_COMMA    => true,
+        Lexer::T_OR       => true,
+        Lexer::T_RBRACE   => true,
         Lexer::T_RBRACKET => true,
-        Lexer::T_PIPE => true,
-        Lexer::T_EOF => true,
+        Lexer::T_PIPE     => true,
+        Lexer::T_EOF      => true,
     );
 
     private static $noPushTokens = array(
