@@ -7,7 +7,7 @@ use JmesPath\Lexer;
 use JmesPath\Parser;
 use JmesPath\Interpreter;
 
-$dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance/perf' : $argv[1];
+$dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance' : $argv[1];
 is_dir($dir) or die('Dir not found: ' . $dir);
 $files = glob($dir . '/*.json');
 $parser = new Parser(new Lexer());
@@ -33,7 +33,7 @@ function runSuite($parser, $interpreter, $file)
     foreach ($json as $suite) {
         foreach ($suite['cases'] as $case) {
             $total += runCase(
-                $file,
+                str_replace(getcwd(), '.', $file),
                 $suite['given'],
                 $case['expression'],
                 $parser,
