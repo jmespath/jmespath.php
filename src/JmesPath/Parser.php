@@ -80,9 +80,9 @@ class Parser
     public function compile($path)
     {
         $this->stack = array();
-        $this->input = $path;
 
         if ($path) {
+            $this->input = $path;
             $this->tokens = $this->lexer->tokenize($path);
             $this->tokenPos = 0;
             $this->tokenCount = count($this->tokens);

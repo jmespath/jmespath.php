@@ -61,6 +61,9 @@ class Lexer
         'null'  => null
     );
 
+    private static $numbers = array(0 => 1, 1 => 1, 2 => 1, 3 => 1, 4 => 1,
+                                    5 => 1, 6 => 1, 7 => 1, 8 => 1, 9 => 1);
+
     private $identifiers;
     private $firstTokenIdentifiers;
     private $jsonLiterals;
@@ -76,8 +79,7 @@ class Lexer
         $this->firstTokenIdentifiers = $this->identifiers = array_fill_keys(
             array_merge(
                 range('a', 'z'),
-                range('A', 'Z'),
-                range('0', '9')
+                range('A', 'Z')
             ),
             true
         );
@@ -85,6 +87,7 @@ class Lexer
         // Identifiers can also include "-" and "_"
         $this->identifiers['_'] = 1;
         $this->identifiers['-'] = 1;
+        $this->identifiers = array_merge($this->identifiers, range(0, 9));
 
         // JSON literal characters
         $this->jsonLiterals = $this->identifiers;
@@ -92,15 +95,11 @@ class Lexer
     }
 
     /**
-     * Tokenize the JMESPath expression into token arrays. The regular
-     * expression of the class breaks the expression into parts. Each part is
-     * then analyzed to determine the token type until finally, the EOF token
-     * is added signifying the end of the token stream.
+     * Tokenize the JMESPath expression into an array of tokens
      *
      * @param string $input JMESPath input
      *
      * @return array
-     *
      * @throws SyntaxErrorException
      */
     public function tokenize($input)
@@ -124,6 +123,8 @@ class Lexer
                     );
                 }
                 $this->consume();
+            } elseif (isset(self::$numbers[$this->c])) {
+                $tokens[] = $this->consumeNumber();
             } elseif ($this->c == '"') {
                 $tokens[] = array(
                     'type'  => self::T_IDENTIFIER,
@@ -159,39 +160,31 @@ class Lexer
     {
         throw new SyntaxErrorException(
             $message,
-            array(
-                'value' => $this->c,
-                'pos'   => $pos !== null ? $pos : $this->pos
-            ),
+            array('value' => $this->c, 'pos' => $pos !== null ? $pos : $this->pos),
             $this->input
         );
     }
 
     private function consume()
     {
-        if (isset($this->input[++$this->pos])) {
-            $this->c = $this->input[$this->pos];
-        } else {
-            $this->c = null;
-        }
+        $this->c = isset($this->input[++$this->pos])
+            ? $this->input[$this->pos]
+            : null;
     }
 
     private function consumeNumber()
     {
-        $pos = $this->pos;
-        $str = $this->c;
-        $this->consume();
+        $token = array('type' => Lexer::T_NUMBER, 'pos' => $this->pos);
+        $str = '';
 
-        while ($this->c >= '0' && $this->c <= '9') {
+        do {
             $str .= $this->c;
             $this->consume();
-        }
+        } while (isset(self::$numbers[$this->c]));
 
-        return array(
-            'type'  => Lexer::T_NUMBER,
-            'value' => (int) $str,
-            'pos'   => $pos
-        );
+        $token['value'] = (int) $str;
+
+        return $token;
     }
 
     private function consumeIdentifier()
@@ -209,12 +202,6 @@ class Lexer
             return array(
                 'type'  => self::T_FUNCTION,
                 'value' => $value,
-                'pos'   => $pos
-            );
-        } elseif (ctype_digit($value)) {
-            return array(
-                'type'  => self::T_NUMBER,
-                'value' => (int) $value,
                 'pos'   => $pos
             );
         } else {
@@ -290,27 +277,26 @@ class Lexer
     {
         $this->consume();
 
-        switch ($this->c) {
-            case ']':
-                $this->consume();
-                return array(
-                    'type'  => self::T_MERGE,
-                    'value' => '[]',
-                    'pos'   => $this->pos - 2
-                );
-            case '?':
-                $this->consume();
-                return array(
-                    'type'  => self::T_FILTER,
-                    'value' => '[?',
-                    'pos'   => $this->pos - 2
-                );
-            default:
-                return array(
-                    'type'  => self::T_LBRACKET,
-                    'value' => '[',
-                    'pos'   => $this->pos - 1
-                );
+        if ($this->c == ']') {
+            $this->consume();
+            return array(
+                'type'  => self::T_MERGE,
+                'value' => '[]',
+                'pos'   => $this->pos - 2
+            );
+        } elseif ($this->c == '?') {
+            $this->consume();
+            return array(
+                'type'  => self::T_FILTER,
+                'value' => '[?',
+                'pos'   => $this->pos - 2
+            );
+        } else {
+            return array(
+                'type'  => self::T_LBRACKET,
+                'value' => '[',
+                'pos'   => $this->pos - 1
+            );
         }
     }
 
