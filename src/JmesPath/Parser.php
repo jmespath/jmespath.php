@@ -379,7 +379,7 @@ class Parser
             $peek = $this->peek();
         }
 
-        $this->match(array(Lexer::T_RBRACE => true));
+        $this->nextToken();
         $this->finishMultiBranch($index);
     }
 
