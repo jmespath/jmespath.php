@@ -92,7 +92,6 @@ class Lexer
 
     private $input;
     private $pos;
-    private $len;
     private $c;
 
     /**
@@ -106,9 +105,9 @@ class Lexer
     public function tokenize($input)
     {
         $this->input = $input;
-        $this->len = strlen($input);
+        $len = strlen($input);
         $this->pos = 0;
-        $this->c = $this->len ? $this->input[0] : null;
+        $this->c = $len ? $this->input[0] : null;
         $tokens = array();
 
         while ($this->c !== null) {
@@ -148,11 +147,7 @@ class Lexer
         }
 
         // Always end the token stream with an EOF token
-        $tokens[] = array(
-            'type'  => self::T_EOF,
-            'pos'   => $this->len,
-            'value' => null
-        );
+        $tokens[] = array('type' => self::T_EOF, 'pos' => $len, 'value' => null);
 
         return $tokens;
     }
