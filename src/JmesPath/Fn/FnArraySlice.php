@@ -53,7 +53,7 @@ class FnArraySlice extends AbstractFn
         }
 
         if ($start === null) {
-            $start = $step < 0 ? -1 : 0;
+            $start = $step < 0 ? $length - 1 : 0;
         } else {
             $start = $this->adjustEndpoint($length, $start, $step);
         }
