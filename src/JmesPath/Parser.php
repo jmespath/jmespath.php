@@ -505,7 +505,7 @@ class Parser
 
         if ($pos == 0) {
             $this->stack[] = array('index', $parts[0]);
-        } elseif ($pos > 4) {
+        } elseif ($pos > 2) {
             throw $this->syntax('Invalid array slice syntax');
         } else {
             // Sliced array from start (e.g., [2:])

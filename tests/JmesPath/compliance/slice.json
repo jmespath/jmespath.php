@@ -73,6 +73,10 @@
     {
       "expression": "foo[8:2:0]",
       "error": "runtime"
+    },
+    {
+      "expression": "foo[8:2:0:1]",
+      "error": "syntax"
     }
   ]
 }]
