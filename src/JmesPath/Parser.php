@@ -447,7 +447,7 @@ class Parser
         $this->stack[] = self::$markCurrent;
     }
 
-    private function parse_T_LBRACKET(array $token)
+    private function parse_T_LBRACKET(array $token, $fromType = null)
     {
         static $nextTypes = array(
             Lexer::T_IDENTIFIER => true, // [a, b]
@@ -457,35 +457,60 @@ class Parser
             Lexer::T_RBRACKET   => true, // foo[]
             Lexer::T_LITERAL    => true, // foo[_true, bar]
             Lexer::T_FUNCTION   => true, // foo[count(@)]
-            Lexer::T_FILTER     => true, // foo[[?bar = 10], baz]
+            Lexer::T_FILTER     => true, // foo[[?bar = 10], baz],
+            Lexer::T_COLON      => true, // foo[:1],
         );
 
+        $fromType = $fromType ?: $this->previousType();
         $peek = $this->matchPeek($nextTypes);
-        $fromType = $this->previousType();
 
-        // Parse simple expressions like [10] or [*]
-        $nextTwo = $this->peek(2);
-        if ($nextTwo['type'] == Lexer::T_RBRACKET &&
-            ($peek['type'] == Lexer::T_NUMBER || $peek['type'] == Lexer::T_STAR)
-        ) {
-            if ($peek['type'] == Lexer::T_NUMBER) {
-                if ($fromType == 'object') {
-                    throw $this->syntax('Cannot access object keys using Number indices');
-                }
-                $this->parse_T_NUMBER($this->nextToken());
-                $this->nextToken();
-            } elseif ($fromType == 'object') {
+        if ($peek['type'] == Lexer::T_NUMBER || $peek['type'] == Lexer::T_COLON) {
+            if ($fromType == 'object') {
+                throw $this->syntax('Cannot access object keys using number indices');
+            }
+            $this->parseArrayIndexExpression();
+            return;
+        } elseif ($peek['type'] == Lexer::T_STAR) {
+            if ($fromType == 'object') {
                 throw $this->syntax('Invalid object wildcard syntax');
-            } else {
-                $token = $this->nextToken();
+            }
+            $token = $this->nextToken();
+            $peek = $this->peek();
+            if ($peek['type'] == Lexer::T_RBRACKET) {
                 $this->nextToken();
                 $this->parse_T_STAR($token, 'array');
+                return;
             }
-            return;
         }
 
-        // Speculatively parse as a multi-bracket expression
         $this->parseMultiBracket($fromType);
+    }
+
+    private function parseArrayIndexExpression()
+    {
+        static $matchNext = array(Lexer::T_NUMBER => true, Lexer::T_COLON => true, Lexer::T_RBRACKET => true);
+
+        $pos = 0;
+        $parts = array(null, null, null);
+        $next = $this->match($matchNext);
+
+        do {
+            if ($next['type'] == Lexer::T_COLON) {
+                $pos++;
+            } else {
+                $parts[$pos] = $next['value'];
+            }
+            $next = $this->match($matchNext);
+        } while ($next['type'] != Lexer::T_RBRACKET);
+
+        if ($pos == 0) {
+            $this->stack[] = array('index', $parts[0]);
+        } elseif ($pos > 4) {
+            throw $this->syntax('Invalid array slice syntax');
+        } else {
+            // Sliced array from start (e.g., [2:])
+            $this->stack[] = array('slice', $parts[0], $parts[1], $parts[2]);
+        }
     }
 
     private function parse_T_FILTER(array $token)

@@ -45,7 +45,8 @@ class Interpreter
             'type' => 'JmesPath\Fn\FnType',
             'union' => 'JmesPath\Fn\FnUnion',
             'uppercase' => 'JmesPath\Fn\FnUppercase',
-            'values' => 'JmesPath\Fn\FnValues'
+            'values' => 'JmesPath\Fn\FnValues',
+            '_array_slice' => 'JmesPath\Fn\FnArraySlice'
         );
 
         $this->debug = $debug === true ? STDOUT : $debug;
@@ -360,6 +361,15 @@ class Interpreter
                     }
                     $stack[] = call_user_func($this->fn[$arg], $funcArgs);
 
+                    break;
+
+                case 'slice':
+                    $stack[] = call_user_func($this->fn['_array_slice'], array(
+                        array_pop($stack),
+                        $arg,
+                        $arg2,
+                        $opcodes[$opPos][3]
+                    ));
                     break;
 
                 case 'stop':

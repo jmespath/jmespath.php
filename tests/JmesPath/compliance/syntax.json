@@ -191,7 +191,7 @@
       {
         "comment": "Valid multi-select of a list",
         "expression": "foo[0, 1]",
-        "result": null
+        "error": "syntax"
       },
       {
         "comment": "Invalid Object key. Must be a string.",

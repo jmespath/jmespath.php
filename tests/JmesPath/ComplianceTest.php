@@ -40,11 +40,11 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
             . "\n\nExpected: " . $this->prettyJson($result)
             . "\n\nopcodes: " . $this->prettyJson($opcodes);
 
-        $this->assertEquals(
-            $error,
-            $failed,
-            "{$expression} should have failed with a {$error} error"
-        );
+        if (!$error && $failed) {
+            $this->fail("Should not have failed\n{$failure}");
+        } elseif ($error && !$failed) {
+            $this->fail("Should have failed\n{$failure}");
+        }
 
         $this->assertEquals(
             $result,
