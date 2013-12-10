@@ -226,7 +226,7 @@ class Lexer
             }
             $value .= $this->c;
             $this->consume();
-            if ($this->c == null) {
+            if ($this->c === null) {
                 $this->throwSyntax('Unclosed JSON literal', $this->pos);
             }
         }

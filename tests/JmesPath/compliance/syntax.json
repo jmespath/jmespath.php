@@ -417,6 +417,10 @@
       {
         "expression": "foo.[a ||]",
         "error": "syntax"
+      },
+      {
+        "expression": "\"foo",
+        "error": "syntax"
       }
     ]
   }]
