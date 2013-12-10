@@ -63,19 +63,6 @@ class Lexer
          4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1,
         '_' => 1, '-' => 1);
 
-    /** @var array Valid JSON literal characters */
-    private static $jsonLiterals = array(
-        'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
-        'h' => 1, 'i' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
-        'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
-        'v' => 1, 'w' => 1, 'x' => 1, 'y' => 1, 'z' => 1, 'A' => 1, 'B' => 1,
-        'C' => 1, 'D' => 1, 'E' => 1, 'F' => 1, 'G' => 1, 'H' => 1, 'I' => 1,
-        'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
-        'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
-        'X' => 1, 'Y' => 1, 'Z' => 1,  0  => 1,  1  => 1,  2  => 1,  3  => 1,
-         4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1,
-        '_' => 1, '-' => 1, '.' => 1);
-
     /** @var array Letters can start an identifier */
     private static $letters = array(
         'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
@@ -132,7 +119,7 @@ class Lexer
                     'pos'   => $this->pos,
                     'value' => $this->consumeQuotedString()
                 );
-            } elseif ($this->c == '_') {
+            } elseif ($this->c == '`') {
                 $tokens[] = $this->consumeLiteral();
             } elseif ($this->c == '[') {
                 $tokens[] = $this->consumeLbracket();
@@ -215,31 +202,51 @@ class Lexer
         // Maps common JavaScript primitives with a native PHP primitive
         static $primitives = array('true' => 0, 'false' => 1, 'null' => 2);
         static $primitiveMap = array(true, false, null);
+        // If a literal starts with these characters, it is JSON decoded
+        static $decodeCharacters = array('"' => 1, '[' => 1, '{' => 1, '-' => 1,
+            0 => 1, 1 => 1, 2 => 1, 3 => 1, 4 => 1, 5 => 1, 6 => 1, 7 => 1,
+            8 => 1, 9 => 1);
 
-        $pos = $this->pos;
+        $literal = array('type' => self::T_LITERAL, 'pos' => $this->pos);
         $this->consume();
 
-        if ($this->c == '"') {
-            $value = $this->consumeQuotedString();
-        } else {
-            $value = '';
-            while (isset(self::$jsonLiterals[$this->c])) {
-                $value .= $this->c;
+        // Consume until the closing literal is found or the end of string
+        $value = '';
+        while ($this->c != '`' && $this->c !== null) {
+            // Fix escaped literals
+            if ($this->c == '\\') {
                 $this->consume();
-            }
-            if (isset($primitives[$value])) {
-                $value = $primitiveMap[$primitives[$value]];
-            } elseif ($value === '') {
-                $this->throwSyntax('Invalid JSON literal', $pos);
-            } else {
-                $value = json_decode($value);
-                if ($error = json_last_error()) {
-                    $this->throwSyntax('Error decoding JSON literal: ' . $error, $pos);
+                if ($this->c != '`') {
+                    $value .= '\\';
+                } else {
+                    $this->consume();
+                    $value .= '`';
+                    continue;
                 }
+            }
+            $value .= $this->c;
+            $this->consume();
+        }
+
+        // Consume the remaining literal character
+        $this->consume();
+
+        if (isset($primitives[$value])) {
+            // Fast lookups for common JSON primitives
+            $value = $primitiveMap[$primitives[$value]];
+        } elseif (strlen($value) == 0) {
+            $this->throwSyntax('Empty JSON literal');
+        } elseif (isset($decodeCharacters[$value[0]])) {
+            // Only decode a JSON literal when the it isn't a string
+            $value = json_decode($value);
+            if ($error = json_last_error()) {
+                $this->throwSyntax('Error decoding JSON literal: ' . $error, $pos);
             }
         }
 
-        return array('type' => self::T_LITERAL, 'value' => $value, 'pos' => $pos);
+        $literal['value'] = $value;
+
+        return $literal;
     }
 
     private function consumeQuotedString()
