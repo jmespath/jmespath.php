@@ -31,14 +31,31 @@ EOT;
     {
         $l = new Lexer();
         try {
-            $l->tokenize('_');
+            $l->tokenize('``');
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
 Syntax error at character 0
-_
+``
 ^
-Invalid JSON literal
+Empty JSON literal
+EOT;
+            $this->assertContains($expected, $e->getMessage());
+        }
+    }
+
+    public function testValidatesLiteralValuesAreClosed()
+    {
+        $l = new Lexer();
+        try {
+            $l->tokenize('`{abc');
+            $this->fail('Did not throw');
+        } catch (SyntaxErrorException $e) {
+            $expected = <<<EOT
+Syntax error at character 5
+`{abc
+     ^
+Unclosed JSON literal
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -48,13 +65,13 @@ EOT;
     {
         $l = new Lexer();
         try {
-            $l->tokenize('_abc');
+            $l->tokenize('`{abc{}`');
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
-Syntax error at character 0
-_abc
-^
+Syntax error at character 7
+`{abc{}`
+       ^
 Error decoding JSON literal: 4
 EOT;
             $this->assertContains($expected, $e->getMessage());
@@ -88,10 +105,10 @@ EOT;
             array('*', Lexer::T_STAR),
             array('foo', Lexer::T_IDENTIFIER),
             array('"foo"', Lexer::T_IDENTIFIER),
-            array('_true', Lexer::T_LITERAL),
-            array('_false', Lexer::T_LITERAL),
-            array('_null', Lexer::T_LITERAL),
-            array('_"true"', Lexer::T_LITERAL)
+            array('`true`', Lexer::T_LITERAL),
+            array('`false`', Lexer::T_LITERAL),
+            array('`null`', Lexer::T_LITERAL),
+            array('`"true"`', Lexer::T_LITERAL)
         );
     }
 
@@ -108,7 +125,7 @@ EOT;
     public function testTokenizesJavasriptLiterals()
     {
         $l = new Lexer();
-        $tokens =  $l->tokenize('_null, _false, _true, _"abc", _"ab\\"c", _0, _0.45, _-0.5');
+        $tokens =  $l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`, `0`, `0.45`, `-0.5`');
         $this->assertNull($tokens[0]['value']);
         $this->assertFalse($tokens[2]['value']);
         $this->assertTrue($tokens[4]['value']);

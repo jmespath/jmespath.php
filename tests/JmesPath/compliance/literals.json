@@ -8,52 +8,72 @@
     },
   "cases": [
     {
-      "expression": "_true",
+      "expression": "`true`",
       "result": true
     },
     {
-      "expression": "_false",
+      "expression": "`false`",
       "result": false
     },
     {
-      "expression": "_null",
+      "expression": "`null`",
       "result": null
     },
     {
-      "expression": "_\"abc\"",
+      "expression": "`\"abc\"`",
       "result": "abc"
     },
     {
-      "expression": "_123",
+      "expression": "`123`",
       "result": 123
     },
     {
-      "expression": "_1.24",
+      "expression": "`1.24`",
       "result": 1.24
     },
     {
-      "expression": "_-1.24",
+      "expression": "`-1.24`",
       "result": -1.24
     },
     {
-      "expression": "_",
+      "expression": "``",
       "error": "syntax"
     },
     {
-      "expression": "_foo",
+      "expression": "`foo`",
+      "result": "foo"
+    },
+    {
+      "expression": "`foo",
       "error": "syntax"
     },
     {
-      "expression": "_\"foo",
-      "error": "syntax"
-    },
-    {
-      "expression": "[_true, _false]",
+      "expression": "[`true`, `false`]",
       "result": [true, false]
     },
     {
-      "expression": "[foo.bar, _true, _false, foo.baz[0]]",
+      "expression": "[foo.bar, `true`, `false`, foo.baz[0]]",
       "result": [1, true, false, "a"]
+    },
+    {
+      "expression": "`foo\\`bar`",
+      "result": "foo`bar"
+    },
+    {
+      "expression": "[`foo\\`bar`]",
+      "result": ["foo`bar"]
+    },
+    {
+      "expression": "`[1, 2, 3]`",
+      "result": [1, 2, 3]
+    },
+    {
+      "expression": "`{\"a\": \"b\"}`",
+      "result": {"a": "b"}
+    },
+    {
+      "expression": "[`true`, `false`, `[1, 2]`]",
+      "result": [true, false, [1, 2]]
     }
   ]
 }]

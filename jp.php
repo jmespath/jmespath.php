@@ -36,7 +36,7 @@ $tokens = $lexer->tokenize($expression);
 foreach ($tokens as $token) {
     echo str_pad($token['pos'], 3, ' ', STR_PAD_LEFT) . '   ';
     echo str_pad($token['type'], 15, ' ') . '   ';
-    echo $token['value'] . "\n";
+    echo json_encode($token['value']) . "\n";
 }
 echo "\n";
 

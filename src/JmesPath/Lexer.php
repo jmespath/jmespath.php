@@ -212,7 +212,7 @@ class Lexer
 
         // Consume until the closing literal is found or the end of string
         $value = '';
-        while ($this->c != '`' && $this->c !== null) {
+        while ($this->c != '`') {
             // Fix escaped literals
             if ($this->c == '\\') {
                 $this->consume();
@@ -226,6 +226,9 @@ class Lexer
             }
             $value .= $this->c;
             $this->consume();
+            if ($this->c == null) {
+                $this->throwSyntax('Unclosed JSON literal', $this->pos);
+            }
         }
 
         // Consume the remaining literal character
@@ -235,12 +238,12 @@ class Lexer
             // Fast lookups for common JSON primitives
             $value = $primitiveMap[$primitives[$value]];
         } elseif (strlen($value) == 0) {
-            $this->throwSyntax('Empty JSON literal');
+            $this->throwSyntax('Empty JSON literal', $this->pos - 2);
         } elseif (isset($decodeCharacters[$value[0]])) {
             // Only decode a JSON literal when the it isn't a string
             $value = json_decode($value, true);
             if ($error = json_last_error()) {
-                $this->throwSyntax('Error decoding JSON literal: ' . $error, $pos);
+                $this->throwSyntax('Error decoding JSON literal: ' . $error, $this->pos - 1);
             }
         }
 
