@@ -238,7 +238,7 @@ class Lexer
             $this->throwSyntax('Empty JSON literal');
         } elseif (isset($decodeCharacters[$value[0]])) {
             // Only decode a JSON literal when the it isn't a string
-            $value = json_decode($value);
+            $value = json_decode($value, true);
             if ($error = json_last_error()) {
                 $this->throwSyntax('Error decoding JSON literal: ' . $error, $pos);
             }
