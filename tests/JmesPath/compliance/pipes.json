@@ -74,6 +74,14 @@
     {
       "expression": "{\"a\": foo.bar, \"b\": foo.other} | *.baz",
       "result": ["one", "two"]
+    },
+    {
+      "expression": "foo.bam || foo.bar | baz",
+      "result": "one"
+    },
+    {
+      "expression": "foo | not_there || bar",
+      "result": {"baz": "one"}
     }
   ]
 }]
