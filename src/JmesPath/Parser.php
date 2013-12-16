@@ -277,11 +277,6 @@ class Parser
         );
 
         $next = $this->matchPeek($nextTypes);
-
-        if ($next['type'] == Lexer::T_NUMBER) {
-            // Handle cases like foo.-1
-            $this->parse_T_IDENTIFIER($this->nextToken());
-        }
     }
 
     private function parse_T_LITERAL(array $token)
