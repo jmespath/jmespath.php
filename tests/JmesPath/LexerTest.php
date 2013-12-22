@@ -18,9 +18,9 @@ class LexerTest extends \PHPUnit_Framework_TestCase
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
-Syntax error at character 10
+Syntax error at character 6
 "foo"."baz
-          ^
+      ^
 Unclosed quote
 EOT;
             $this->assertContains($expected, $e->getMessage());

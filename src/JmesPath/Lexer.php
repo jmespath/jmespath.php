@@ -114,11 +114,7 @@ class Lexer
             } elseif (isset(self::$numbers[$this->c])) {
                 $tokens[] = $this->consumeNumber();
             } elseif ($this->c == '"') {
-                $tokens[] = array(
-                    'type'  => self::T_IDENTIFIER,
-                    'pos'   => $this->pos,
-                    'value' => json_decode('"' . $this->consumeQuotedString() . '"')
-                );
+                $tokens[] = $this->consumeQuotedString();
             } elseif ($this->c == '`') {
                 $tokens[] = $this->consumeLiteral();
             } elseif ($this->c == '[') {
@@ -254,22 +250,20 @@ class Lexer
 
     private function consumeQuotedString()
     {
-        $value = $last = '';
-        $this->consume();
-        $open = false;
-
-        // Don't stop consuming on an escaped quote
-        while ($this->c != '"' || $open) {
-            if ($this->c === null) {
-                $this->throwSyntax('Unclosed quote: ' . $value);
-            }
-            $open = $this->c == '\\' && $last != '\\';
-            $value .= $last = $this->c;
-            $this->consume();
+        if (!preg_match('/"(\\\"|[^"])*"/', $this->input, $matches, 0, $this->pos)) {
+            $this->throwSyntax('Unclosed quote');
         }
+
+        $token = array(
+            'type'  => self::T_IDENTIFIER,
+            'pos'   => $this->pos,
+            'value' => json_decode($matches[0])
+        );
+
+        $this->pos += strlen($matches[0]) - 1;
         $this->consume();
 
-        return $value;
+        return $token;
     }
 
     private function consumeLbracket()
