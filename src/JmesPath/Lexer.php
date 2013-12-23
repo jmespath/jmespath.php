@@ -214,17 +214,12 @@ class Lexer
                 $this->consume();
                 if ($this->c != '`') {
                     $value .= '\\';
-                } else {
-                    $this->consume();
-                    $value .= '`';
-                    continue;
                 }
+            } elseif ($this->c === null) {
+                $this->throwSyntax('Unclosed JSON literal', $this->pos);
             }
             $value .= $this->c;
             $this->consume();
-            if ($this->c === null) {
-                $this->throwSyntax('Unclosed JSON literal', $this->pos);
-            }
         }
 
         // Consume the remaining literal character
