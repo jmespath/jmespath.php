@@ -413,7 +413,7 @@ class Interpreter
         }
 
         ob_start();
-        echo "Bytecode\n=========\n\n";
+        echo "Bytecode\n========\n\n";
         foreach ($opcodes as $id => $code) {
             echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
             echo str_pad($code[0], 17, ' ') . '  ';
