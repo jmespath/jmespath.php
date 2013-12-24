@@ -290,11 +290,9 @@ class Interpreter
                     }
                     break;
 
-                case 'is_empty':
-                    // Pushes TRUE or FALSE on to TOS if TOS is null or an empty
-                    // array.
-                    $tos = end($stack);
-                    $stack[] = $tos === null || $tos === array();
+                case 'is_array':
+                    // Pushes TRUE or FALSE on to TOS if TOS is an array
+                    $stack[] = is_array(end($stack));
                     break;
 
                 case 'is_null':

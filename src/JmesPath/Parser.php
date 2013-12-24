@@ -602,8 +602,8 @@ class Parser
      */
     private function prepareMultiBranch()
     {
-        $this->stack[] = array('is_empty');
-        $this->stack[] = array('jump_if_true', null);
+        $this->stack[] = array('is_array');
+        $this->stack[] = array('jump_if_false', null);
         $this->stack[] = self::$markCurrent;
         $this->stack[] = array('pop');
         $this->stack[] = array('push', array());

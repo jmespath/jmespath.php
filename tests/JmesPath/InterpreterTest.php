@@ -142,7 +142,7 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
             array(' ', false, false),
             array('', false, false),
             array(false, false, true),
-            array(null, true, true),
+            array(null, false, true),
             array(array(), true, false),
         );
     }
@@ -150,11 +150,11 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider emptyOrFalseProvider
      */
-    public function testChecksIfEmptyOrFalse($check, $resultEmpty, $resultFalse)
+    public function testChecksIfEmptyOrFalse($check, $resultArray, $resultFalse)
     {
         $i = new Interpreter();
-        $codes = array(array('index', 0), array('is_empty'));
-        $this->assertEquals($resultEmpty, $i->execute($codes, array($check)));
+        $codes = array(array('index', 0), array('is_array'));
+        $this->assertEquals($resultArray, $i->execute($codes, array($check)));
         $codes = array(array('index', 0), array('is_falsey'));
         $this->assertEquals($resultFalse, $i->execute($codes, array($check)));
     }

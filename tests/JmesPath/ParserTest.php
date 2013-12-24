@@ -55,8 +55,8 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $result = $p->compile('foo[[1], [2]]');
         $this->assertSame(array (
             0 => array('field', 'foo'),
-            1 => array('is_empty'),
-            2 => array('jump_if_true', 13),
+            1 => array('is_array'),
+            2 => array('jump_if_false', 13),
             3 => array('mark_current'),
             4 => array('pop'),
             5 => array('push', array()),
@@ -80,8 +80,8 @@ class ParserTest extends \PHPUnit_Framework_TestCase
             0  => array('field', 'foo'),
             1  => array('each', 17, 'object'),
             2  => array('mark_current'),
-            3  => array('is_empty'),
-            4  => array('jump_if_true', 15),
+            3  => array('is_array'),
+            4  => array('jump_if_false', 15),
             5  => array('mark_current'),
             6  => array('pop'),
             7  => array('push', array()),
