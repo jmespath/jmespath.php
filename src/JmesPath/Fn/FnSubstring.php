@@ -26,9 +26,9 @@ class FnSubstring extends AbstractFn
     protected $rules = array(
         'arity' => array(2, 3),
         'args'  => array(
-            0 => array('type' => 'string', 'failure' => 'null'),
-            1 => array('type' => 'integer'),
-            2 => array('type' => 'integer')
+            0 => array('type' => array('string'), 'failure' => 'null'),
+            1 => array('type' => array('integer')),
+            2 => array('type' => array('integer'))
         )
     );
 

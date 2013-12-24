@@ -21,8 +21,8 @@ class FnJoin extends AbstractFn
     protected $rules = array(
         'arity' => array(2, -1),
         'args' => array(
-            0 => array('type' => 'string', 'failure' => 'null'),
-            'default' => array('type' => 'array', 'failure' => 'null')
+            0 => array('type' => array('string'), 'failure' => 'null'),
+            'default' => array('type' => array('array'), 'failure' => 'null')
         )
     );
 

@@ -30,9 +30,7 @@ abstract class AbstractFn
      */
     public function __invoke(array $args)
     {
-        $args = $this->validate($args);
-
-        return $args === false ? null : $this->execute($args);
+        return $this->validate($args) ? $this->execute($args) : null;
     }
 
     /**
@@ -50,66 +48,45 @@ abstract class AbstractFn
      *
      * @param array $args Arguments to verify
      *
-     * @return array Returns the validated (and perhaps coerced) arguments
+     * @return bool Returns true on success or false on failure
      * @throws \RuntimeException If the arguments are not valid
      */
-    protected function validate(array $args)
+    private function validate(array $args)
     {
         $name = get_class($this);
 
-        // Validate the function arity
+        // Validate the function arity (number of arguments)
         if (isset($this->rules['arity'])) {
-            $this->validateArity($name, $this->rules['arity'][0],$this->rules['arity'][1], $args);
+            $this->validateArity($name, $this->rules['arity'][0], $this->rules['arity'][1], $args);
         }
-
-        $defaultRule = isset($this->rules['args']['default']) ? $this->rules['args']['default'] : null;
 
         // Validate arguments
         if (isset($this->rules['args'])) {
-            foreach ($args as $position => $arg) {
-                $rule = isset($this->rules['args'][$position]) ? $this->rules['args'][$position] : $defaultRule;
+            $default = isset($this->rules['args']['default']) ? $this->rules['args']['default'] : null;
+            foreach ($args as $k => $arg) {
+                $rule = isset($this->rules['args'][$k]) ? $this->rules['args'][$k] : $default;
                 if ($rule) {
-                    if (false === $this->validateArg($name, $position, $rule, $arg, $this->rules['arity'])) {
+                    if (false === $this->validateArg($name, $k, $rule, $arg, $this->rules['arity'])) {
                         return false;
                     }
                 }
             }
         }
 
-        return $args;
+        return true;
     }
 
-    /**
-     * Asserts that the number of arguments provided satisfies the arity of the
-     * function.
-     *
-     * @throws \RuntimeException
-     */
-    private function validateArity($fnName, $min, $max, array $args)
+    private function validateArity($fn, $min, $max, array $args)
     {
-        $t = count($args);
-        $eqMessage = "{$fnName} expects {$min} arguments, {$t} were provided";
-        $rnMessage = "{$fnName} expects from {$min} to {$max} arguments, {$t} were provided";
-        $s = false;
-
-        if ($t < $min) {
-            if ($max == -1) {
-                $s = "{$fnName} expects at least {$min} arguments, {$t} were provided";
-            } elseif ($max == $min) {
-                $s = $eqMessage;
+        $ct = count($args);
+        if ($ct < $min || ($ct > $max && $max != -1)) {
+            if ($min == $max) {
+                throw new \RuntimeException("{$fn} expects {$min} arguments, {$ct} were provided");
+            } elseif ($max == -1) {
+                throw new \RuntimeException("{$fn} expects from {$min} to {$max} arguments, {$ct} were provided");
             } else {
-                $s = $rnMessage;
+                throw new \RuntimeException("{$fn} expects at least {$min} arguments, {$ct} were provided");
             }
-        } elseif ($t > $max && $max != -1) {
-            if ($max == $min) {
-                $s = $eqMessage;
-            } else {
-                $s = $rnMessage;
-            }
-        }
-
-        if ($s) {
-            throw new \RuntimeException($s);
         }
     }
 
@@ -117,40 +94,29 @@ abstract class AbstractFn
      * Returns false if the provided argument does not satisfy the rules and the
      * rules' failure attribute is "null".
      *
-     * @throws \RuntimeException if the provided argument does not
-     *   satisfy the rules and the rules' failure attribute is "throw".
+     * @throws \RuntimeException if the provided argument is invalid
      */
-    private function validateArg($fnName, $position, array $rule, $arg, array $arity)
+    private function validateArg($fn, $position, array $rule, $arg)
     {
-        if (!isset($rule['failure'])) {
-            $rule['failure'] = 'throw';
+        if (!isset($rule['type']) || in_array(gettype($arg), $rule['type'])) {
+            return null;
         }
 
-        if (isset($rule['type'])) {
-
-            $matches = is_array($rule['type'])
-                ? in_array(gettype($arg), $rule['type'])
-                : gettype($arg) == $rule['type'];
-
-            if (!$matches) {
-                if ($rule['failure'] == 'throw') {
-                    // Handle failure when it should throw an exception
-                    throw new \RuntimeException(
-                        sprintf(
-                            'Argument %d of %s must be of type %s. Got %s.',
-                            $position + 1,
-                            $fnName,
-                            json_encode($rule['type']),
-                            gettype($arg)
-                        )
-                    );
-                } elseif ($rule['failure'] == 'null') {
-                    // Handle failure when set to return null
-                    return false;
-                }
-            }
+        if (!isset($rule['failure']) || $rule['failure'] == 'throw') {
+            // Handle failure when it should throw an exception
+            throw new \RuntimeException(
+                sprintf(
+                    'Argument %d of %s must be of type %s. Got %s.',
+                    $position + 1,
+                    $fn,
+                    json_encode($rule['type']),
+                    gettype($arg)
+                )
+            );
+        } elseif ($rule['failure'] == 'null') {
+            return false;
+        } else {
+            throw new \InvalidArgumentException('Failure can only be "throw" or "null"');
         }
-
-        return null;
     }
 }

@@ -14,7 +14,7 @@ class FnLowercase extends AbstractFn
     protected $rules = array(
         'arity' => array(1, 1),
         'args'  => array(
-            0 => array('type' => 'string', 'failure' => 'null')
+            0 => array('type' => array('string'), 'failure' => 'null')
         )
     );
 

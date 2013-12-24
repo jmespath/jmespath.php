@@ -27,8 +27,8 @@ class FnSortBy extends AbstractFn
     protected $rules = array(
         'arity' => array(2, 2),
         'args'  => array(
-            0 => array('type' => 'array', 'failure' => 'null'),
-            1 => array('type' => 'string'),
+            0 => array('type' => array('array'), 'failure' => 'null'),
+            1 => array('type' => array('string')),
         )
     );
 
