@@ -421,7 +421,7 @@ class Parser
             $peek = $this->peek();
         }
 
-        $this->storeMultiBranchKey($keyToken['value']);
+        $this->stack[] = array('store_key', $keyToken['value']);
     }
 
     private function parse_T_MERGE(array $token)
@@ -594,7 +594,7 @@ class Parser
             $peek = $this->peek();
         }
 
-        $this->storeMultiBranchKey(null);
+        $this->stack[] = array('store_key', null);
     }
 
     /**
@@ -609,14 +609,6 @@ class Parser
         $this->stack[] = array('push', array());
 
         return count($this->stack) - 4;
-    }
-
-    /**
-     * @param string|null $key Key to store the result in
-     */
-    private function storeMultiBranchKey($key)
-    {
-        $this->stack[] = array('store_key', $key);
     }
 
     /**
