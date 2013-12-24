@@ -115,6 +115,10 @@ class Interpreter
                     $stack[] = is_array($tos) && isset($tos[$arg]) ? $tos[$arg] : null;
                     break;
 
+                case 'stop':
+                    // Halts execution
+                    break 2;
+
                 case 'push':
                     // Pushes the given operand onto TOS
                     $stack[] = $arg;
@@ -364,10 +368,6 @@ class Interpreter
                         $opcodes[$opPos][3]
                     ));
                     break;
-
-                case 'stop':
-                    // Halts execution
-                    break 2;
 
                 default:
                     throw new \RuntimeException("Unknown opcode {$opcodes[$opPos][0]}");
