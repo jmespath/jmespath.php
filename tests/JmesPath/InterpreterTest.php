@@ -206,7 +206,7 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedExceptionMessage Unknown function
+     * @expectedExceptionMessage Call to undefined function: foo
      * @expectedException \RuntimeException
      */
     public function testValidatesFunctionsExist()

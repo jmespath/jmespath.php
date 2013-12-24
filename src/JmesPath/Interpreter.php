@@ -13,7 +13,10 @@ class Interpreter
     /** @var resource */
     private $debug;
 
-    /** @var array Array of functions */
+    /** @var array Map of function names to class names */
+    private $fnMap = array();
+
+    /** @var array Map of function names to instantiated function objects */
     private $fn = array();
 
     /**
@@ -23,7 +26,7 @@ class Interpreter
      */
     public function __construct($debug = false)
     {
-        static $defaultFunctions = array(
+        $this->fnMap = array(
             'abs' => 'JmesPath\Fn\FnAbs',
             'avg' => 'JmesPath\Fn\FnAvg',
             'ceil' => 'JmesPath\Fn\FnCeil',
@@ -51,11 +54,6 @@ class Interpreter
 
         $this->debug = $debug === true ? STDOUT : $debug;
         $this->methods = array_fill_keys(get_class_methods($this), true);
-
-        // Register default functions
-        foreach ($defaultFunctions as $name => $className) {
-            $this->fn[$name] = new $className;
-        }
     }
 
     /**
@@ -350,21 +348,16 @@ class Interpreter
                     // opcode requires two operands:
                     // 1: Function name as a string
                     // 2: Number of arguments to pop off of the stack
-                    if (!isset($this->fn[$arg])) {
-                        throw new \RuntimeException("Unknown function: {$arg}");
-                    }
-
-                    // Pop function arguments
                     $funcArgs = array();
                     for ($i = 0; $i < $arg2; $i++) {
                         array_unshift($funcArgs, array_pop($stack));
                     }
-                    $stack[] = call_user_func($this->fn[$arg], $funcArgs);
-
+                    $stack[] = $this->callFunction($arg, $funcArgs);
                     break;
 
                 case 'slice':
-                    $stack[] = call_user_func($this->fn['_array_slice'], array(
+                    // Returns a slice of an array
+                    $stack[] = $this->callFunction('_array_slice', array(
                         array_pop($stack),
                         $arg,
                         $arg2,
@@ -391,6 +384,28 @@ class Interpreter
         return array_pop($stack);
     }
 
+    /**
+     * Invokes a named function. If the function has not already been
+     * instantiated, the function object is created and cached.
+     *
+     * @param string $name Name of the function to invoke
+     * @param array  $args Function arguments
+     * @return mixed Returns the function invocation result
+     * @throws \RuntimeException If the function is undefined
+     */
+    private function callFunction($name, $args)
+    {
+        if (!isset($this->fn[$name])) {
+            if (!isset($this->fnMap[$name])) {
+                throw new \RuntimeException("Call to undefined function: {$name}");
+            } else {
+                $this->fn[$name] = new $this->fnMap[$name];
+            }
+        }
+
+        return call_user_func($this->fn[$name], $args);
+    }
+
     private function debugInit(array $opcodes, array $data)
     {
         if (!is_resource($this->debug)) {
@@ -412,11 +427,6 @@ class Interpreter
 
     /**
      * Prints debug information for a single line, including the opcodes & stack
-     *
-     * @param $key
-     * @param $stack
-     * @param $currentStack
-     * @param $op
      */
     private function debugLine($key, $stack, $currentStack, $op)
     {
@@ -438,9 +448,6 @@ class Interpreter
      * Prints debug out for the stack and current node scopes IF they are not
      * in the ideal state, indicating extra stuff on the stack or unpopped
      * scopes.
-     *
-     * @param array $stack
-     * @param array $currentStack
      */
     private function debugFinal(array $stack, array $currentStack)
     {
@@ -453,11 +460,6 @@ class Interpreter
         }
     }
 
-    /**
-     * Dumps the stack using a modified JSON output
-     *
-     * @param array $stack
-     */
     private function dumpStack(array $stack)
     {
         foreach (array_reverse($stack) as $index => $stack) {
