@@ -89,7 +89,7 @@ class Interpreter
     {
         $opPos = 0;
         $opTotal = count($opcodes);
-        $stack = $currentStack = array(&$data);
+        $stack = $frames = array(&$data);
         $eaches = array();
 
         if ($this->debug) {
@@ -102,7 +102,7 @@ class Interpreter
             $arg2 = isset($opcodes[$opPos][2]) ? $opcodes[$opPos][2] : null;
 
             if ($this->debug) {
-                $this->debugLine($opPos, $stack, $currentStack, $opcodes[$opPos]);
+                $this->debugLine($opPos, $stack, $frames, $opcodes[$opPos]);
             }
 
             switch ($opcodes[$opPos][0]) {
@@ -167,18 +167,18 @@ class Interpreter
                 case 'mark_current':
                     // Pushes the TOS onto the current node stack so that any
                     // usage of the @ token will use value at TOS
-                    $currentStack[] = &$stack[count($stack) - 1];
+                    $frames[] = &$stack[count($stack) - 1];
                     break;
 
                 case 'push_current':
                     // Pushes the top of the current node stack onto the top
                     // of the operand stack.
-                    $stack[] = &$currentStack[count($currentStack) - 1];
+                    $stack[] = &$frames[count($frames) - 1];
                     break;
 
                 case 'pop_current':
                     // Pops the top of the current node stack
-                    array_pop($currentStack);
+                    array_pop($frames);
                     break;
 
                 case 'each':
@@ -376,7 +376,7 @@ class Interpreter
         }
 
         if ($this->debug) {
-            $this->debugFinal($stack, $currentStack);
+            $this->debugFinal($stack, $frames);
         }
 
         return array_pop($stack);
@@ -410,36 +410,30 @@ class Interpreter
             throw new \InvalidArgumentException('debug must be a resource');
         }
 
-        ob_start();
-        echo "Bytecode\n========\n\n";
+        fwrite($this->debug, "Bytecode\n========\n\n");
         foreach ($opcodes as $id => $code) {
-            echo str_pad($id, 3, ' ', STR_PAD_LEFT) . ': ';
-            echo str_pad($code[0], 17, ' ') . '  ';
-            echo str_pad(isset($code[1]) ? json_encode($code[1]) : '', 12, ' ');
-            echo (isset($code[2]) ? json_encode($code[2]) : '') . "\n";
+            fprintf($this->debug, "%3d  %-13s  %-12s %s\n", $id, $code[0],
+                isset($code[1]) ? json_encode($code[1]) : '',
+                isset($code[2]) ? json_encode($code[2]) : '');
         }
-        echo "\nData\n====\n\n" . $this->prettyJson($data) . "\n\n";
-        echo "Execution stack\n===============\n\n";
-        fwrite($this->debug, ob_get_clean());
+        fprintf($this->debug, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
+        fwrite($this->debug, "Execution stack\n===============\n\n");
     }
 
     /**
      * Prints debug information for a single line, including the opcodes & stack
      */
-    private function debugLine($key, $stack, $currentStack, $op)
+    private function debugLine($key, $stack, $frames, $op)
     {
-        ob_start();
-        $arg = $op[0];
-        $opLine = '> ' .    str_pad($key, 3, ' ', STR_PAD_RIGHT) . ' ';
-        $opLine .= str_pad($arg, 17, ' ') . '   ';
-        $opLine .= str_pad((isset($op[1]) ? json_encode($op[1]) : null), 14, ' ');
-        $opLine .= str_pad((isset($op[2]) ? json_encode($op[2]) : null), 14, ' ');
-        echo $opLine . "\n";
-        echo '      Frames: ';
-        echo implode(' | ', array_map(function ($frame) { return substr(json_encode($frame), 0, 100); }, array_reverse($currentStack)));
-        echo "\n" . str_repeat('-', strlen($opLine)) . "\n\n";
+        $line = sprintf('> %-3s %-13s   %14s %14s', $key, $op[0],
+            isset($op[1]) ? json_encode($op[1]) : '',
+            isset($op[2]) ? json_encode($op[2]) : '');
+        fwrite($this->debug, "{$line}\n      Frames: ");
+        fwrite($this->debug, implode(' | ', array_map(function ($frame) {
+            return substr(json_encode($frame), 0, 100);
+        }, array_reverse($frames))));
+        fprintf($this->debug, "\n%s\n\n", str_repeat('-', strlen($line)));
         $this->dumpStack($stack);
-        fwrite($this->debug, ob_get_clean());
     }
 
     /**
@@ -447,29 +441,21 @@ class Interpreter
      * in the ideal state, indicating extra stuff on the stack or unpopped
      * scopes.
      */
-    private function debugFinal(array $stack, array $currentStack)
+    private function debugFinal(array $stack, array $frames)
     {
-        if (count($stack) > 2 || count($currentStack) > 1) {
-            ob_start();
-            echo "Final state\n===========\n\nStack: ";
+        if (count($stack) > 2 || count($frames) > 1) {
+            fwrite($this->debug, "Final state\n===========\n\nStack: ");
             $this->dumpStack($stack);
-            echo 'Current stack: ' . json_encode($currentStack) . "\n\n";
-            fwrite($this->debug, ob_get_clean());
+            fprintf($this->debug, "Current stack: %s\n\n", json_encode($frames));
         }
     }
 
     private function dumpStack(array $stack)
     {
-        foreach (array_reverse($stack) as $index => $stack) {
-            $json = json_encode($stack);
-            echo '    ' . str_pad($index, 3, ' ', STR_PAD_LEFT) . ': ';
-            echo substr(json_encode($stack), 0, 500);
-            if (strlen($json) > 500) {
-                echo ' [...]';
-            }
-            echo "\n";
+        foreach (array_reverse($stack) as $k => $v) {
+            fprintf($this->debug, "    %03d  %.500s\n", $k, json_encode($v));
         }
-        echo "\n\n";
+        fprintf($this->debug, "\n\n");
     }
 
     private function prettyJson($json)

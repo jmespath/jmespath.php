@@ -35,3 +35,46 @@ function search($expression, array $data)
 
     return $interpreter->execute($cache[$expression], $data);
 }
+
+/**
+ * Executes a JMESPath expression while emitting debug information to a resource
+ *
+ * @param string   $expression JMESPath expression to evaluate
+ * @param mixed    $data       JSON like data to search
+ * @param resource $out        Resource as returned from fopen to write to
+ *
+ * @return mixed Returns the expression result
+ */
+function debugSearch($expression, $data, $out = STDOUT)
+{
+    $lexer = new Lexer();
+    $parser = new Parser($lexer);
+    $interpreter = new Interpreter($out);
+
+    fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
+    fwrite($out, "Tokens\n======\n\n");
+    foreach ($lexer->tokenize($expression) as $t) {
+        fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'], json_encode($t['value']));
+    }
+    fwrite($out, "\n");
+
+    $t = microtime(true);
+    $opcodes = $parser->compile($expression);
+    $parseTime = (microtime(true) - $t) * 1000;
+    $t = microtime(true);
+    $result = $interpreter->execute($opcodes, $data);
+    $interpretTime = (microtime(true) - $t) * 1000;
+
+    fprintf($out, "Result\n======\n\n%s\n\n",
+        defined('JSON_PRETTY_PRINT')
+            ? json_encode($result, JSON_PRETTY_PRINT)
+            : json_encode($result)
+    );
+
+    fwrite($out, "Time\n====\n\n");
+    fprintf($out, "Parse time:     %f ms\n", $parseTime);
+    fprintf($out, "Interpret time: %f ms\n", $interpretTime);
+    fprintf($out, "Total time:     %f ms\n\n", $parseTime + $interpretTime);
+
+    return $result;
+}

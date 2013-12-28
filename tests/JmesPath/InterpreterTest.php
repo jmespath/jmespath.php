@@ -73,18 +73,6 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         fclose($r);
     }
 
-    public function testTrimsDebugJsonWhenTooLarge()
-    {
-        $repeated = str_repeat('@', 1000);
-        $r = fopen('php://temp', 'r+');
-        $i = new Interpreter($r);
-        $i->execute(array(array('push', 'foo')), array($repeated));
-        rewind($r);
-        $contents = stream_get_contents($r);
-        fclose($r);
-        $this->assertContains('@@@ [...]', $contents);
-    }
-
     public function testPushesAndPops()
     {
         $i = new Interpreter();
