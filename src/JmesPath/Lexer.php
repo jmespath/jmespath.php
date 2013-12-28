@@ -145,6 +145,26 @@ class Lexer
         );
     }
 
+    private function decodeJson($json)
+    {
+        static $jsonErrors = array(
+            JSON_ERROR_NONE => 'JSON_ERROR_NONE - No errors',
+            JSON_ERROR_DEPTH => 'JSON_ERROR_DEPTH - Maximum stack depth exceeded',
+            JSON_ERROR_STATE_MISMATCH => 'JSON_ERROR_STATE_MISMATCH - Underflow or the modes mismatch',
+            JSON_ERROR_CTRL_CHAR => 'JSON_ERROR_CTRL_CHAR - Unexpected control character found',
+            JSON_ERROR_SYNTAX => 'JSON_ERROR_SYNTAX - Syntax error, malformed JSON',
+            JSON_ERROR_UTF8 => 'JSON_ERROR_UTF8 - Malformed UTF-8 characters, possibly incorrectly encoded'
+        );
+
+        $value = json_decode($json, true);
+        if ($error = json_last_error()) {
+            $message = isset($jsonErrors[$error]) ? $jsonErrors[$error] : 'Unknown error';
+            $this->throwSyntax("Error decoding JSON: {$error} {$message}", $this->pos - 1);
+        }
+
+        return $value;
+    }
+
     private function consume()
     {
         $this->c = isset($this->input[++$this->pos])
@@ -232,10 +252,7 @@ class Lexer
             $this->throwSyntax('Empty JSON literal', $this->pos - 2);
         } elseif (isset($decodeCharacters[$value[0]])) {
             // Only decode a JSON literal when the it isn't a string
-            $value = json_decode($value, true);
-            if ($error = json_last_error()) {
-                $this->throwSyntax('Error decoding JSON literal: ' . $error, $this->pos - 1);
-            }
+            $value = $this->decodeJson($value);
         }
 
         $literal['value'] = $value;
@@ -252,7 +269,7 @@ class Lexer
         $token = array(
             'type'  => self::T_IDENTIFIER,
             'pos'   => $this->pos,
-            'value' => json_decode($matches[0])
+            'value' => $this->decodeJson($matches[0])
         );
 
         $this->pos += strlen($matches[0]) - 1;
