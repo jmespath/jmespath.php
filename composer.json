@@ -27,6 +27,8 @@
     "files": ["src/JmesPath/functions.php"]
   },
 
+  "bin": ["bin/jp.php"],
+
   "extra": {
     "branch-alias": {
       "dev-master": "1.0-dev"
