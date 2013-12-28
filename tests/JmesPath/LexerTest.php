@@ -72,7 +72,7 @@ EOT;
 Syntax error at character 7
 `{abc{}`
        ^
-Error decoding JSON: 4 JSON_ERROR_SYNTAX - Syntax error, malformed JSON
+Error decoding JSON: (4) JSON_ERROR_SYNTAX - Syntax error, malformed JSON, given "{abc{}"
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }

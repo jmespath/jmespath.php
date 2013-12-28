@@ -159,7 +159,7 @@ class Lexer
         $value = json_decode($json, true);
         if ($error = json_last_error()) {
             $message = isset($jsonErrors[$error]) ? $jsonErrors[$error] : 'Unknown error';
-            $this->throwSyntax("Error decoding JSON: {$error} {$message}", $this->pos - 1);
+            $this->throwSyntax("Error decoding JSON: ({$error}) {$message}, given \"{$json}\"", $this->pos - 1);
         }
 
         return $value;
