@@ -50,6 +50,9 @@ function debugSearch($expression, $data, $out = STDOUT)
     $lexer = new Lexer();
     $parser = new Parser($lexer);
     $interpreter = new Interpreter($out);
+    $printJson = function ($json) {
+        return defined('JSON_PRETTY_PRINT') ? json_encode($json, JSON_PRETTY_PRINT) : json_encode($json);
+    };
 
     fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
     fwrite($out, "Tokens\n======\n\n");
@@ -61,16 +64,21 @@ function debugSearch($expression, $data, $out = STDOUT)
     $t = microtime(true);
     $opcodes = $parser->compile($expression);
     $parseTime = (microtime(true) - $t) * 1000;
+
+    fwrite($out, "Bytecode\n========\n\n");
+    foreach ($opcodes as $id => $code) {
+        fprintf($out, "%3d  %-13s  %-12s %s\n", $id, $code[0],
+            isset($code[1]) ? json_encode($code[1]) : '',
+            isset($code[2]) ? json_encode($code[2]) : '');
+    }
+    fprintf($out, "\nData\n====\n\n%s\n\n", $printJson($data));
+    fwrite($out, "Execution stack\n===============\n\n");
+
     $t = microtime(true);
     $result = $interpreter->execute($opcodes, $data);
     $interpretTime = (microtime(true) - $t) * 1000;
 
-    fprintf($out, "Result\n======\n\n%s\n\n",
-        defined('JSON_PRETTY_PRINT')
-            ? json_encode($result, JSON_PRETTY_PRINT)
-            : json_encode($result)
-    );
-
+    fprintf($out, "Result\n======\n\n%s\n\n", $printJson($result));
     fwrite($out, "Time\n====\n\n");
     fprintf($out, "Parse time:     %f ms\n", $parseTime);
     fprintf($out, "Interpret time: %f ms\n", $interpretTime);

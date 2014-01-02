@@ -92,18 +92,11 @@ class Interpreter
         $stack = $frames = array(&$data);
         $eaches = array();
 
-        if ($this->debug) {
-            $this->debugInit($opcodes, $data);
-        }
-
         while ($opPos < $opTotal) {
 
+            $this->debug && $this->debugLine($opPos, $stack, $frames, $opcodes[$opPos]);
             $arg = isset($opcodes[$opPos][1]) ? $opcodes[$opPos][1] : null;
             $arg2 = isset($opcodes[$opPos][2]) ? $opcodes[$opPos][2] : null;
-
-            if ($this->debug) {
-                $this->debugLine($opPos, $stack, $frames, $opcodes[$opPos]);
-            }
 
             switch ($opcodes[$opPos][0]) {
 
@@ -375,9 +368,7 @@ class Interpreter
             $opPos++;
         }
 
-        if ($this->debug) {
-            $this->debugFinal($stack, $frames);
-        }
+        $this->debug && $this->debugFinal($stack, $frames);
 
         return array_pop($stack);
     }
@@ -404,27 +395,15 @@ class Interpreter
         return call_user_func($this->fn[$name], $args);
     }
 
-    private function debugInit(array $opcodes, array $data)
-    {
-        if (!is_resource($this->debug)) {
-            throw new \InvalidArgumentException('debug must be a resource');
-        }
-
-        fwrite($this->debug, "Bytecode\n========\n\n");
-        foreach ($opcodes as $id => $code) {
-            fprintf($this->debug, "%3d  %-13s  %-12s %s\n", $id, $code[0],
-                isset($code[1]) ? json_encode($code[1]) : '',
-                isset($code[2]) ? json_encode($code[2]) : '');
-        }
-        fprintf($this->debug, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
-        fwrite($this->debug, "Execution stack\n===============\n\n");
-    }
-
     /**
      * Prints debug information for a single line, including the opcodes & stack
      */
     private function debugLine($key, $stack, $frames, $op)
     {
+        if (!is_resource($this->debug)) {
+            throw new \InvalidArgumentException('debug must be a resource');
+        }
+
         $line = sprintf('> %-3s %-13s   %14s %14s', $key, $op[0],
             isset($op[1]) ? json_encode($op[1]) : '',
             isset($op[2]) ? json_encode($op[2]) : '');
@@ -456,10 +435,5 @@ class Interpreter
             fprintf($this->debug, "    %03d  %.500s\n", $k, json_encode($v));
         }
         fprintf($this->debug, "\n\n");
-    }
-
-    private function prettyJson($json)
-    {
-        return defined('JSON_PRETTY_PRINT') ? json_encode($json, JSON_PRETTY_PRINT) : json_encode($json);
     }
 }

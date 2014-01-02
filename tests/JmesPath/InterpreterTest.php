@@ -41,7 +41,7 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
     public function testEnsuresDebugIsResource()
     {
         $i = new Interpreter('foo');
-        $i->execute(array(), array());
+        $i->execute(array(array('push', 1)), array());
     }
 
     public function testOutputsDebugInformation()
