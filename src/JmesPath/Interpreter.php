@@ -368,8 +368,6 @@ class Interpreter
             $opPos++;
         }
 
-        $this->debug && $this->debugFinal($stack, $frames);
-
         return array_pop($stack);
     }
 
@@ -413,20 +411,6 @@ class Interpreter
         }, array_reverse($frames))));
         fprintf($this->debug, "\n%s\n\n", str_repeat('-', strlen($line)));
         $this->dumpStack($stack);
-    }
-
-    /**
-     * Prints debug out for the stack and current node scopes IF they are not
-     * in the ideal state, indicating extra stuff on the stack or unpopped
-     * scopes.
-     */
-    private function debugFinal(array $stack, array $frames)
-    {
-        if (count($stack) > 2 || count($frames) > 1) {
-            fwrite($this->debug, "Final state\n===========\n\nStack: ");
-            $this->dumpStack($stack);
-            fprintf($this->debug, "Current stack: %s\n\n", json_encode($frames));
-        }
     }
 
     private function dumpStack(array $stack)

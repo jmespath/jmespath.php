@@ -59,20 +59,6 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('foo', $contents);
     }
 
-    public function testShowsIfFinalStateIsBorked()
-    {
-        $r = fopen('php://temp', 'r+');
-        $i = new Interpreter($r);
-        $ref = new \ReflectionMethod($i, 'debugFinal');
-        $ref->setAccessible(true);
-        $ref->invoke($i, array('abc', '123'), array('def', '456'));
-        rewind($r);
-        $this->assertContains('abc', stream_get_contents($r));
-        rewind($r);
-        $this->assertContains('456', stream_get_contents($r));
-        fclose($r);
-    }
-
     public function testPushesAndPops()
     {
         $i = new Interpreter();
