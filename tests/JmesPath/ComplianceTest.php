@@ -22,7 +22,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         }
 
         rewind($debug);
-        $failure = "\nphp jp.php {$file} {$suite} {$case}\n\n"
+        $failure = "\nphp bin/jp.php {$file} {$suite} {$case}\n\n"
             . stream_get_contents($debug) . "\n\n"
             . "Expected: " . $this->prettyJson($result) . "\n\n";
 

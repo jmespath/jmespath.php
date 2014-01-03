@@ -11,7 +11,7 @@ if (!isset($argv[2])) {
     die("Must specify an expression OR a jmespath compliance script, test suite, and test case\n");
 } else {
     // Manually run a compliance test
-    $path = __DIR__ . "/tests/JmesPath/compliance/{$argv[1]}.json";
+    $path = __DIR__ . "/../tests/JmesPath/compliance/{$argv[1]}.json";
     file_exists($path) or die('File not found at ' . $path);
     $json = json_decode(file_get_contents($path), true);
     $set = $json[$argv[2]];
