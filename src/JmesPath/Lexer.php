@@ -250,8 +250,9 @@ class Lexer
             $value = $primitiveMap[$primitives[$value]];
         } elseif (strlen($value) == 0) {
             $this->throwSyntax('Empty JSON literal', $this->pos - 2);
-        } elseif (isset($decodeCharacters[$value[0]])) {
-            // Only decode a JSON literal when the it isn't a string
+        } elseif (!isset($decodeCharacters[$value[0]])) {
+            $value = $this->decodeJson('"' . $value . '"');
+        } else {
             $value = $this->decodeJson($value);
         }
 
