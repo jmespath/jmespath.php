@@ -46,7 +46,6 @@ class Lexer
         ']'  => self::T_RBRACKET,
         '('  => self::T_LPARENS,
         ')'  => self::T_RPARENS,
-        '='  => self::T_OPERATOR,
         '@'  => self::T_AT,
     );
 
@@ -119,7 +118,7 @@ class Lexer
                 $tokens[] = $this->consumeLiteral();
             } elseif ($this->c == '[') {
                 $tokens[] = $this->consumeLbracket();
-            } elseif ($this->c == '<' || $this->c == '>' || $this->c == '!') {
+            } elseif ($this->c == '=' || $this->c == '<' || $this->c == '>' || $this->c == '!') {
                 $tokens[] = $this->consumeOperator($this->c);
             } elseif ($this->c == '|') {
                 $tokens[] = $this->consumePipe();
@@ -319,6 +318,8 @@ class Lexer
         if ($this->c == '=') {
             $this->consume();
             $token['value'] .= '=';
+        } elseif ($operator == '=') {
+            $this->throwSyntax('Got "=", expected "=="');
         }
 
         return $token;

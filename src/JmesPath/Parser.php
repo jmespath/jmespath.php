@@ -691,7 +691,7 @@ class Parser
     private function parseFullExpression()
     {
         static $operators = array(
-            '='  => 'eq',
+            '==' => 'eq',
             '!=' => 'not',
             '>'  => 'gt',
             '>=' => 'gte',
