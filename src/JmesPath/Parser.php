@@ -237,9 +237,10 @@ class Parser
             Lexer::T_EOF      => true, // foo,
             Lexer::T_DOT      => true, // foo.bar
             Lexer::T_OR       => true, // foo || bar
-            Lexer::T_OPERATOR => true, // foo[a = "a"]
-            Lexer::T_RPARENS  => true, // foo[length(abc)]
-            Lexer::T_PIPE     => true, // foo.*.a | [0]
+            Lexer::T_OPERATOR => true, // a = "a"
+            Lexer::T_RPARENS  => true, // length(abc)
+            Lexer::T_PIPE     => true, // foo.*.a | [0],
+            Lexer::T_FILTER   => true, // foo[?baz==`10`]
         );
 
         $this->matchPeek($nextTypes);
@@ -273,7 +274,7 @@ class Parser
             Lexer::T_STAR       => true, // foo.*
             Lexer::T_LBRACE     => true, // foo[1]
             Lexer::T_LBRACKET   => true, // foo{a: 0}
-            Lexer::T_FILTER     => true,
+            Lexer::T_FILTER     => true, // foo.[?bar = 10]
         );
 
         $next = $this->matchPeek($nextTypes);
