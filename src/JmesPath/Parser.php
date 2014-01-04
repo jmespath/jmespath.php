@@ -465,11 +465,9 @@ class Parser
                 throw $this->syntax('Cannot access object keys using number indices');
             }
             $this->parseArrayIndexExpression();
-            return;
-        } elseif ($peek['type'] == Lexer::T_STAR) {
-            if ($fromType == 'object') {
-                throw $this->syntax('Invalid object wildcard syntax');
-            }
+        } elseif ($peek['type'] != Lexer::T_STAR || $fromType == 'object') {
+            $this->parseMultiBracket($fromType);
+        } else {
             $token = $this->nextToken();
             $peek = $this->peek();
             if ($peek['type'] == Lexer::T_RBRACKET) {
@@ -478,8 +476,6 @@ class Parser
                 return;
             }
         }
-
-        $this->parseMultiBracket($fromType);
     }
 
     private function parseArrayIndexExpression()

@@ -199,11 +199,6 @@
         "error": "syntax"
       },
       {
-        "comment": "Invalid Object wildcard syntax",
-        "expression": "foo.[*]",
-        "error": "syntax"
-      },
-      {
         "comment": "Multi-select of a list with trailing comma",
         "expression": "foo[0, ]",
         "error": "syntax"
