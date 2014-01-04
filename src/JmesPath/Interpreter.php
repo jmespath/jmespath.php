@@ -410,11 +410,6 @@ class Interpreter
             return substr(json_encode($frame), 0, 100);
         }, array_reverse($frames))));
         fprintf($this->debug, "\n%s\n\n", str_repeat('-', strlen($line)));
-        $this->dumpStack($stack);
-    }
-
-    private function dumpStack(array $stack)
-    {
         foreach (array_reverse($stack) as $k => $v) {
             fprintf($this->debug, "    %03d  %.500s\n", $k, json_encode($v));
         }
