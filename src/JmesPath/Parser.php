@@ -3,21 +3,36 @@
 namespace JmesPath;
 
 /**
- * LL(1) recursive descent JMESPath parser utilizing a Pratt parser
+ * LL(1) recursive descent JMESPath parser utilizing a Pratt based parser
  */
 class Parser implements ParserInterface
 {
     /** @var LexerInterface */
     private $lexer;
 
-    /** @var PrattParser */
-    private $pratt;
-
     /** @var array Bytecode stack */
     private $stack;
 
     /** @var array Stack of ParseState objects */
     private $state;
+
+    /** @var array Array of tokens */
+    private $tokens;
+
+    /** @var int */
+    private $tokenPos;
+
+    /** @var int */
+    private $tokenCount;
+
+    /** @var string JMESPath expression */
+    private $input;
+
+    /** @var array Known opcodes of the parser */
+    private $methods;
+
+    /** @var array Null token that is reused over and over */
+    private static $nullToken = array('type' => Lexer::T_EOF, 'value' => '');
 
     /** @var array Store common opcodes as statics for performance */
     private static $popCurrent = array('pop_current');
@@ -64,18 +79,25 @@ class Parser implements ParserInterface
     public function __construct(LexerInterface $lexer)
     {
         $this->lexer = $lexer;
-        $this->pratt = new PrattParser($this->lexer);
-        foreach (self::$parselets as $token => $precedence) {
-            $this->pratt->register($token, array($this, '_' . $token), $precedence);
-        }
+        $this->methods = array_fill_keys(get_class_methods($this), true);
     }
 
     public function compile($expression)
     {
-        $this->stack = array(array('push_current'));
+        static $stopInstruction = array('stop');
+
+        $this->input = $expression;
+        $this->tokens = $this->lexer->tokenize($expression);
+        $this->tokenCount = count($this->tokens);
+        $this->tokenPos = -1;
         $this->state = array(new ParseState);
-        $this->pratt->parse($expression);
-        $this->stack[] = array('stop');
+        $this->stack = array(self::$pushCurrent);
+
+        while (isset($this->tokens[$this->tokenPos + 1])) {
+            $this->parseExpression();
+        }
+
+        $this->stack[] = $stopInstruction;
         if (!end($this->state)->push) {
             unset($this->stack[0]);
         }
@@ -83,7 +105,112 @@ class Parser implements ParserInterface
         return $this->stack;
     }
 
-    public function _T_IDENTIFIER(array $token, PrattParser $p)
+    /**
+     * Throws a SyntaxErrorException for the current token
+     *
+     * @param array|string $messageOrTypes
+     * @throws SyntaxErrorException
+     */
+    private function throwSyntax($messageOrTypes)
+    {
+        throw new SyntaxErrorException(
+            $messageOrTypes,
+            $this->tokens[$this->tokenPos],
+            $this->input
+        );
+    }
+
+    /**
+     * @return array Returns the next token after advancing
+     */
+    private function nextToken()
+    {
+        return $this->tokens[++$this->tokenPos];
+    }
+
+    /**
+     * Match the next token against one or more types and advance the lexer
+     *
+     * @param array $types Type to match
+     *
+     * @return array Returns the next token
+     * @throws SyntaxErrorException
+     */
+    private function match(array $types)
+    {
+        $token = $this->nextToken();
+        if (!isset($types[$token['type']])) {
+            $this->throwSyntax($types);
+        }
+
+        return $token;
+    }
+
+    /**
+     * Match the peek token against one or more types
+     *
+     * @param array $types Type to match
+     *
+     * @return array Returns the next token
+     * @throws SyntaxErrorException
+     */
+    private function matchPeek(array $types)
+    {
+        $token = $this->peek();
+        if (!isset($types[$token['type']])) {
+            $this->nextToken();
+            $this->throwSyntax($types);
+        }
+
+        return $token;
+    }
+
+    /**
+     * Grab the next lexical token without consuming it
+     *
+     * @param int $lookAhead Number of token to lookahead
+     *
+     * @return array
+     */
+    private function peek($lookAhead = 1)
+    {
+        $nextPos = $this->tokenPos + $lookAhead;
+
+        return isset($this->tokens[$nextPos])
+            ? $this->tokens[$nextPos]
+            : self::$nullToken;
+    }
+
+    private function getPrecedence()
+    {
+        $peek = $this->peek();
+
+        return isset(self::$parselets[$peek['type']])
+            ? self::$parselets[$peek['type']]
+            : 0;
+    }
+
+    private function parseExpression($precedence = 0)
+    {
+        $token = $this->nextToken();
+
+        if (!isset($this->methods[$method = 'parse_' . $token['type']])) {
+            $this->throwSyntax('Unexpected token: ' . $token['type']);
+        }
+        $left = $this->{$method}($token);
+
+        while ($precedence >= $this->getPrecedence() && isset($this->tokens[$this->tokenPos + 1])) {
+            $token = $this->nextToken();
+            if (!isset($this->methods[$method = 'parse_' . $token['type']])) {
+                $this->throwSyntax('Unexpected token: ' . $token['type']);
+            }
+            $left = $this->{$method}($token, $left);
+        }
+
+        return $left;
+    }
+
+    private function parse_T_IDENTIFIER(array $token)
     {
         static $nextTypes = array(
             Lexer::T_MERGE    => true, // foo[]
@@ -101,12 +228,12 @@ class Parser implements ParserInterface
             Lexer::T_FILTER   => true, // foo[?baz==`10`]
         );
 
-        $p->matchPeek($nextTypes);
+        $this->matchPeek($nextTypes);
         $this->stack[] = array('field', $token['value']);
         end($this->state)->push = true;
     }
 
-    public function _T_DOT(array $token, PrattParser $p)
+    private function parse_T_DOT(array $token)
     {
         static $nextTypes = array(
             Lexer::T_IDENTIFIER => true, // foo.bar
@@ -116,35 +243,35 @@ class Parser implements ParserInterface
             Lexer::T_LBRACKET   => true, // foo{a: 0}
             Lexer::T_FILTER     => true, // foo.[?bar = 10]
         );
-        $p->matchPeek($nextTypes);
+        $this->matchPeek($nextTypes);
 
         $this->state[] = new ParseState('object');
-        $p->parseExpression(0);
+        $this->parseExpression(0);
         array_pop($this->state);
     }
 
-    public function _T_STAR(array $token, PrattParser $p)
+    private function parse_T_STAR(array $token)
     {
         $this->stack[] = array('each', null, end($this->state)->type);
         $pos = count($this->stack) - 1;
-        $this->stack[] = array('mark_current');
-        $p->parseExpression(0);
-        $this->stack[] = array('pop_current');
+        $this->stack[] = self::$markCurrent;
+        $this->parseExpression(0);
+        $this->stack[] = self::$popCurrent;
         $this->stack[] = array('jump', $pos);
         $this->stack[$pos][1] = count($this->stack);
     }
 
-    public function _T_OR(array $token, PrattParser $p)
+    private function parse_T_OR(array $token)
     {
         $this->stack[] = array('is_null');
         $this->stack[] = array('jump_if_false', null);
         $index = count($this->stack) - 1;
         // Pop the empty variable at TOS
         $this->stack[] = array('pop');
-        $this->stack[] = array('push_current');
+        $this->stack[] = self::$pushCurrent;
         $pos = count($this->stack) - 1;
         $this->state[] = new ParseState;
-        $p->parseExpression();
+        $this->parseExpression();
         $this->stack[$index][1] = count($this->stack);
         $state = array_pop($this->state);
         if (!$state->push) {
@@ -152,12 +279,12 @@ class Parser implements ParserInterface
         }
     }
 
-    public function _T_LITERAL(array $token, PrattParser $p)
+    private function parse_T_LITERAL(array $token)
     {
         $this->stack[] = array('push', $token['value']);
     }
 
-    public function _T_NUMBER(array $token, PrattParser $p)
+    private function parse_T_NUMBER(array $token)
     {
         static $nextTypes = array(
             Lexer::T_RBRACE   => true, // {a: 1}
@@ -169,17 +296,17 @@ class Parser implements ParserInterface
             Lexer::T_EOF      => true, // foo.-1
             Lexer::T_PIPE     => true, // foo.-1 | bar
         );
-        $p->matchPeek($nextTypes);
+        $this->matchPeek($nextTypes);
         $this->stack[] = array('index', (int) $token['value']);
     }
 
-    public function _T_PIPE(array $token, PrattParser $p)
+    private function parse_T_PIPE(array $token)
     {
-        $this->stack[] = array('pop_current');
-        $this->stack[] = array('mark_current');
+        $this->stack[] = self::$popCurrent;
+        $this->stack[] = self::$markCurrent;
     }
 
-    public function _T_OPERATOR(array $token, PrattParser $p)
+    private function parse_T_OPERATOR(array $token)
     {
         static $operators = array(
             '==' => 'eq',
@@ -190,10 +317,10 @@ class Parser implements ParserInterface
             '<=' => 'lte'
         );
 
-        $this->stack[] = array('push_current');
+        $this->stack[] = self::$pushCurrent;
         $pos = count($this->stack) - 1;
         $this->state[] = new ParseState();
-        $p->parseExpression();
+        $this->parseExpression();
         if (!array_pop($this->state)->push) {
             unset($this->stack[$pos]);
         }
@@ -202,37 +329,37 @@ class Parser implements ParserInterface
         if (isset($operators[$token['value']])) {
             $this->stack[] = array($operators[$token['value']]);
         } else {
-            $p->throwSyntax('Invalid operator');
+            $this->throwSyntax('Invalid operator');
         }
     }
 
-    public function _T_FUNCTION(array $token, PrattParser $p)
+    private function parse_T_FUNCTION(array $token)
     {
         $found = 0;
         $fn = $token['value'];
-        $peek = $p->peek();
+        $peek = $this->peek();
 
         while ($peek['type'] !== Lexer::T_RPARENS) {
             $found++;
-            $this->stack[] = array('push_current');
+            $this->stack[] = self::$pushCurrent;
             $pos = count($this->stack) - 1;
             $this->state[] = new ParseState();
-            $p->parseExpression();
+            $this->parseExpression();
             if (!array_pop($this->state)->push) {
                 unset($this->stack[$pos]);
             }
-            $peek = $p->peek();
+            $peek = $this->peek();
             if ($peek['type'] == Lexer::T_COMMA) {
-                $p->match(array(Lexer::T_COMMA => true));
-                $peek = $p->peek();
+                $this->match(array(Lexer::T_COMMA => true));
+                $peek = $this->peek();
             }
         }
 
-        $p->match(array(Lexer::T_RPARENS => true));
+        $this->match(array(Lexer::T_RPARENS => true));
         $this->stack[] = array('call', $fn, $found);
     }
 
-    public function _T_LBRACKET(array $token, PrattParser $p)
+    private function parse_T_LBRACKET(array $token)
     {
         static $nextTypes = array(
             Lexer::T_IDENTIFIER => true, // [a, b]
@@ -247,27 +374,27 @@ class Parser implements ParserInterface
         );
 
         $fromType = end($this->state)->type;
-        $peek = $p->matchPeek($nextTypes);
+        $peek = $this->matchPeek($nextTypes);
 
         if ($peek['type'] == Lexer::T_NUMBER || $peek['type'] == Lexer::T_COLON) {
             if ($fromType == 'object') {
-                $p->throwSyntax('Cannot access object keys using number indices');
+                $this->throwSyntax('Cannot access object keys using number indices');
             }
-            $this->parseArrayIndexExpression($p);
+            $this->parseArrayIndexExpression();
         } elseif ($peek['type'] != Lexer::T_STAR || $fromType == 'object') {
-            $this->parseMultiBracket($p);
+            $this->parseMultiBracket();
         } else {
-            $token = $p->nextToken();
-            $peek = $p->peek();
+            $token = $this->nextToken();
+            $peek = $this->peek();
             if ($peek['type'] == Lexer::T_RBRACKET) {
                 end($this->state)->type = 'array';
-                $p->nextToken();
-                $this->T_STAR($token, $p);
+                $this->nextToken();
+                $this->parse_T_STAR($token);
             }
         }
     }
 
-    public function _T_FILTER(array $token, PrattParser $p)
+    private function parse_T_FILTER(array $token)
     {
         $this->stack[] = array('each', null);
         $loopIndex = count($this->stack) - 1;
@@ -276,7 +403,7 @@ class Parser implements ParserInterface
         $this->state[] = new ParseState;
         $this->stack[] = self::$pushCurrent;
         $pos = count($this->stack) - 1;
-        $p->parseExpression();
+        $this->parseExpression();
         if (!array_pop($this->state)->push) {
             unset($this->stack[$pos]);
         }
@@ -291,28 +418,29 @@ class Parser implements ParserInterface
         $this->stack[] = array('jump', $loopIndex);
 
         // Actually yield values that matched the filter
-        $p->match(array(Lexer::T_RBRACKET => true));
-        $p->parseExpression();
+        $this->match(array(Lexer::T_RBRACKET => true));
+        $this->parseExpression();
 
         // Finish the projection loop
         $this->stack[] = array('jump', $loopIndex);
         $this->stack[$loopIndex][1] = count($this->stack);
     }
 
-    public function _T_MERGE(array $token, PrattParser $p)
+    private function parse_T_MERGE(array $token)
     {
         static $mergeOpcode = array('merge');
         $this->stack[] = $mergeOpcode;
-        $peek = $p->peek();
+        $peek = $this->peek();
         $this->state[] = new ParseState('array');
         if ($peek['type'] != Lexer::T_EOF) {
-            $this->T_STAR($token, $p);
+            $this->parse_T_STAR($token);
         }
         array_pop($this->state);
     }
 
-    public function _T_LBRACE(array $token, PrattParser $p)
+    private function parse_T_LBRACE(array $token)
     {
+        static $validClosingToken = array(Lexer::T_RBRACE => true);
         static $validNext = array(
             Lexer::T_COMMA => true,
             Lexer::T_RBRACE => true
@@ -322,19 +450,19 @@ class Parser implements ParserInterface
         $index = $this->prepareMultiBranch();
 
         do {
-            $this->parseKeyValuePair($p, $fromType);
-            $peek = $p->matchPeek($validNext);
+            $this->parseKeyValuePair($fromType);
+            $peek = $this->matchPeek($validNext);
             if ($peek['type'] == Lexer::T_COMMA) {
-                $p->nextToken();
-                $peek = $p->matchPeek($validNext);
+                $this->nextToken();
+                $peek = $this->matchPeek($validNext);
             }
         } while ($peek['type'] !== Lexer::T_RBRACE);
 
-        $p->match(array(Lexer::T_RBRACE => true));
+        $this->match($validClosingToken);
         $this->finishMultiBranch($index);
     }
 
-    public function _T_EOF(array $token, PrattParser $p) {}
+    private function parse_T_EOF(array $token) {}
 
     /**
      * @return int Returns the index of the jump bytecode instruction
@@ -359,10 +487,12 @@ class Parser implements ParserInterface
         $this->stack[$index][1] = count($this->stack);
     }
 
-    private function parseKeyValuePair(PrattParser $p, $type)
+    private function parseKeyValuePair($type)
     {
-        $keyToken = $p->match(array(Lexer::T_IDENTIFIER => true));
-        $p->match(array(Lexer::T_COLON => true));
+        static $validBegin = array(Lexer::T_IDENTIFIER => true);
+        static $validColon = array(Lexer::T_COLON => true);
+        $keyToken = $this->match($validBegin);
+        $this->match($validColon);
 
         // Requires at least one value that can start an expression, and
         // don't allow number indices on objects or strings on arrays
@@ -372,12 +502,12 @@ class Parser implements ParserInterface
         } elseif ($type == 'object') {
             unset($valid[Lexer::T_NUMBER]);
         }
-        $p->matchPeek($valid);
+        $this->matchPeek($valid);
 
         $this->stack[] = self::$pushCurrent;
         $pos = count($this->stack) - 1;
         $this->state[] = new ParseState($type);
-        $p->parseExpression();
+        $this->parseExpression();
         if (!array_pop($this->state)->push) {
             unset($this->stack[$pos]);
         }
@@ -385,7 +515,7 @@ class Parser implements ParserInterface
         $this->stack[] = array('store_key', $keyToken['value']);
     }
 
-    private function parseArrayIndexExpression(PrattParser $p)
+    private function parseArrayIndexExpression()
     {
         static $matchNext = array(
             Lexer::T_NUMBER => true,
@@ -395,7 +525,7 @@ class Parser implements ParserInterface
 
         $pos = 0;
         $parts = array(null, null, null);
-        $next = $p->match($matchNext);
+        $next = $this->match($matchNext);
 
         do {
             if ($next['type'] == Lexer::T_COLON) {
@@ -403,20 +533,20 @@ class Parser implements ParserInterface
             } else {
                 $parts[$pos] = $next['value'];
             }
-            $next = $p->match($matchNext);
+            $next = $this->match($matchNext);
         } while ($next['type'] != Lexer::T_RBRACKET);
 
         if ($pos == 0) {
             $this->stack[] = array('index', $parts[0]);
         } elseif ($pos > 2) {
-            $p->throwSyntax('Invalid array slice syntax');
+            $this->throwSyntax('Invalid array slice syntax');
         } else {
             // Sliced array from start (e.g., [2:])
             $this->stack[] = array('slice', $parts[0], $parts[1], $parts[2]);
         }
     }
 
-    private function parseMultiBracket(PrattParser $p)
+    private function parseMultiBracket()
     {
         $index = $this->prepareMultiBranch();
 
@@ -424,18 +554,18 @@ class Parser implements ParserInterface
             $this->stack[] = self::$pushCurrent;
             $this->state[] = new ParseState;
             $pos = count($this->stack) - 1;
-            $p->parseExpression();
+            $this->parseExpression();
             if (!array_pop($this->state)->push) {
                 unset($this->stack[$pos]);
             }
             $this->stack[] = array('store_key', null);
-            $token = $p->peek();
+            $token = $this->peek();
             if ($token['type'] == Lexer::T_COMMA) {
-                $p->nextToken();
-                $token = $p->peek();
+                $this->nextToken();
+                $token = $this->peek();
             }
         } while ($token['type'] !== Lexer::T_RBRACKET);
-        $p->nextToken();
+        $this->nextToken();
 
         $this->finishMultiBranch($index);
     }
