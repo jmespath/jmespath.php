@@ -160,13 +160,13 @@ class Interpreter
                 case 'mark_current':
                     // Pushes the TOS onto the current node stack so that any
                     // usage of the @ token will use value at TOS
-                    $frames[] = &$stack[count($stack) - 1];
+                    $frames[] = $stack ? $stack[count($stack) - 1] : null;
                     break;
 
                 case 'push_current':
                     // Pushes the top of the current node stack onto the top
                     // of the operand stack.
-                    $stack[] = &$frames[count($frames) - 1];
+                    $stack[] = $frames[count($frames) - 1];
                     break;
 
                 case 'pop_current':
