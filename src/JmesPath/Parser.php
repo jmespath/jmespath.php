@@ -54,7 +54,6 @@ class Parser implements ParserInterface
     );
 
     private static $parselets = array(
-        Lexer::T_EOF        => 0,
         Lexer::T_IDENTIFIER => 0,
         Lexer::T_DOT        => 0,
         Lexer::T_STAR       => 0,
@@ -73,6 +72,7 @@ class Parser implements ParserInterface
         Lexer::T_COMMA      => 3,
         Lexer::T_RPARENS    => 3,
         Lexer::T_PIPE       => 4,
+        Lexer::T_EOF        => 99
     );
 
     /**
@@ -98,7 +98,6 @@ class Parser implements ParserInterface
         $this->input = $expression;
         $this->tokens = $this->lexer->tokenize($expression);
         $this->tokenCount = count($this->tokens);
-        $this->statePosition = 0;
         $this->tokenPos = -1;
         $this->state = array();
         $this->pushState();
@@ -578,7 +577,6 @@ class Parser implements ParserInterface
         }
 
         $this->state[] = new ParseState(count($this->stack) - 1, $type, $needsPush);
-        $this->statePosition++;
     }
 
     private function popState()
