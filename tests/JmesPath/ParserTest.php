@@ -44,9 +44,10 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     {
         $p = new Parser(new Lexer());
         $result = $p->compile('foo[1]');
-        $this->assertEquals(array('field', 'foo'), $result[0]);
-        $this->assertEquals(array('index', '1'), $result[1]);
-        $this->assertEquals(array('stop'), $result[2]);
+        $this->assertEquals(array('push_current'), $result[0]);
+        $this->assertEquals(array('field', 'foo'), $result[1]);
+        $this->assertEquals(array('index', '1'), $result[2]);
+        $this->assertEquals(array('stop'), $result[3]);
     }
 
     public function testEmitsIndexOpcodesForNestedExpressions()
@@ -54,20 +55,21 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $p = new Parser(new Lexer());
         $result = $p->compile('foo[[1], [2]]');
         $this->assertSame(array (
-            0 => array('field', 'foo'),
-            1 => array('is_array'),
-            2 => array('jump_if_false', 13),
-            3 => array('mark_current'),
-            4 => array('pop'),
-            5 => array('push', array()),
-            6 => array('push_current'),
-            7 => array('index', 1),
-            8 => array('store_key', null),
-            9 => array('push_current'),
-            10 => array('index', 2,),
-            11 => array('store_key', 1 => null),
-            12 =>array('pop_current'),
-            13 => array('stop'),
+            0 => array('push_current'),
+            1 => array('field', 'foo'),
+            2 => array('is_array'),
+            3 => array('jump_if_false', 14),
+            4 => array('mark_current'),
+            5 => array('pop'),
+            6 => array('push', array()),
+            7 => array('push_current'),
+            8 => array('index', 1),
+            9 => array('store_key', null),
+            10 => array('push_current'),
+            11 => array('index', 2,),
+            12 => array('store_key', 1 => null),
+            13 =>array('pop_current'),
+            14 => array('stop'),
         ), $result);
     }
 
@@ -77,24 +79,25 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $result = $p->compile('foo.*[[1], [2]]');
 
         $this->assertEquals(array(
-            0  => array('field', 'foo'),
-            1  => array('each', 17, 'object'),
-            2  => array('mark_current'),
-            3  => array('is_array'),
-            4  => array('jump_if_false', 15),
-            5  => array('mark_current'),
-            6  => array('pop'),
-            7  => array('push', array()),
-            8  => array('push_current'),
-            9  => array('index', 1),
-            10 => array('store_key', null),
-            11 => array('push_current'),
-            12 => array('index', 2),
-            13 => array('store_key', null),
-            14 => array('pop_current'),
+            0 => array('push_current'),
+            1  => array('field', 'foo'),
+            2  => array('each', 18, 'object'),
+            3  => array('mark_current'),
+            4  => array('is_array'),
+            5  => array('jump_if_false', 16),
+            6  => array('mark_current'),
+            7  => array('pop'),
+            8  => array('push', array()),
+            9  => array('push_current'),
+            10  => array('index', 1),
+            11 => array('store_key', null),
+            12 => array('push_current'),
+            13 => array('index', 2),
+            14 => array('store_key', null),
             15 => array('pop_current'),
-            16 => array('jump', 1),
-            17 => array('stop')
+            16 => array('pop_current'),
+            17 => array('jump', 2),
+            18 => array('stop')
         ), $result);
     }
 

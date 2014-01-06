@@ -20,7 +20,8 @@ class functionsTest extends \PHPUnit_Framework_TestCase
         $output = stream_get_contents($resource);
         $this->assertContains('Bytecode', $output);
         $this->assertContains('Execution stack', $output);
-        $this->assertContains('0  field', $output);
+        $this->assertContains('0  push_current', $output);
+        $this->assertContains('1  field ', $output);
         $this->assertContains('Frames', $output);
     }
 }

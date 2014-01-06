@@ -10,16 +10,18 @@ namespace JmesPath;
  */
 class ParseState
 {
-    public $push, $type;
+    public $pos, $push, $type;
 
     /**
      * Creates a new parser state
      *
+     * @param int    $pos  Lexer position of the state
      * @param string $type Type that this state is descended from
      * @param bool   $push Whether or not the state needs to push_current
      */
-    public function __construct($type = '', $push = false)
+    public function __construct($pos, $type = '', $push = false)
     {
+        $this->pos = $pos;
         $this->type = $type;
         $this->push = $push;
     }

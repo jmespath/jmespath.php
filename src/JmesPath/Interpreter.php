@@ -89,8 +89,8 @@ class Interpreter
     {
         $opPos = 0;
         $opTotal = count($opcodes);
-        $stack = $frames = array(&$data);
-        $eaches = array();
+        $stack = $eaches = array();
+        $frames = array(&$data);
 
         while ($opPos < $opTotal) {
 
