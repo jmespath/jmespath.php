@@ -454,7 +454,7 @@ class Parser implements ParserInterface
             $peek = $this->matchPeek($validNext);
             if ($peek['type'] == Lexer::T_COMMA) {
                 $this->nextToken();
-                $peek = $this->matchPeek($validNext);
+                $peek = $this->peek();
             }
         } while ($peek['type'] !== Lexer::T_RBRACE);
 
