@@ -87,16 +87,11 @@ class Parser implements ParserInterface
     }
 
     /**
-     * Throws a SyntaxErrorException for the current token
+     * Parses an expression until a token is encountered greater than the
+     * provided precedence.
      *
-     * @param string $msg Error message
-     * @throws SyntaxErrorException
+     * @param int $precedence Precedence cut-off
      */
-    private function throwSyntax($msg)
-    {
-        throw new SyntaxErrorException($msg, $this->tokens->token, (string) $this->tokens);
-    }
-
     private function parseExpression($precedence = 0)
     {
         $this->{'parse_' . $this->tokens->token['type']}();
@@ -284,7 +279,7 @@ class Parser implements ParserInterface
         } elseif ($this->tokens->token['type'] != Lexer::T_STAR ||
             $fromType == 'object'
         ) {
-            $this->parseMultiBracket($fromType);
+            $this->parseMultiSelectList($fromType);
         } else {
             $this->tokens->next();
             $this->tokens->match(array(Lexer::T_RBRACKET => true));
@@ -373,6 +368,12 @@ class Parser implements ParserInterface
 
     private function parse_T_EOF() {}
 
+    /**
+     * Creates a bytecode loop using each and jump instructions. Used for
+     * projections of wildcards and filters.
+     *
+     * @param string $previousType The last known type descended from
+     */
     private function createBytecodeLoop($previousType)
     {
         $this->stack[] = array('each', null, $previousType);
@@ -413,7 +414,12 @@ class Parser implements ParserInterface
         $this->stack[$index][1] = count($this->stack);
     }
 
-    private function parseKeyValuePair($type)
+    /**
+     * Parses a keyval-expr: identifier ":" expression
+     *
+     * @param string $fromType The known type this multi-bracket descends from
+     */
+    private function parseKeyValuePair($fromType)
     {
         static $validBegin = array(Lexer::T_IDENTIFIER => true);
         static $validColon = array(Lexer::T_COLON => true);
@@ -422,13 +428,16 @@ class Parser implements ParserInterface
         $this->tokens->next();
         $this->tokens->match($validColon);
         $this->tokens->next();
-        $this->fromType($type);
+        $this->fromType($fromType);
         $this->pushState();
         $this->parseExpression(2);
         $this->popState();
         $this->stack[] = array('store_key', $keyToken['value']);
     }
 
+    /**
+     * Parses an array index expression (e.g., [0], [1:2:3]
+     */
     private function parseArrayIndexExpression()
     {
         static $matchNext = array(
@@ -465,7 +474,13 @@ class Parser implements ParserInterface
         }
     }
 
-    private function parseMultiBracket($fromType)
+    /**
+     * Parses a multi-select-list expression:
+     * multi-select-list = "[" ( expression *( "," expression ) ) "]"
+     *
+     * @param string $fromType The known type this multi-bracket descends from
+     */
+    private function parseMultiSelectList($fromType)
     {
         $index = $this->prepareMultiBranch();
 
@@ -489,6 +504,11 @@ class Parser implements ParserInterface
         $this->tokens->next();
     }
 
+    /**
+     * Ensures the the current token is valid based on given from type.
+     *
+     * @param string $fromType One of 'array' or 'object'
+     */
     private function fromType($fromType)
     {
         static $fromArrayTokens, $fromObjectTokens;
@@ -502,6 +522,12 @@ class Parser implements ParserInterface
         $this->tokens->match($fromType == 'array' ? $fromArrayTokens : $fromObjectTokens);
     }
 
+    /**
+     * Begins tracking the current state
+     *
+     * @param bool $type      The known type that this state descends from
+     * @param bool $needsPush Whether or not this state initially pushed the current_node onto the stack
+     */
     private function pushState($type = false, $needsPush = true)
     {
         if ($needsPush) {
@@ -511,6 +537,10 @@ class Parser implements ParserInterface
         $this->state[] = new ParseState(count($this->stack) - 1, $type, $needsPush);
     }
 
+    /**
+     * Pops the most recent state and reindexes bytecode and jump positions if
+     * nothing consumed the current_node (@) during the state.
+     */
     private function popState()
     {
         static $patch = array(
@@ -534,6 +564,17 @@ class Parser implements ParserInterface
                 $this->stack[$i][1]--;
             }
         }
+    }
+
+    /**
+     * Throws a SyntaxErrorException for the current token
+     *
+     * @param string $msg Error message
+     * @throws SyntaxErrorException
+     */
+    private function throwSyntax($msg)
+    {
+        throw new SyntaxErrorException($msg, $this->tokens->token, (string) $this->tokens);
     }
 
     /**
