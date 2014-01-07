@@ -211,6 +211,7 @@ class Lexer implements LexerInterface
 
         // Consume the remaining literal character
         $this->consume();
+        $value = ltrim($value);
 
         if (isset($primitives[$value])) {
             // Fast lookups for common JSON primitives

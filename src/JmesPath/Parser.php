@@ -26,6 +26,7 @@ class Parser implements ParserInterface
 
     /** @var array First acceptable token */
     private static $exprTokens = array(
+        Lexer::T_FILTER     => true,
         Lexer::T_IDENTIFIER => true,
         Lexer::T_STAR       => true,
         Lexer::T_LBRACKET   => true,
