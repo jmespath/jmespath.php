@@ -498,9 +498,7 @@ class Parser implements ParserInterface
             unset($fromObjectTokens[Lexer::T_NUMBER]);
         }
 
-        return $fromType == 'array'
-            ? $this->tokens->match($fromArrayTokens)
-            : $this->tokens->match($fromObjectTokens);
+        $this->tokens->match($fromType == 'array' ? $fromArrayTokens : $fromObjectTokens);
     }
 
     private function pushState($type = false, $needsPush = true)
