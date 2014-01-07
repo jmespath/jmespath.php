@@ -224,7 +224,6 @@ class Parser implements ParserInterface
         $this->pushState();
         $this->parseExpression();
         $this->popState();
-        $this->tokens->next();
 
         // Add the operator opcode and track the jump if false index
         if (isset($operators[$operator])) {
@@ -300,6 +299,8 @@ class Parser implements ParserInterface
         $this->stack[] = array('each', null);
         $loopIndex = count($this->stack) - 1;
         $this->stack[] = self::$markCurrent;
+        $this->tokens->next();
+        $this->tokens->match(self::$exprTokens);
         $this->pushState();
         $this->parseExpression(2);
         $this->popState();
@@ -314,11 +315,10 @@ class Parser implements ParserInterface
         $this->stack[] = array('jump', $loopIndex);
 
         // Actually yield values that matched the filter
-        $this->tokens->next();
+        var_export($this->tokens->token);
         $this->tokens->match(array(Lexer::T_RBRACKET => true));
         $this->tokens->next();
         $this->parseExpression(1);
-        $this->tokens->next();
 
         // Finish the projection loop
         $this->stack[] = array('jump', $loopIndex);
