@@ -56,8 +56,11 @@ function debugSearch($expression, $data, $out = STDOUT)
 
     fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
     fwrite($out, "Tokens\n======\n\n");
-    foreach ($lexer->tokenize($expression) as $t) {
+    $tokens = $lexer->tokenize($expression);
+    while ($tokens->token['type'] != Lexer::T_EOF) {
+        $t = $tokens->token;
         fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'], json_encode($t['value']));
+        $tokens->next();
     }
     fwrite($out, "\n");
 

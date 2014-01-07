@@ -4,6 +4,7 @@ namespace JmesPath\Tests;
 
 use JmesPath\Lexer;
 use JmesPath\SyntaxErrorException;
+use JmesPath\TokenStream;
 
 /**
  * @covers JmesPath\Lexer
@@ -118,14 +119,14 @@ EOT;
     public function testTokenizesInput($input, $type)
     {
         $l = new Lexer();
-        $tokens = $l->tokenize($input);
+        $tokens = $this->tokenArray($l->tokenize($input));
         $this->assertEquals($tokens[0]['type'], $type);
     }
 
     public function testTokenizesJavasriptLiterals()
     {
         $l = new Lexer();
-        $tokens =  $l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`, `0`, `0.45`, `-0.5`');
+        $tokens = $this->tokenArray($l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`, `0`, `0.45`, `-0.5`'));
         $this->assertNull($tokens[0]['value']);
         $this->assertFalse($tokens[2]['value']);
         $this->assertTrue($tokens[4]['value']);
@@ -134,5 +135,17 @@ EOT;
         $this->assertSame(0, $tokens[10]['value']);
         $this->assertSame(0.45, $tokens[12]['value']);
         $this->assertSame(-0.5, $tokens[14]['value']);
+    }
+
+    private function tokenArray(TokenStream $tokens)
+    {
+        $result = array();
+
+        do {
+            $result[] = $tokens->token;
+            $tokens->next();
+        } while ($tokens->token['type'] != Lexer::T_EOF);
+
+        return $result;
     }
 }

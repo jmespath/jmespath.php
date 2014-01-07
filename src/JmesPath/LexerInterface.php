@@ -36,7 +36,7 @@ interface LexerInterface
      *
      * @param string $input JMESPath input
      *
-     * @return array
+     * @return TokenStream
      * @throws SyntaxErrorException
      */
     public function tokenize($input);

@@ -57,14 +57,6 @@ class Lexer implements LexerInterface
     private $pos;
     private $c;
 
-    /**
-     * Tokenize the JMESPath expression into an array of tokens
-     *
-     * @param string $input JMESPath input
-     *
-     * @return array
-     * @throws SyntaxErrorException
-     */
     public function tokenize($input)
     {
         $this->input = $input;
@@ -108,7 +100,7 @@ class Lexer implements LexerInterface
         // Always end the token stream with an EOF token
         $tokens[] = array('type' => self::T_EOF, 'pos' => $len, 'value' => null);
 
-        return $tokens;
+        return new TokenStream($tokens, $input);
     }
 
     private function throwSyntax($message = 'Unexpected character', $pos = null)
