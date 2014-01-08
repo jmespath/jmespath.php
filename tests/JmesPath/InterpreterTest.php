@@ -78,13 +78,14 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         $i = new Interpreter();
         $this->assertEquals(
             'bar',
-            $i->execute(array(array('index', 1)), array('baz', 'bar'))
+            $i->execute(array(array('push_current'), array('index', 1)), array('baz', 'bar'))
         );
         $this->assertNull(
-            $i->execute(array(array('index', 2)), array('baz', 'bar'))
+            $i->execute(array(array('push_current'), array('index', 2)), array('baz', 'bar'))
         );
         $this->assertNull(
             $i->execute(array(
+                array('push_current'),
                 array('field', 'foo'),
                 array('index', 0)
             ), array('foo' => 'baz'))
@@ -96,7 +97,7 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         $i = new Interpreter();
         $this->assertEquals(
             'bar',
-            $i->execute(array(array('field', 'foo')), array('foo' => 'bar'))
+            $i->execute(array(array('push_current'), array('field', 'foo')), array('foo' => 'bar'))
         );
         $this->assertNull(
             $i->execute(array(array('field', 'notfoo')), array('foo' => 'bar'))
@@ -127,9 +128,9 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
     public function testChecksIfEmptyOrFalse($check, $resultArray, $resultFalse)
     {
         $i = new Interpreter();
-        $codes = array(array('index', 0), array('is_array'));
+        $codes = array(array('push_current'), array('index', 0), array('is_array'));
         $this->assertEquals($resultArray, $i->execute($codes, array($check)));
-        $codes = array(array('index', 0), array('is_falsey'));
+        $codes = array(array('push_current'), array('index', 0), array('is_falsey'));
         $this->assertEquals($resultFalse, $i->execute($codes, array($check)));
     }
 
@@ -138,7 +139,7 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
         $i = new Interpreter();
         $this->assertEquals(
             array(1, 2, 3),
-            $i->execute(array(array('merge')), array(
+            $i->execute(array(array('push_current'), array('merge')), array(
                 array(1),
                 array(2),
                 array(3),
@@ -147,12 +148,12 @@ class InterpreterTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(
             array('foo'),
-            $i->execute(array(array('merge')), array('foo'))
+            $i->execute(array(array('push_current'), array('merge')), array('foo'))
         );
 
-        $this->assertEquals(array(), $i->execute(array(array('merge')), array()));
+        $this->assertEquals(array(), $i->execute(array(array('push_current'), array('merge')), array()));
         $orig = array(array('foo' => 'bar'), array('foo' => 'baz'));
-        $this->assertEquals($orig, $i->execute(array(array('merge')), $orig));
+        $this->assertEquals($orig, $i->execute(array(array('push_current'), array('merge')), $orig));
     }
 
     public function testCanRegisterCustomFunctions()

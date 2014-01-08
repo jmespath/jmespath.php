@@ -5,32 +5,8 @@ namespace JmesPath;
 /**
  * LL(1) recursive descent JMESPath lexer
  */
-class Lexer
+class Lexer implements LexerInterface
 {
-    const T_EOF        = 'T_EOF';
-    const T_IDENTIFIER = 'T_IDENTIFIER';
-    const T_DOT        = 'T_DOT';
-    const T_STAR       = 'T_STAR';
-    const T_NUMBER     = 'T_NUMBER';
-    const T_OR         = 'T_OR';
-    const T_PIPE       = 'T_PIPE';
-    const T_LBRACKET   = 'T_LBRACKET';
-    const T_RBRACKET   = 'T_RBRACKET';
-    const T_COMMA      = 'T_COMMA';
-    const T_LBRACE     = 'T_LBRACE';
-    const T_RBRACE     = 'T_RBRACE';
-    const T_WHITESPACE = 'T_WHITESPACE';
-    const T_UNKNOWN    = 'T_UNKNOWN';
-    const T_COLON      = 'T_COLON';
-    const T_OPERATOR   = 'T_OPERATOR';
-    const T_FUNCTION   = 'T_FUNCTION';
-    const T_LPARENS    = 'T_LPARENS';
-    const T_RPARENS    = 'T_RPARENS';
-    const T_MERGE      = 'T_MERGE';
-    const T_LITERAL    = 'T_LITERAL';
-    const T_FILTER     = 'T_FILTER';
-    const T_AT         = 'T_AT';
-
     /** @var array Array of simple matches to token types */
     private static $simpleTokens = array(
         ' '  => self::T_WHITESPACE,
@@ -81,14 +57,6 @@ class Lexer
     private $pos;
     private $c;
 
-    /**
-     * Tokenize the JMESPath expression into an array of tokens
-     *
-     * @param string $input JMESPath input
-     *
-     * @return array
-     * @throws SyntaxErrorException
-     */
     public function tokenize($input)
     {
         $this->input = $input;
@@ -132,7 +100,7 @@ class Lexer
         // Always end the token stream with an EOF token
         $tokens[] = array('type' => self::T_EOF, 'pos' => $len, 'value' => null);
 
-        return $tokens;
+        return new TokenStream($tokens, $input);
     }
 
     private function throwSyntax($message = 'Unexpected character', $pos = null)
@@ -223,25 +191,14 @@ class Lexer
             8 => 1, 9 => 1);
 
         $literal = array('type' => self::T_LITERAL, 'pos' => $this->pos);
-        $this->consume();
 
         // Consume until the closing literal is found or the end of string
-        $value = '';
-        while ($this->c != '`') {
-            // Fix escaped literals
-            if ($this->c == '\\') {
-                $this->consume();
-                if ($this->c != '`') {
-                    $value .= '\\';
-                }
-            } elseif ($this->c === null) {
-                $this->throwSyntax('Unclosed JSON literal', $this->pos);
-            }
-            $value .= $this->c;
-            $this->consume();
+        if (!preg_match('/`((\\\\\\\\|\\\\`|[^`])*)`/', $this->input, $matches, 0, $this->pos)) {
+            $this->throwSyntax('Unclosed JSON literal', $this->pos);
         }
 
-        // Consume the remaining literal character
+        $value = str_replace('\\`', '`', ltrim($matches[1]));
+        $this->pos += strlen($matches[0]) - 1 ;
         $this->consume();
 
         if (isset($primitives[$value])) {
@@ -262,7 +219,7 @@ class Lexer
 
     private function consumeQuotedString()
     {
-        if (!preg_match('/"(\\\"|[^"])*"/', $this->input, $matches, 0, $this->pos)) {
+        if (!preg_match('/"(\\\\\\\\|\\\\"|[^"])*"/', $this->input, $matches, 0, $this->pos)) {
             $this->throwSyntax('Unclosed quote');
         }
 

@@ -45,7 +45,7 @@
       "result": null
     },
     {
-      "expression": "abs(1, 2, 3)",
+      "expression": "abs(`1`, `2`, `3`)",
       "error": "runtime"
     },
     {
@@ -301,7 +301,7 @@
       "result": null
     },
     {
-      "expression": "matches(`str`, `str`, `i`, 123)",
+      "expression": "matches(`str`, `str`, `i`, `123`)",
       "error": "runtime"
     },
     {
@@ -381,11 +381,11 @@
       "result": null
     },
     {
-      "expression": "substring(`abc`, 0, -1)",
+      "expression": "substring(`abc`, `0`, `-1`)",
       "result": "ab"
     },
     {
-      "expression": "substring(`abc`, -2)",
+      "expression": "substring(`abc`, `-2`)",
       "result": "bc"
     },
     {
@@ -393,7 +393,7 @@
       "result": "bc123"
     },
     {
-      "expression": "substring(`false`, 1, 1)",
+      "expression": "substring(`false`, `1`, `1`)",
       "result": null
     },
     {
@@ -401,7 +401,7 @@
       "error": "runtime"
     },
     {
-      "expression": "substring(`abc`, 1, `false`)",
+      "expression": "substring(`abc`, `1`, `false`)",
       "error": "runtime"
     },
     {
@@ -413,7 +413,7 @@
       "result": "String"
     },
     {
-      "expression": "type(123)",
+      "expression": "type(`123`)",
       "result": "Number"
     },
     {

@@ -8,11 +8,11 @@
     },
     {
       "expression": "foo.1",
-      "result": null
+      "error": "syntax"
     },
     {
       "expression": "foo.-11",
-      "result": null
+      "error": "syntax"
     },
     {
       "expression": "foo",
@@ -301,7 +301,7 @@
       },
       {
         "comment": "Missing closing character",
-        "expression": "a{foo: 0",
+        "expression": "a{foo: [0]",
         "error": "syntax"
       },
       {
@@ -311,7 +311,7 @@
       },
       {
         "comment": "Trailing comma and no closing character",
-        "expression": "a{foo: 0, ",
+        "expression": "a{foo: [0], ",
         "error": "syntax"
       },
       {
@@ -326,7 +326,7 @@
       },
       {
         "comment": "Valid",
-        "expression": "a{foo: 0}",
+        "expression": "a{foo: [0]}",
         "result": null
       },
       {
