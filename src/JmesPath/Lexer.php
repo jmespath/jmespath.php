@@ -191,27 +191,15 @@ class Lexer implements LexerInterface
             8 => 1, 9 => 1);
 
         $literal = array('type' => self::T_LITERAL, 'pos' => $this->pos);
-        $this->consume();
 
         // Consume until the closing literal is found or the end of string
-        $value = '';
-        while ($this->c != '`') {
-            // Fix escaped literals
-            if ($this->c == '\\') {
-                $this->consume();
-                if ($this->c != '`') {
-                    $value .= '\\';
-                }
-            } elseif ($this->c === null) {
-                $this->throwSyntax('Unclosed JSON literal', $this->pos);
-            }
-            $value .= $this->c;
-            $this->consume();
+        if (!preg_match('/`((\\\\\\\\|\\\\`|[^`])*)`/', $this->input, $matches, 0, $this->pos)) {
+            $this->throwSyntax('Unclosed JSON literal', $this->pos);
         }
 
-        // Consume the remaining literal character
+        $value = str_replace('\\`', '`', ltrim($matches[1]));
+        $this->pos += strlen($matches[0]) - 1 ;
         $this->consume();
-        $value = ltrim($value);
 
         if (isset($primitives[$value])) {
             // Fast lookups for common JSON primitives
@@ -231,7 +219,7 @@ class Lexer implements LexerInterface
 
     private function consumeQuotedString()
     {
-        if (!preg_match('/"(\\\"|[^"])*"/', $this->input, $matches, 0, $this->pos)) {
+        if (!preg_match('/"(\\\\\\\\|\\\\"|[^"])*"/', $this->input, $matches, 0, $this->pos)) {
             $this->throwSyntax('Unclosed quote');
         }
 

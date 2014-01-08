@@ -53,9 +53,9 @@ EOT;
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
-Syntax error at character 5
+Syntax error at character 0
 `{abc
-     ^
+^
 Unclosed JSON literal
 EOT;
             $this->assertContains($expected, $e->getMessage());
