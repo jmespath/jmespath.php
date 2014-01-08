@@ -19,6 +19,9 @@ class Parser implements ParserInterface
     /** @var TokenStream Stream of tokens */
     private $tokens;
 
+    /** @var array Bytecode positions that be removed after parsing */
+    private $removed;
+
     /** @var array Store common opcodes as statics for performance */
     private static $popCurrent = array('pop_current');
     private static $pushCurrent = array('push_current');
@@ -71,7 +74,7 @@ class Parser implements ParserInterface
     {
         static $stopInstruction = array('stop');
 
-        $this->stack = $this->state = array();
+        $this->stack = $this->state = $this->removed = array();
 
         if ($expression) {
             $this->tokens = $this->lexer->tokenize($expression);
@@ -551,18 +554,23 @@ class Parser implements ParserInterface
         );
 
         $state = array_pop($this->state);
-        if (!$state->needsPush || $state->push) {
-            return;
+        if ($state->needsPush && !$state->push) {
+            $this->removed[] = $state->pos;
         }
 
-        unset($this->stack[$state->pos]);
-        // Reindex the stack
-        $this->stack = array_values($this->stack);
-        // Move jump positions
-        for ($i = $state->pos, $t = count($this->stack) - 1; $i < $t; $i++) {
-            if (isset($patch[$this->stack[$i][0]])) {
-                $this->stack[$i][1]--;
+        // When the last state is popped (meaning we're done parsing), we must
+        // reindex the bytecode stack and jump positions if any of the states
+        // pushed the current node but did not consume it.
+        if (!$this->state && $this->removed) {
+            foreach ($this->removed as $pos) {
+                unset($this->stack[$pos]);
+                foreach ($this->stack as &$instr) {
+                    if (isset($patch[$instr[0]]) && $instr[1] > $pos) {
+                        $instr[1]--;
+                    }
+                }
             }
+            $this->stack = array_values($this->stack);
         }
     }
 
