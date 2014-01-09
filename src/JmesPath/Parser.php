@@ -313,7 +313,6 @@ class Parser implements ParserInterface
         $this->stack[] = array('jump', $loopIndex);
 
         // Actually yield values that matched the filter
-        var_export($this->tokens->token);
         $this->tokens->match(array(Lexer::T_RBRACKET => true));
         $this->tokens->next();
         $this->parseExpression(1);
@@ -328,11 +327,10 @@ class Parser implements ParserInterface
         static $mergeOpcode = array('merge');
         $this->stack[] = $mergeOpcode;
         $this->tokens->next();
-        $this->pushState('array', false);
+        end($this->state)->push = true;
         if ($this->tokens->token['type'] != Lexer::T_EOF) {
             $this->createBytecodeLoop('array');
         }
-        $this->popState();
     }
 
     private function parse_T_LBRACE()
