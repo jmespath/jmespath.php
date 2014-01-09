@@ -249,8 +249,10 @@ class Interpreter
                     // the end of TOS. The resulting array is added to the TOS.
                     static $skipElement = array();
                     $tos = array_pop($stack);
-                    $result = array();
-                    if ($tos && is_array($tos)) {
+                    if (!is_array($tos)) {
+                        $stack[] = null;
+                    } else {
+                        $result = array();
                         foreach ($tos as $values) {
                             // Only merge up arrays lists and not hashes
                             if (is_array($values) && isset($values[0])) {
@@ -259,8 +261,9 @@ class Interpreter
                                 $result[] = $values;
                             }
                         }
+                        $stack[] = $result;
                     }
-                    $stack[] = $result;
+
                     break;
 
                 case 'store_key':
