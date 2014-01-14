@@ -327,6 +327,7 @@ class Parser implements ParserInterface
         static $mergeOpcode = array('merge');
         $this->stack[] = $mergeOpcode;
         $this->tokens->next();
+
         end($this->state)->push = true;
         if ($this->tokens->token['type'] != Lexer::T_EOF) {
             $this->createBytecodeLoop('array');

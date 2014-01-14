@@ -309,7 +309,7 @@ class Interpreter
 
                 case 'not':
                     // Pops TOS and TOS1 and pushed TOS != TOS1 onto the stack
-                    $stack[] = array_pop($stack) != array_pop($stack);
+                    $stack[] = array_pop($stack) !== array_pop($stack);
                     break;
 
                 case 'gt':
