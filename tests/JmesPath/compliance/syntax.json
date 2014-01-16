@@ -134,7 +134,7 @@
   },
   {
     "comment": "Flatten syntax",
-    "given": {},
+    "given": {"type": "object"},
     "cases": [
       {
         "expression": "[]",
@@ -144,7 +144,7 @@
   },
   {
     "comment": "Simple bracket syntax",
-    "given": {},
+    "given": {"type": "object"},
     "cases": [
       {
         "expression": "[0]",
@@ -160,7 +160,7 @@
       },
       {
         "expression": "*.[\"0\"]",
-        "result": []
+        "result": [[null]]
       },
       {
         "expression": "[*].bar",
@@ -371,6 +371,11 @@
         "comment": "Trailing comma",
         "expression": "a.{foo: bar, baz: bam, }",
         "error": "syntax"
+      },
+      {
+        "comment": "Nested multi select",
+        "expression": "{\"\\\\\":{\" \":*}}",
+        "result": {"\\": {" ": []}}
       }
     ]
   },
@@ -479,11 +484,21 @@
       {
         "expression": "foo[bar==baz]",
         "error": "syntax"
+      },
+      {
+        "comment": "Quoted identifier in filter expression no spaces",
+        "expression": "[?\"\\\\\">`\"foo\"`]",
+        "result": null
+      },
+      {
+        "comment": "Quoted identifier in filter expression with spaces",
+        "expression": "[?\"\\\\\" > `\"foo\"`]",
+        "result": null
       }
     ]
   },
   {
-    "comment": "Filter expressions",
+    "comment": "Filter expression errors",
     "given": {},
     "cases": [
       {
@@ -536,6 +551,49 @@
       {
         "comment": "Two level flattened projection of a literal",
         "expression": "twolen[].threelen[].`bar`",
+        "error": "syntax"
+      }
+    ]
+  },
+  {
+    "comment": "Identifiers",
+    "given": {},
+    "cases": [
+      {
+        "expression": "foo",
+        "result": null
+      },
+      {
+        "expression": "\"foo\"",
+        "result": null
+      },
+      {
+        "expression": "\"\\\\\"",
+        "result": null
+      }
+    ]
+  },
+  {
+    "comment": "Literals",
+    "given": {},
+    "cases": [
+      {
+        "expression": "`foo`",
+        "result": "foo"
+      },
+      {
+        "comment": "Literal with leading whitespace",
+        "expression": "`  {\"foo\": true}`",
+        "result": {"foo": true}
+      },
+      {
+        "comment": "Literal with trailing whitespace",
+        "expression": "`{\"foo\": true}   `",
+        "result": {"foo": true}
+      },
+      {
+        "comment": "Literal on RHS of subexpr not allowed",
+        "expression": "foo.`bar`",
         "error": "syntax"
       }
     ]

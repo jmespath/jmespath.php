@@ -2,6 +2,8 @@
 
 namespace JmesPath;
 
+use JmesPath\Tree\TreeInterpreter;
+
 /**
  * Returns data from the input array that matches a given JMESPath expression.
  *
@@ -30,10 +32,10 @@ function search($expression, array $data)
     }
 
     if (!$interpreter) {
-        $interpreter = new Interpreter();
+        $interpreter = new TreeInterpreter();
     }
 
-    return $interpreter->execute($cache[$expression], $data);
+    return $interpreter->visit($cache[$expression], $data);
 }
 
 /**
@@ -49,7 +51,7 @@ function debugSearch($expression, $data, $out = STDOUT)
 {
     $lexer = new Lexer();
     $parser = new Parser($lexer);
-    $interpreter = new Interpreter($out);
+    $interpreter = new TreeInterpreter($out);
     $printJson = function ($json) {
         return defined('JSON_PRETTY_PRINT') ? json_encode($json, JSON_PRETTY_PRINT) : json_encode($json);
     };
@@ -57,28 +59,24 @@ function debugSearch($expression, $data, $out = STDOUT)
     fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
     fwrite($out, "Tokens\n======\n\n");
     $tokens = $lexer->tokenize($expression);
-    while ($tokens->token['type'] != Lexer::T_EOF) {
+    $tokens->next();
+    do {
         $t = $tokens->token;
         fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'], json_encode($t['value']));
         $tokens->next();
-    }
+    } while ($tokens->token['type'] != Lexer::T_EOF);
     fwrite($out, "\n");
 
     $t = microtime(true);
-    $opcodes = $parser->compile($expression);
+    $ast = $parser->compile($expression);
     $parseTime = (microtime(true) - $t) * 1000;
 
-    fwrite($out, "Bytecode\n========\n\n");
-    foreach ($opcodes as $id => $code) {
-        fprintf($out, "%3d  %-13s  %-12s %s\n", $id, $code[0],
-            isset($code[1]) ? json_encode($code[1]) : '',
-            isset($code[2]) ? json_encode($code[2]) : '');
-    }
+    fwrite($out, "AST\n========\n\n");
+    fwrite($out, var_export($ast, true) . "\n");
     fprintf($out, "\nData\n====\n\n%s\n\n", $printJson($data));
-    fwrite($out, "Execution stack\n===============\n\n");
 
     $t = microtime(true);
-    $result = $interpreter->execute($opcodes, $data);
+    $result = $interpreter->visit($ast, $data);
     $interpretTime = (microtime(true) - $t) * 1000;
 
     fprintf($out, "Result\n======\n\n%s\n\n", $printJson($result));

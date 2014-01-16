@@ -3,7 +3,7 @@
 namespace JmesPath;
 
 /**
- * JMESPath lexer used to create an array of tokens
+ * JMESPath lexer used to create a token stream.
  */
 interface LexerInterface
 {
@@ -32,7 +32,7 @@ interface LexerInterface
     const T_AT         = 'T_AT';
 
     /**
-     * Tokenize the JMESPath expression into an array of tokens
+     * Tokenize the JMESPath expression into a token stream
      *
      * @param string $input JMESPath input
      *

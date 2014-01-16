@@ -18,10 +18,6 @@ class functionsTest extends \PHPUnit_Framework_TestCase
         \Jmespath\debugSearch('foo', $data, $resource);
         rewind($resource);
         $output = stream_get_contents($resource);
-        $this->assertContains('Bytecode', $output);
-        $this->assertContains('Execution stack', $output);
-        $this->assertContains('0  push_current', $output);
-        $this->assertContains('1  field ', $output);
-        $this->assertContains('Frames', $output);
+        $this->assertContains('AST', $output);
     }
 }

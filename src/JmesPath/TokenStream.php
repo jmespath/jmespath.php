@@ -33,7 +33,6 @@ class TokenStream
         $this->tokens = $tokens;
         $this->expression = $expression;
         $this->pos = -1;
-        $this->next();
     }
 
     /**
@@ -48,30 +47,27 @@ class TokenStream
 
     /**
      * Move the token stream cursor to the next token
+     *
+     * @param array $match Associative array of acceptable next tokens
+     *
+     * @throws SyntaxErrorException if the next token is not acceptable
      */
-    public function next()
+    public function next(array $match = null)
     {
         if (!isset($this->tokens[$this->pos + 1])) {
             $this->token = self::$nullToken;
         } else {
             $this->token = $this->tokens[++$this->pos];
         }
-    }
 
-    /**
-     * Asserts that the current token is one of several types.
-     *
-     * @param array $types Hash of type values to true/false
-     * @throws SyntaxErrorException if the token is not one of the types
-     */
-    public function match(array $types)
-    {
-        if (!isset($types[$this->tokens[$this->pos]['type']])) {
-            throw new SyntaxErrorException(
-                $types,
-                $this->tokens[$this->pos],
-                (string) $this
-            );
+        if ($match) {
+            if (!isset($match[$this->token['type']])) {
+                throw new SyntaxErrorException(
+                    $match,
+                    $this->tokens[$this->pos],
+                    (string) $this
+                );
+            }
         }
     }
 }
