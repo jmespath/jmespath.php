@@ -174,7 +174,7 @@ class TreeInterpreter implements TreeVisitorInterface
      */
     private function visit_multi_select_list(array $node, $value)
     {
-        if (!is_array($value)) {
+        if ($value === null) {
             return null;
         }
 
@@ -284,6 +284,14 @@ class TreeInterpreter implements TreeVisitorInterface
         $result = $this->dispatch($node['children'][0], $value);
         if (!is_array($result)) {
             return null;
+        }
+
+        // Ensure that it is not an object (hash)
+        if ($result) {
+            $keys = array_keys($result);
+            if ($keys[0] !== 0) {
+                return null;
+            }
         }
 
         $merged = array();

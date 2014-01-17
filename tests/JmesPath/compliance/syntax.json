@@ -488,12 +488,12 @@
       {
         "comment": "Quoted identifier in filter expression no spaces",
         "expression": "[?\"\\\\\">`\"foo\"`]",
-        "result": null
+        "result": []
       },
       {
         "comment": "Quoted identifier in filter expression with spaces",
         "expression": "[?\"\\\\\" > `\"foo\"`]",
-        "result": null
+        "result": []
       }
     ]
   },

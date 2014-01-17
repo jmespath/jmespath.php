@@ -102,8 +102,8 @@
       {"key": [0]},
       {"key": {"bar": [0]}},
       {"key": null},
-      {"key": []},
-      {"key": {}}
+      {"key": [1]},
+      {"key": {"a":2}}
     ]},
     "cases": [
       {
@@ -135,12 +135,12 @@
         "result": [{"key": null}]
       },
       {
-        "expression": "foo[?key == `[]`]",
-        "result": [{"key": []}]
+        "expression": "foo[?key == `[1]`]",
+        "result": [{"key": [1]}]
       },
       {
-        "expression": "foo[?key == `{}`]",
-        "result": [{"key": {}}]
+        "expression": "foo[?key == `{\"a\":2}`]",
+        "result": [{"key": {"a":2}]
       },
       {
         "expression": "foo[?`true` == key]",
@@ -171,12 +171,12 @@
         "result": [{"key": null}]
       },
       {
-        "expression": "foo[?`[]` == key]",
-        "result": [{"key": []}]
+        "expression": "foo[?`[1]` == key]",
+        "result": [{"key": [1]}]
       },
       {
-        "expression": "foo[?`{}` == key]",
-        "result": [{"key": {}}]
+        "expression": "foo[?`{\"a\":2}` == key]",
+        "result": [{"key": {"a":2}}]
       },
       {
         "expression": "foo[?key != `true`]",
@@ -204,49 +204,49 @@
           {"key": {"bar": [0]}}, {"key": []}, {"key": {}}]
       },
       {
-        "expression": "foo[?key != `[]`]",
+        "expression": "foo[?key != `[1]`]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": {"a":2}}]
       },
       {
-        "expression": "foo[?key != `{}`]",
+        "expression": "foo[?key != `{\"a\":1}`]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}]
       },
       {
         "expression": "foo[?`true` != key]",
         "result": [{"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?`false` != key]",
         "result": [{"key": true}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?`0` != key]",
         "result": [{"key": true}, {"key": false}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?`1` != key]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?`null` != key]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
-        "expression": "foo[?`[]` != key]",
+        "expression": "foo[?`[1]` != key]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": {"a":2}}]
       },
       {
-        "expression": "foo[?`{}` != key]",
+        "expression": "foo[?`{\"a\":2}` != key]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}]
       }
     ]
   },

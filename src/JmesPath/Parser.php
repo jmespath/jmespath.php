@@ -102,7 +102,6 @@ class Parser implements ParserInterface
     {
         static $nextTypes = array(
             Lexer::T_MERGE    => true, // foo[]
-            Lexer::T_LBRACE   => true, // a{foo: 0}
             Lexer::T_LBRACKET => true, // a[0]
             Lexer::T_RBRACE   => true, // {a: b}
             Lexer::T_RBRACKET => true, // [a] / foo[a = substring(@, 0, 1)]
@@ -139,6 +138,9 @@ class Parser implements ParserInterface
             // Skip the opening bracket
             $this->tokens->next();
             $next = $this->parseMultiSelectList();
+            if (!$left) {
+                return $next;
+            }
         } else {
             $next = $this->parseExpression();
         }
@@ -298,18 +300,25 @@ class Parser implements ParserInterface
     private function parse_T_LBRACKET(array $token, array $left = null)
     {
         static $nextTypes = array(
-            Lexer::T_IDENTIFIER => true, // [a, b]
-            Lexer::T_NUMBER     => true, // [0]
-            Lexer::T_STAR       => true, // [*]
-            Lexer::T_LBRACKET   => true, // foo[[0], [1]]
+            Lexer::T_NUMBER     => true, // foo[0]
+            Lexer::T_STAR       => true, // foo[*]
+            Lexer::T_COLON      => true, // foo[:1]
             Lexer::T_RBRACKET   => true, // foo[]
-            Lexer::T_LITERAL    => true, // foo[_true, bar]
-            Lexer::T_FUNCTION   => true, // foo[count(@)]
-            Lexer::T_FILTER     => true, // foo[[?bar = 10], baz],
-            Lexer::T_COLON      => true, // foo[:1],
+            Lexer::T_IDENTIFIER => true, // foo.[a, b]
+            Lexer::T_LITERAL    => true, // foo.[`true`]
+            Lexer::T_FUNCTION   => true, // foo.[count(@)]
+            Lexer::T_FILTER     => true, // foo.[[?bar = 10], baz]
         );
 
-        $this->tokens->next($nextTypes);
+        static $nextTypesAfterIdentifier = array(
+            Lexer::T_NUMBER     => true, // foo[0]
+            Lexer::T_STAR       => true, // foo[*]
+            Lexer::T_COLON      => true, // foo[:1]
+            Lexer::T_FILTER     => true, // foo[[?bar = 10], baz],
+        );
+
+        $this->tokens->next($left ? $nextTypesAfterIdentifier : $nextTypes);
+        $node = null;
 
         if ($this->tokens->token['type'] == Lexer::T_NUMBER ||
             $this->tokens->token['type'] == Lexer::T_COLON
