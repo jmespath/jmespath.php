@@ -81,13 +81,13 @@ class Parser implements ParserInterface
      */
     private function parseExpression($precedence = 0)
     {
-        return $this->parseSubexpression(
+        return $this->precedenceParse(
             $precedence,
             $this->{'parse_' . $this->tokens->token['type']}()
         );
     }
 
-    private function parseSubexpression($precedence = 0, $left = null)
+    private function precedenceParse($precedence = 0, $left = null)
     {
         $type = $this->tokens->token['type'];
         while ($type != Lexer::T_EOF && $precedence >= self::$precedence[$type]) {
@@ -174,7 +174,7 @@ class Parser implements ParserInterface
 
         $this->tokens->next($nextTypes);
         $children = array($left ?: self::$currentNode);
-        if ($next = $this->parseSubexpression()) {
+        if ($next = $this->precedenceParse()) {
             $children[] = $next;
         } else {
             $children[] = self::$currentNode;
@@ -187,7 +187,7 @@ class Parser implements ParserInterface
     {
         $this->tokens->next();
         $children = array($left ?: self::$currentNode);
-        if ($next = $this->parseSubexpression(3)) {
+        if ($next = $this->precedenceParse(3)) {
             $children[] = $next;
         } else {
             $children[] = self::$currentNode;
@@ -288,7 +288,7 @@ class Parser implements ParserInterface
         $this->tokens->next();
 
         $children = array($left ?: self::$currentNode);
-        if ($next = $this->parseSubexpression(3)) {
+        if ($next = $this->precedenceParse(3)) {
             $children[] = array($next);
         } else {
             $children[] = self::$currentNode;
@@ -334,7 +334,7 @@ class Parser implements ParserInterface
             $this->tokens->next($consumeRbracket);
             $this->tokens->next();
             $children = array($left ?: self::$currentNode);
-            if ($next = $this->parseSubexpression(3)) {
+            if ($next = $this->precedenceParse(3)) {
                 $children[] = $next;
             } else {
                 $children[] = self::$currentNode;
