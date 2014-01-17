@@ -140,7 +140,7 @@
       },
       {
         "expression": "foo[?key == `{\"a\":2}`]",
-        "result": [{"key": {"a":2}]
+        "result": [{"key": {"a":2}}]
       },
       {
         "expression": "foo[?`true` == key]",
@@ -181,27 +181,27 @@
       {
         "expression": "foo[?key != `true`]",
         "result": [{"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?key != `false`]",
         "result": [{"key": true}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?key != `0`]",
         "result": [{"key": true}, {"key": false}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?key != `1`]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": null}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?key != `null`]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
-          {"key": {"bar": [0]}}, {"key": []}, {"key": {}}]
+          {"key": {"bar": [0]}}, {"key": [1]}, {"key": {"a":2}}]
       },
       {
         "expression": "foo[?key != `[1]`]",
@@ -209,7 +209,7 @@
           {"key": {"bar": [0]}}, {"key": null}, {"key": {"a":2}}]
       },
       {
-        "expression": "foo[?key != `{\"a\":1}`]",
+        "expression": "foo[?key != `{\"a\":2}`]",
         "result": [{"key": true}, {"key": false}, {"key": 0}, {"key": 1}, {"key": [0]},
           {"key": {"bar": [0]}}, {"key": null}, {"key": [1]}]
       },
