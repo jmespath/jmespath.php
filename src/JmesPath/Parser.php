@@ -92,13 +92,13 @@ class Parser implements ParserInterface
         while ($this->tokens->token['type'] != Lexer::T_EOF
             && $precedence >= self::$precedence[$this->tokens->token['type']]
         ) {
-            $left = $this->{'parse_' . $this->tokens->token['type']}($this->tokens->token, $left);
+            $left = $this->{'parse_' . $this->tokens->token['type']}($left);
         }
 
         return $left;
     }
 
-    private function parse_T_IDENTIFIER(array $token)
+    private function parse_T_IDENTIFIER()
     {
         static $nextTypes = array(
             Lexer::T_MERGE    => true, // foo[]
@@ -115,12 +115,13 @@ class Parser implements ParserInterface
             Lexer::T_FILTER   => true, // foo[?baz==`10`]
         );
 
+        $token = $this->tokens->token;
         $this->tokens->next($nextTypes);
 
         return array('type' => 'field', 'key' => $token['value']);
     }
 
-    private function parse_T_DOT(array $token, array $left = null)
+    private function parse_T_DOT(array $left = null)
     {
         static $nextTypes = array(
             Lexer::T_IDENTIFIER => true, // foo.bar
@@ -155,7 +156,7 @@ class Parser implements ParserInterface
         );
     }
 
-    private function parse_T_STAR(array $token, array $left = null)
+    private function parse_T_STAR(array $left = null)
     {
         static $nextTypes = array(
             Lexer::T_DOT      => true, // *.bar
@@ -173,7 +174,7 @@ class Parser implements ParserInterface
 
         $this->tokens->next($nextTypes);
         $children = array($left ?: self::$currentNode);
-        if ($next = $this->parseSubExpression()) {
+        if ($next = $this->parseSubexpression()) {
             $children[] = $next;
         } else {
             $children[] = self::$currentNode;
@@ -182,11 +183,11 @@ class Parser implements ParserInterface
         return array('type' => 'wildcard_values', 'children' => $children);
     }
 
-    private function parse_T_MERGE(array $token, array $left = null)
+    private function parse_T_MERGE(array $left = null)
     {
         $this->tokens->next();
         $children = array($left ?: self::$currentNode);
-        if ($next = $this->parseSubExpression(3)) {
+        if ($next = $this->parseSubexpression(3)) {
             $children[] = $next;
         } else {
             $children[] = self::$currentNode;
@@ -195,7 +196,7 @@ class Parser implements ParserInterface
         return array('type' => 'merge', 'children' => $children);
     }
 
-    private function parse_T_OR(array $token, array $left)
+    private function parse_T_OR(array $left)
     {
         $this->tokens->next(self::$exprTokens);
 
@@ -205,14 +206,15 @@ class Parser implements ParserInterface
         );
     }
 
-    private function parse_T_LITERAL(array $token)
+    private function parse_T_LITERAL()
     {
+        $token = $this->tokens->token;
         $this->tokens->next();
 
         return array('type' => 'literal', 'value' => $token['value']);
     }
 
-    private function parse_T_PIPE(array $token, array $left)
+    private function parse_T_PIPE(array $left)
     {
         $this->tokens->next(self::$exprTokens);
 
@@ -222,7 +224,7 @@ class Parser implements ParserInterface
         );
     }
 
-    private function parse_T_OPERATOR(array $token, array $left)
+    private function parse_T_OPERATOR(array $left)
     {
         static $operators = array(
             '==' => 'eq',
@@ -233,6 +235,7 @@ class Parser implements ParserInterface
             '<=' => 'lte'
         );
 
+        $token = $this->tokens->token;
         if (!isset($operators[$token['value']])) {
             $this->throwSyntax('Invalid operator: ' . $token['value']);
         }
@@ -246,9 +249,10 @@ class Parser implements ParserInterface
         );
     }
 
-    private function parse_T_FUNCTION(array $token)
+    private function parse_T_FUNCTION()
     {
         $args = array();
+        $token = $this->tokens->token;
         $this->tokens->next();
 
         while ($this->tokens->token['type'] !== Lexer::T_RPARENS) {
@@ -274,7 +278,7 @@ class Parser implements ParserInterface
         return self::$currentNode;
     }
 
-    private function parse_T_FILTER(array $token, array $left = null)
+    private function parse_T_FILTER(array $left = null)
     {
         $this->tokens->next(self::$exprTokens);
         $expression = $this->parseExpression(5);
@@ -284,7 +288,7 @@ class Parser implements ParserInterface
         $this->tokens->next();
 
         $children = array($left ?: self::$currentNode);
-        if ($next = $this->parseSubExpression(3)) {
+        if ($next = $this->parseSubexpression(3)) {
             $children[] = array($next);
         } else {
             $children[] = self::$currentNode;
@@ -297,8 +301,9 @@ class Parser implements ParserInterface
         );
     }
 
-    private function parse_T_LBRACKET(array $token, array $left = null)
+    private function parse_T_LBRACKET(array $left = null)
     {
+        static $consumeRbracket = array(Lexer::T_RBRACKET => true);
         static $nextTypes = array(
             Lexer::T_NUMBER     => true, // foo[0]
             Lexer::T_STAR       => true, // foo[*]
@@ -309,7 +314,6 @@ class Parser implements ParserInterface
             Lexer::T_FUNCTION   => true, // foo.[count(@)]
             Lexer::T_FILTER     => true, // foo.[[?bar = 10], baz]
         );
-
         static $nextTypesAfterIdentifier = array(
             Lexer::T_NUMBER     => true, // foo[0]
             Lexer::T_STAR       => true, // foo[*]
@@ -327,10 +331,10 @@ class Parser implements ParserInterface
         } elseif ($this->tokens->token['type'] != Lexer::T_STAR) {
             $node = $this->parseMultiSelectList();
         } else {
-            $this->tokens->next(array(Lexer::T_RBRACKET => true));
+            $this->tokens->next($consumeRbracket);
             $this->tokens->next();
             $children = array($left ?: self::$currentNode);
-            if ($next = $this->parseSubExpression(3)) {
+            if ($next = $this->parseSubexpression(3)) {
                 $children[] = $next;
             } else {
                 $children[] = self::$currentNode;
@@ -349,8 +353,8 @@ class Parser implements ParserInterface
     private function parseArrayIndexExpression()
     {
         static $matchNext = array(
-            Lexer::T_NUMBER => true,
-            Lexer::T_COLON => true,
+            Lexer::T_NUMBER   => true,
+            Lexer::T_COLON    => true,
             Lexer::T_RBRACKET => true
         );
 
@@ -400,7 +404,7 @@ class Parser implements ParserInterface
         return array('type' => 'multi_select_list', 'children' => $nodes);
     }
 
-    private function parse_T_LBRACE(array $token)
+    private function parse_T_LBRACE()
     {
         $this->tokens->next();
         $kvps = array();
