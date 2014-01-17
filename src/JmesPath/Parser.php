@@ -83,7 +83,7 @@ class Parser implements ParserInterface
     {
         return $this->parseSubexpression(
             $precedence,
-            $this->{'parse_' . $this->tokens->token['type']}($this->tokens->token)
+            $this->{'parse_' . $this->tokens->token['type']}()
         );
     }
 
