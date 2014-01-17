@@ -140,6 +140,7 @@ EOT;
     private function tokenArray(TokenStream $tokens)
     {
         $result = array();
+        $tokens->next();
 
         do {
             $result[] = $tokens->token;

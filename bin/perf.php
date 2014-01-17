@@ -5,17 +5,17 @@ require 'vendor/autoload.php';
 
 use JmesPath\Lexer;
 use JmesPath\Parser;
-use JmesPath\Interpreter;
+use JmesPath\Tree\TreeInterpreter;
 
 $dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance' : $argv[1];
 is_dir($dir) or die('Dir not found: ' . $dir);
 $files = glob($dir . '/*.json');
 $parser = new Parser(new Lexer());
-$interpreter = new Interpreter();
+$interpreter = new TreeInterpreter();
 $total = 0;
 
 // Warm up the runner
-$interpreter->execute($parser->compile('foo.bar'), array('foo' => array('bar' => 1)));
+$interpreter->visit($parser->compile('foo.bar'), array('foo' => array('bar' => 1)));
 
 foreach ($files as $file) {
     if (!strpos($file, 'syntax')) {
@@ -50,7 +50,7 @@ function runCase(
     $given,
     $expression,
     Parser $parser,
-    Interpreter $interpreter
+    TreeInterpreter $interpreter
 ) {
     $bestParse = 99999;
     $bestInterpret = 99999;
@@ -61,7 +61,7 @@ function runCase(
             $opcodes = $parser->compile($expression);
             $parseTime = (microtime(true) - $t) * 1000;
             $t = microtime(true);
-            $interpreter->execute($opcodes, $given);
+            $interpreter->visit($opcodes, $given);
             $interpretTime = (microtime(true) - $t) * 1000;
         } catch (\Exception $e) {
             $parseTime = (microtime(true) - $t) * 1000;
