@@ -89,10 +89,10 @@ class Parser implements ParserInterface
 
     private function parseSubexpression($precedence = 0, $left = null)
     {
-        while ($this->tokens->token['type'] != Lexer::T_EOF
-            && $precedence >= self::$precedence[$this->tokens->token['type']]
-        ) {
-            $left = $this->{'parse_' . $this->tokens->token['type']}($left);
+        $type = $this->tokens->token['type'];
+        while ($type != Lexer::T_EOF && $precedence >= self::$precedence[$type]) {
+            $left = $this->{'parse_' . $type}($left);
+            $type = $type = $this->tokens->token['type'];
         }
 
         return $left;
