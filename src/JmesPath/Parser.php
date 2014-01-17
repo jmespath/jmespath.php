@@ -134,25 +134,22 @@ class Parser implements ParserInterface
 
         $this->tokens->next($nextTypes);
 
+        // Special handling for expression "." "*"
+        if ($this->tokens->token['type'] == Lexer::T_STAR) {
+            return $this->parse_T_STAR($left);
+        }
+
         // If the next token is "[", then it's a multi-select-list
         if ($this->tokens->token['type'] == Lexer::T_LBRACKET) {
-            // Skip the opening bracket
             $this->tokens->next();
             $next = $this->parseMultiSelectList();
-            if (!$left) {
-                return $next;
-            }
         } else {
             $next = $this->parseExpression();
         }
 
         return array(
-            'type'  => 'subexpression',
-            'from'  => 'object',
-            'children' => array(
-                $left ?: self::$currentNode,
-                $next
-            )
+            'type'     => 'subexpression',
+            'children' => array($left ?: self::$currentNode, $next)
         );
     }
 
@@ -303,17 +300,16 @@ class Parser implements ParserInterface
 
     private function parse_T_LBRACKET(array $left = null)
     {
-        static $consumeRbracket = array(Lexer::T_RBRACKET => true);
         static $nextTypes = array(
             Lexer::T_NUMBER     => true, // foo[0]
             Lexer::T_STAR       => true, // foo[*]
             Lexer::T_COLON      => true, // foo[:1]
-            Lexer::T_RBRACKET   => true, // foo[]
-            Lexer::T_IDENTIFIER => true, // foo.[a, b]
-            Lexer::T_LITERAL    => true, // foo.[`true`]
-            Lexer::T_FUNCTION   => true, // foo.[count(@)]
-            Lexer::T_FILTER     => true, // foo.[[?bar = 10], baz]
+            Lexer::T_IDENTIFIER => true, // [a, b]
+            Lexer::T_LITERAL    => true, // [`true`]
+            Lexer::T_FUNCTION   => true, // [count(@)]
+            Lexer::T_FILTER     => true, // [[?bar = 10], baz]
         );
+
         static $nextTypesAfterIdentifier = array(
             Lexer::T_NUMBER     => true, // foo[0]
             Lexer::T_STAR       => true, // foo[*]
@@ -322,29 +318,33 @@ class Parser implements ParserInterface
         );
 
         $this->tokens->next($left ? $nextTypesAfterIdentifier : $nextTypes);
-        $node = null;
+        $type = $this->tokens->token['type'];
 
-        if ($this->tokens->token['type'] == Lexer::T_NUMBER ||
-            $this->tokens->token['type'] == Lexer::T_COLON
-        ) {
+        if ($type == Lexer::T_NUMBER || $type == Lexer::T_COLON) {
             $node = $this->parseArrayIndexExpression();
-        } elseif ($this->tokens->token['type'] != Lexer::T_STAR) {
-            $node = $this->parseMultiSelectList();
+            return $left
+                ? array('type' => 'subexpression', 'children' => array($left, $node))
+                : $node;
+        } elseif ($type !== Lexer::T_STAR) {
+            return $this->parseMultiSelectList();
         } else {
-            $this->tokens->next($consumeRbracket);
-            $this->tokens->next();
-            $children = array($left ?: self::$currentNode);
-            if ($next = $this->precedenceParse(3)) {
-                $children[] = $next;
-            } else {
-                $children[] = self::$currentNode;
-            }
-            return array('type' => 'wildcard_index', 'children' => $children);
+            return $this->parseWildcardIndex($left);
+        }
+    }
+
+    private function parseWildcardIndex(array $left = null)
+    {
+        static $consumeRbracket = array(Lexer::T_RBRACKET => true);
+        $this->tokens->next($consumeRbracket);
+        $this->tokens->next();
+        $children = array($left ?: self::$currentNode);
+        if ($next = $this->precedenceParse(3)) {
+            $children[] = $next;
+        } else {
+            $children[] = self::$currentNode;
         }
 
-        return !$left
-            ? $node
-            : array('type' => 'subexpression', 'children' => array($left, $node));
+        return array('type' => 'wildcard_index', 'children' => $children);
     }
 
     /**
