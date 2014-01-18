@@ -174,27 +174,32 @@ class Parser implements ParserInterface
         );
 
         $this->tokens->next($nextTypes);
-        $children = array($left ?: self::$currentNode);
-        if ($next = $this->precedenceParse()) {
-            $children[] = $next;
-        } else {
-            $children[] = self::$currentNode;
-        }
 
-        return array('type' => 'wildcard_values', 'children' => $children);
+        return array(
+            'type'     => 'projection',
+            'from'     => 'object',
+            'children' => array(
+                $left ?: self::$currentNode,
+                $this->precedenceParse() ?: self::$currentNode
+            )
+        );
     }
 
     private function parse_T_MERGE(array $left = null)
     {
         $this->tokens->next();
-        $children = array($left ?: self::$currentNode);
-        if ($next = $this->precedenceParse(3)) {
-            $children[] = $next;
-        } else {
-            $children[] = self::$currentNode;
-        }
 
-        return array('type' => 'merge', 'children' => $children);
+        return array(
+            'type'     => 'projection',
+            'from'     => 'array',
+            'children' => array(
+                array(
+                    'type'     => 'merge',
+                    'children' => array($left ?: self::$currentNode)
+                ),
+                $this->precedenceParse(3) ?: self::$currentNode
+            )
+        );
     }
 
     private function parse_T_OR(array $left)
@@ -288,16 +293,18 @@ class Parser implements ParserInterface
         }
         $this->tokens->next();
 
-        $children = array($left ?: self::$currentNode, $expression);
-        if ($next = $this->precedenceParse(3)) {
-            $children[] = array($next);
-        } else {
-            $children[] = self::$currentNode;
-        }
-
         return array(
-            'type'       => 'filter',
-            'children'   => $children
+            'type'       => 'projection',
+            'children'   => array(
+                $left ?: self::$currentNode,
+                array(
+                    'type' => 'condition',
+                    'children' => array(
+                        $expression,
+                        $this->precedenceParse(3) ?: self::$currentNode
+                    )
+                )
+            )
         );
     }
 
@@ -340,14 +347,15 @@ class Parser implements ParserInterface
         static $consumeRbracket = array(Lexer::T_RBRACKET => true);
         $this->tokens->next($consumeRbracket);
         $this->tokens->next();
-        $children = array($left ?: self::$currentNode);
-        if ($next = $this->precedenceParse(3)) {
-            $children[] = $next;
-        } else {
-            $children[] = self::$currentNode;
-        }
 
-        return array('type' => 'wildcard_index', 'children' => $children);
+        return array(
+            'type'     => 'projection',
+            'from'     => 'array',
+            'children' => array(
+                $left ?: self::$currentNode,
+                $this->precedenceParse(3) ?: self::$currentNode
+            )
+        );
     }
 
     /**
@@ -437,8 +445,6 @@ class Parser implements ParserInterface
             'key'      => $keyToken['value']
         );
     }
-
-    private function parse_T_EOF() {}
 
     private function assertNotEof()
     {

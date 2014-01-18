@@ -271,94 +271,63 @@ class TreeInterpreter implements TreeVisitorInterface
     }
 
     /**
-     * Merges the current $value and creates a projection.
-     *
-     * First the left child is evaluated. If the left child evaluates to a
-     * non-array value, then null is returned. Otherwise, each value of the
-     * child is fed into a projection and results are collected into an array.
+     * Merges up sub-values in the current $value
      */
     private function visit_merge(array $node, $value)
     {
         static $skipElement = array();
+        $value = $this->dispatch($node['children'][0], $value);
 
-        $result = $this->dispatch($node['children'][0], $value);
-        if (!is_array($result)) {
+        if (!is_array($value)) {
             return null;
         }
 
         // Ensure that it is not an object (hash)
-        if ($result) {
-            $keys = array_keys($result);
+        if ($value && ($keys = array_keys($value))) {
             if ($keys[0] !== 0) {
                 return null;
             }
         }
 
         $merged = array();
-        foreach ($result as $values) {
+        foreach ($value as $values) {
             // Only merge up arrays lists and not hashes
             if (is_array($values) && isset($values[0])) {
                 $merged = array_merge($merged, $values);
-            } elseif ($values != $skipElement) {
+            } elseif ($values !== $skipElement) {
                 $merged[] = $values;
             }
         }
 
-        return $this->projection($node['children'][1], $merged);
+        return $merged;
     }
 
     /**
-     * Creates a projection for arrays (similar to merge but w/o the merge)
+     * Interprets a projection node, passing the values of the left child
+     * through the values of the right child and aggregating the non-null
+     * results into the return value.
      */
-    private function visit_wildcard_index(array $node, $value)
+    private function visit_projection(array $node, $value)
     {
-        $result = $this->dispatch($node['children'][0], $value);
-        // Validate that it is not an object
-        if (!is_array($result)) {
+        $left = $this->dispatch($node['children'][0], $value);
+
+        if (!is_array($left)) {
             return null;
         }
 
-        // Ensure that this is an array
-        $keys = array_keys($result);
-        if ($keys && $keys[0] !== 0) {
-            return null;
+        // Validate the expected type of the projection
+        if (isset($node['from'])) {
+            $keys = array_keys($left);
+            if ($node['from'] == 'object' && $keys && $keys[0] === 0) {
+                return null;
+            } elseif ($node['from'] == 'array' && $keys && $keys[0] !== 0) {
+                return null;
+            }
         }
 
-        return $this->projection($node['children'][1], $result);
-    }
-
-    /**
-     * Creates a projection for objects (similar to merge but w/o the merge)
-     */
-    private function visit_wildcard_values(array $node, $value)
-    {
-        $result = $this->dispatch($node['children'][0], $value);
-        // Validate that it is not a list
-        if (!is_array($result)) {
-            return null;
-        }
-
-        // Ensure that this is a hash
-        $keys = array_keys($result);
-        if ($keys && $keys[0] === 0) {
-            return null;
-        }
-
-        return $this->projection($node['children'][1], $result);
-    }
-
-    /**
-     * Creates a basic projection.
-     *
-     * Each element of the provided value is run through the provided $node
-     * AST. Elements that yield non-null values are added to the collected
-     * array of projection matches and returned.
-     */
-    private function projection(array $node, $value)
-    {
         $collected = array();
-        foreach ($value as $val) {
-            if (null !== ($result = $this->dispatch($node, $val))) {
+        foreach ($left as $val) {
+            if (null !== ($result = $this->dispatch($node['children'][1], $val))) {
                 $collected[] = $result;
             }
         }
@@ -367,36 +336,15 @@ class TreeInterpreter implements TreeVisitorInterface
     }
 
     /**
-     * Visits a filter expression.
-     *
-     * The left child is the value being filtered. The 'expression' attribute
-     * is the AST used to evaluate the left expression using a projection, and
-     * the right child is the AST representing the nodes to extract from the
-     * elements that pass through the filter into the projection.
-     *
-     * child[0] -> expression -> projection -> child[1]
+     * Evaluates the left child, and if the left child returns anything other
+     * than true, then a condition node returns null. Otherwise, the condition
+     * node returns the result of evaluation the right child.
      */
-    private function visit_filter(array $node, $value)
+    private function visit_condition(array $node, $value)
     {
-        $result = $this->dispatch($node['children'][0], $value);
-
-        if (!is_array($result)) {
-            return null;
-        } elseif (!$node['children']) {
-            return array_values($result);
-        }
-
-        $collected = array();
-        foreach ($result as $val) {
-            $valid = $this->dispatch($node['children'][1], $val);
-            if ($valid === true) {
-                if (null !== ($childResult = $this->dispatch($node['children'][2], $val))) {
-                    $collected[] = $childResult;
-                }
-            }
-        }
-
-        return $collected;
+        return true === $this->dispatch($node['children'][0], $value)
+            ? $this->dispatch($node['children'][1], $value)
+            : null;
     }
 
     /**
