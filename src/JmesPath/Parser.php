@@ -137,19 +137,23 @@ class Parser implements ParserInterface
         // Special handling for expression "." "*"
         if ($this->tokens->token['type'] == Lexer::T_STAR) {
             return $this->parse_T_STAR($left);
-        }
-
-        // If the next token is "[", then it's a multi-select-list
-        if ($this->tokens->token['type'] == Lexer::T_LBRACKET) {
+        } elseif ($this->tokens->token['type'] == Lexer::T_LBRACKET) {
+            // If the next token is "[", then it's a multi-select-list
             $this->tokens->next();
             $next = $this->parseMultiSelectList();
         } else {
             $next = $this->parseExpression();
         }
 
+        // Only create a sub-expression if there is a left node. If there's
+        // no left node, then it means this is after projection node.
+        if (!$left) {
+            return $next;
+        }
+
         return array(
             'type'     => 'subexpression',
-            'children' => array($left ?: self::$currentNode, $next)
+            'children' => array($left, $next)
         );
     }
 
