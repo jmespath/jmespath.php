@@ -35,7 +35,7 @@ class Parser implements ParserInterface
         Lexer::T_LBRACKET   => 0,
         Lexer::T_LBRACE     => 0,
         Lexer::T_AT         => 0,
-        Lexer::T_OPERATOR   => 2,
+        Lexer::T_COMPARATOR => 2,
         Lexer::T_STAR       => 3,
         Lexer::T_FILTER     => 3,
         Lexer::T_MERGE      => 4,
@@ -101,18 +101,18 @@ class Parser implements ParserInterface
     private function parse_T_IDENTIFIER()
     {
         static $nextTypes = array(
-            Lexer::T_MERGE    => true, // foo[]
-            Lexer::T_LBRACKET => true, // a[0]
-            Lexer::T_RBRACE   => true, // {a: b}
-            Lexer::T_RBRACKET => true, // [a] / foo[a = substring(@, 0, 1)]
-            Lexer::T_COMMA    => true, // [a, b]
-            Lexer::T_EOF      => true, // foo,
-            Lexer::T_DOT      => true, // foo.bar
-            Lexer::T_OR       => true, // foo || bar
-            Lexer::T_OPERATOR => true, // a = "a"
-            Lexer::T_RPARENS  => true, // length(abc)
-            Lexer::T_PIPE     => true, // foo.*.a | [0],
-            Lexer::T_FILTER   => true, // foo[?baz==`10`]
+            Lexer::T_MERGE      => true, // foo[]
+            Lexer::T_LBRACKET   => true, // a[0]
+            Lexer::T_RBRACE     => true, // {a: b}
+            Lexer::T_RBRACKET   => true, // [a] / foo[a = substring(@, 0, 1)]
+            Lexer::T_COMMA      => true, // [a, b]
+            Lexer::T_EOF        => true, // foo,
+            Lexer::T_DOT        => true, // foo.bar
+            Lexer::T_OR         => true, // foo || bar
+            Lexer::T_COMPARATOR => true, // a = "a"
+            Lexer::T_RPARENS    => true, // length(abc)
+            Lexer::T_PIPE       => true, // foo.*.a | [0],
+            Lexer::T_FILTER     => true, // foo[?baz==`10`]
         );
 
         $token = $this->tokens->token;
@@ -156,17 +156,17 @@ class Parser implements ParserInterface
     private function parse_T_STAR(array $left = null)
     {
         static $nextTypes = array(
-            Lexer::T_DOT      => true, // *.bar
-            Lexer::T_EOF      => true, // foo.*
-            Lexer::T_MERGE    => true, // foo.*[]
-            Lexer::T_LBRACKET => true, // foo.*[0]
-            Lexer::T_RBRACKET => true, // foo.[a, b.*]
-            Lexer::T_LBRACE   => true, // foo.*{a: 0, b: 1}
-            Lexer::T_RBRACE   => true, // foo.{a: a, b: b.*}
-            Lexer::T_OR       => true, // foo.* || foo
-            Lexer::T_COMMA    => true, // foo.[a.*, b],
-            Lexer::T_PIPE     => true, // foo.* | [0],
-            Lexer::T_OPERATOR => true, // foo.* == `[]`
+            Lexer::T_DOT        => true, // *.bar
+            Lexer::T_EOF        => true, // foo.*
+            Lexer::T_MERGE      => true, // foo.*[]
+            Lexer::T_LBRACKET   => true, // foo.*[0]
+            Lexer::T_RBRACKET   => true, // foo.[a, b.*]
+            Lexer::T_LBRACE     => true, // foo.*{a: 0, b: 1}
+            Lexer::T_RBRACE     => true, // foo.{a: a, b: b.*}
+            Lexer::T_OR         => true, // foo.* || foo
+            Lexer::T_COMMA      => true, // foo.[a.*, b],
+            Lexer::T_PIPE       => true, // foo.* | [0],
+            Lexer::T_COMPARATOR => true, // foo.* == `[]`
         );
 
         $this->tokens->next($nextTypes);
@@ -221,7 +221,7 @@ class Parser implements ParserInterface
         );
     }
 
-    private function parse_T_OPERATOR(array $left)
+    private function parse_T_COMPARATOR(array $left)
     {
         static $operators = array(
             '==' => 'eq',
@@ -240,7 +240,7 @@ class Parser implements ParserInterface
         $this->tokens->next(self::$exprTokens);
 
         return array(
-            'type'     => 'operator',
+            'type'     => 'comparator',
             'relation' => $operators[$token['value']],
             'children' => array($left, $this->parseExpression())
         );
@@ -284,7 +284,7 @@ class Parser implements ParserInterface
         }
         $this->tokens->next();
 
-        $children = array($left ?: self::$currentNode);
+        $children = array($left ?: self::$currentNode, $expression);
         if ($next = $this->precedenceParse(3)) {
             $children[] = array($next);
         } else {
@@ -293,7 +293,6 @@ class Parser implements ParserInterface
 
         return array(
             'type'       => 'filter',
-            'expression' => $expression,
             'children'   => $children
         );
     }

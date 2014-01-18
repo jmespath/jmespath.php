@@ -214,7 +214,7 @@ class TreeInterpreter implements TreeVisitorInterface
      * Returns the comparison of the evaluation of the left child to the
      * evaluation of the right child.
      */
-    private function visit_operator(array $node, $value)
+    private function visit_comparator(array $node, $value)
     {
         $left = $this->dispatch($node['children'][0], $value);
         $right = $this->dispatch($node['children'][1], $value);
@@ -388,9 +388,9 @@ class TreeInterpreter implements TreeVisitorInterface
 
         $collected = array();
         foreach ($result as $val) {
-            $valid = $this->dispatch($node['expression'], $val);
+            $valid = $this->dispatch($node['children'][1], $val);
             if ($valid === true) {
-                if (null !== ($childResult = $this->dispatch($node['children'][1], $val))) {
+                if (null !== ($childResult = $this->dispatch($node['children'][2], $val))) {
                     $collected[] = $childResult;
                 }
             }

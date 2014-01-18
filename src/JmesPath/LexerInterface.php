@@ -22,7 +22,7 @@ interface LexerInterface
     const T_WHITESPACE = 'T_WHITESPACE';
     const T_UNKNOWN    = 'T_UNKNOWN';
     const T_COLON      = 'T_COLON';
-    const T_OPERATOR   = 'T_OPERATOR';
+    const T_COMPARATOR = 'T_COMPARATOR';
     const T_FUNCTION   = 'T_FUNCTION';
     const T_LPARENS    = 'T_LPARENS';
     const T_RPARENS    = 'T_RPARENS';

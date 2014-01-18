@@ -265,7 +265,7 @@ class Lexer implements LexerInterface
     private function consumeOperator($operator)
     {
         $token = array(
-            'type'  => self::T_OPERATOR,
+            'type'  => self::T_COMPARATOR,
             'pos'   => $this->pos,
             'value' => $operator
         );
