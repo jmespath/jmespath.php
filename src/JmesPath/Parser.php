@@ -233,12 +233,12 @@ class Parser implements ParserInterface
     private function parse_T_COMPARATOR(array $left)
     {
         static $operators = array(
-            '==' => 'eq',
-            '!=' => 'not',
-            '>'  => 'gt',
-            '>=' => 'gte',
-            '<'  => 'lt',
-            '<=' => 'lte'
+            '==' => true,
+            '!=' => true,
+            '>'  => true,
+            '>=' => true,
+            '<'  => true,
+            '<=' => true
         );
 
         $token = $this->tokens->token;
@@ -250,7 +250,7 @@ class Parser implements ParserInterface
 
         return array(
             'type'     => 'comparator',
-            'relation' => $operators[$token['value']],
+            'relation' => $token['value'],
             'children' => array($left, $this->parseExpression())
         );
     }

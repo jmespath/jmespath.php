@@ -220,12 +220,12 @@ class TreeInterpreter implements TreeVisitorInterface
         $right = $this->dispatch($node['children'][1], $value);
 
         switch ($node['relation']) {
-            case 'eq': return $left === $right;
-            case 'not': return $left !== $right;
-            case 'gt': return is_int($left) && is_int($right) && $left > $right;
-            case 'gte': return is_int($left) && is_int($right) && $left >= $right;
-            case 'lt': return is_int($left) && is_int($right) && $left < $right;
-            case 'lte': return is_int($left) && is_int($right) && $left <= $right;
+            case '==': return $left === $right;
+            case '!=': return $left !== $right;
+            case '>': return is_int($left) && is_int($right) && $left > $right;
+            case '>=': return is_int($left) && is_int($right) && $left >= $right;
+            case '<': return is_int($left) && is_int($right) && $left < $right;
+            case '<=': return is_int($left) && is_int($right) && $left <= $right;
         }
 
         throw new \RuntimeException('Invalid relation: ' . $node['relation']);
