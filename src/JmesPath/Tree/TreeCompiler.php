@@ -2,19 +2,21 @@
 
 namespace JmesPath\Tree;
 
+use JmesPath\Lexer;
+
 /**
  * Tree visitor used to compile JMESPath expressions into native PHP code.
  */
-class TreeCompiler implements TreeVisitorInterface
+class TreeCompiler extends AbstractTreeVisitor
 {
+    /** @var int Current level of indentation */
     private $indentation;
-    private $source;
-    private $cachedIndents;
 
-    public function __call($method, $args)
-    {
-        throw new \RuntimeException('Invalid node encountered: ' . json_encode($args[0]));
-    }
+    /** @var string Compiled source code */
+    private $source;
+
+    /** @var array Hash of indentation level to cached str_padded value */
+    private $cachedIndents;
 
     public function visit(array $node, array $args = null)
     {
@@ -38,6 +40,8 @@ class TreeCompiler implements TreeVisitorInterface
     }
 
     /**
+     * Writes the given line of source code
+     *
      * @param string $str String to write
      * @return $this
      */
@@ -54,6 +58,8 @@ class TreeCompiler implements TreeVisitorInterface
     }
 
     /**
+     * Increases the indentation level of code being written
+     *
      * @return $this
      */
     private function outdent()
@@ -64,6 +70,8 @@ class TreeCompiler implements TreeVisitorInterface
     }
 
     /**
+     * Decreases the indentation level of code being written
+     *
      * @return $this
      */
     private function indent()
@@ -227,12 +235,36 @@ class TreeCompiler implements TreeVisitorInterface
 
     private function visit_function(array $node)
     {
+        $value = uniqid('value_');
+        $current = uniqid('current_');
+        $args = uniqid('args_');
 
+        $this->write("\${$value} = \$value;")
+            ->write("\${$current} = \$current;")
+            ->write("\${$args} = array()");
+
+        foreach ($node['children'] as $arg) {
+            $this->dispatch($arg);
+            $this->write("\${$args}[] = $value;")
+                ->write("\$current = {$current};")
+                ->write("\$value = {$value};");
+        }
+
+        $this->write("\$value = JmesPath\\Fn\\FnRegistry::invoke('{$node['fn']}', \${$args});");
     }
 
     private function visit_slice(array $node)
     {
-
+        $this->write("\$value = JmesPath\\Fn\\FnRegistry::invoke('array_slice', array(")
+            ->indent()
+            ->write(sprintf(
+                '$value, %s, %s, %s',
+                var_export($node['args'][0], true),
+                var_export($node['args'][1], true),
+                var_export($node['args'][2], true)
+            ))
+            ->outdent()
+            ->write('));');
     }
 
     private function visit_current_node(array $node)
@@ -372,27 +404,11 @@ class TreeCompiler implements TreeVisitorInterface
             ->dispatch($node['children'][1])
             ->write("\${$tmpB} = \$value;");
 
-        switch ($node['relation']) {
-            case '==':
-                $this->write("\$result = \${$tmpA} === \${$tmpB};");
-                break;
-            case '!=':
-                $this->write("\$result = \${$tmpA} !== \${$tmpB};");
-                break;
-            case '>':
-                $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} > \${$tmpB};");
-                break;
-            case '>=':
-                $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} >= \${$tmpB};");
-                break;
-            case '<':
-                $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} < \${$tmpB};");
-                break;
-            case '<=':
-                $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} <= \${$tmpB};");
-                break;
-            default:
-                throw new \RuntimeException("Invalid relation: {$node['relation']}");
+        Lexer::validateBinaryOperator($node['relation']);
+        if ($node['relation'] == '==' || $node['relation'] == '!=') {
+            $this->write("\$result = \${$tmpA} {$node['relation']} \${$tmpB};");
+        } else {
+            $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} {$node['relation']} \${$tmpB};");
         }
 
         $this->write("\$value = \$result === true ? \${$tmpValue} : null;");

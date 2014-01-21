@@ -57,6 +57,29 @@ class Lexer implements LexerInterface
     private $pos;
     private $c;
 
+    /**
+     * Ensures that a binary relational operator is valid, and if not, throws
+     * a RuntimeException.
+     *
+     * @param string $value Relational operator to validate
+     * @throws \RuntimeException
+     */
+    public static function validateBinaryOperator($value)
+    {
+        static $valid = array(
+            '==' => true,
+            '!=' => true,
+            '>'  => true,
+            '>=' => true,
+            '<'  => true,
+            '<=' => true
+        );
+
+        if (!isset($valid[$value])) {
+            throw new \RuntimeException("Invalid relational operator: {$value}");
+        }
+    }
+
     public function tokenize($input)
     {
         $this->input = $input;
@@ -278,6 +301,8 @@ class Lexer implements LexerInterface
         } elseif ($operator == '=') {
             $this->throwSyntax('Got "=", expected "=="');
         }
+
+        self::validateBinaryOperator($token['value']);
 
         return $token;
     }

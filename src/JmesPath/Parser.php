@@ -5,7 +5,7 @@ namespace JmesPath;
 /**
  * LL(1) recursive descent JMESPath parser utilizing a Pratt parsing technique
  */
-class Parser implements ParserInterface
+class Parser
 {
     /** @var LexerInterface */
     private $lexer;
@@ -59,6 +59,14 @@ class Parser implements ParserInterface
         $this->lexer = $lexer;
     }
 
+    /**
+     * Compile a JMESPath expression into an AST
+     *
+     * @param string $expression JMESPath expression to compile
+     *
+     * @return array Returns an array based AST
+     * @throws SyntaxErrorException
+     */
     public function compile($expression)
     {
         if (!$expression) {
