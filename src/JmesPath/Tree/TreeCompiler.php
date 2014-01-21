@@ -328,7 +328,9 @@ class TreeCompiler extends AbstractTreeVisitor
 
     private function visit_projection(array $node)
     {
-        $tempVal = uniqid('v');
+        $tmpVal = uniqid('v');
+        $tmpCollected = uniqid('collected_');
+
         $this->dispatch($node['children'][0])
             ->write('')
             ->write('if (!is_array($value)) {')
@@ -349,19 +351,19 @@ class TreeCompiler extends AbstractTreeVisitor
             }
         }
 
-        $this->write('$collected = array();')
-            ->write('foreach ($value as $key => $' . $tempVal . ') {')
+        $this->write("\${$tmpCollected} = array();")
+            ->write('foreach ($value as $key => $' . $tmpVal . ') {')
                 ->indent()
-                ->write("\$value = \${$tempVal};")
+                ->write("\$value = \${$tmpVal};")
                 ->dispatch($node['children'][1])
                 ->write('if ($value !== null) {')
                     ->indent()
-                    ->write('$collected[] = $value;')
+                    ->write("\${$tmpCollected}[] = \$value;")
                     ->outdent()
                 ->write('}')
                 ->outdent()
             ->write('}')
-            ->write('$value = $collected;');
+            ->write("\$value = \${$tmpCollected};");
 
         if (isset($node['from'])) {
             $this->outdent()
