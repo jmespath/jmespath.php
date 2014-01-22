@@ -72,7 +72,9 @@ function debugSearch($expression, $data, $out = STDOUT)
     $parseTime = (microtime(true) - $t) * 1000;
 
     fwrite($out, "AST\n========\n\n");
-    fwrite($out, json_encode($ast, JSON_PRETTY_PRINT) . "\n");
+    fwrite($out, (defined('JSON_PRETTY_PRINT')
+            ? json_encode($ast, JSON_PRETTY_PRINT)
+            : json_encode($ast)) . "\n");
     fprintf($out, "\nData\n====\n\n%s\n\n", $printJson($data));
 
     $t = microtime(true);
