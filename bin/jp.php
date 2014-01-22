@@ -9,7 +9,7 @@ $description = <<<EOT
 Runs a JMESPath expression on the provided input or a test case.
 
 Provide the JSON input and expression:
-    echo '{}' | jp.php expression
+    echo '{}' | jp.php expression [--twice 1]
 
 Or provide the path to a compliance script, a suite, and test case number:
     jp.php --script path_to_script --suite test_suite_number --case test_case_number [expression]
@@ -80,5 +80,8 @@ if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
     die($description);
 }
 
-JmesPath\search($expression, $data);
+if (isset($args['twice']) && $args['twice'] == '1') {
+    JmesPath\search($expression, $data);
+}
+
 JmesPath\debugSearch($expression, $data);

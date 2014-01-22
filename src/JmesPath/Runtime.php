@@ -17,6 +17,12 @@ class Runtime extends AbstractRuntime
     /** @var array */
     private $visitorOptions;
 
+    /** @var array Internal AST cache */
+    private $cache = array();
+
+    /** @var int Number of cached entries */
+    private $cachedCount = 0;
+
     /**
      * Factory method used to easily create a customized JMESPath runtime
      * environment
@@ -60,15 +66,40 @@ class Runtime extends AbstractRuntime
 
     public function search($expression, $data)
     {
+        if (!isset($this->cache[$expression])) {
+            // Clear the AST cache when it hits 1024 entries
+            if (++$this->cachedCount > 1024) {
+                $this->cache = array();
+                $this->cachedCount = 0;
+            }
+            $this->cache[$expression] = $this->parser->parse($expression);
+        }
+
         return $this->interpreter->visit(
-            $this->parser->parse($expression),
+            $this->cache[$expression],
             $data,
             $this->visitorOptions
         );
     }
 
-    protected function debugInterpret($expression, array $ast, $data, $out)
+    public function debug($expression, $data, $out = STDOUT)
     {
-        return $this->interpreter->visit($ast, $data, $this->visitorOptions);
+        fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
+        list($tokens, $lexTime) = $this->printDebugTokens($out, $expression);
+        list($ast, $parseTime) = $this->printDebugAst($out, $expression);
+        fprintf($out, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
+
+        $t = microtime(true);
+        $result = $this->interpreter->visit($ast, $data, $this->visitorOptions);
+        $interpretTime = (microtime(true) - $t) * 1000;
+
+        fprintf($out, "\nResult\n======\n\n%s\n\n", $this->prettyJson($result));
+        fwrite($out, "Time\n====\n\n");
+        fprintf($out, "Lexer time:     %f ms\n", $lexTime);
+        fprintf($out, "Parse time:     %f ms\n", $parseTime);
+        fprintf($out, "Interpret time: %f ms\n", $interpretTime);
+        fprintf($out, "Total time:     %f ms\n\n", $parseTime + $interpretTime);
+
+        return $result;
     }
 }

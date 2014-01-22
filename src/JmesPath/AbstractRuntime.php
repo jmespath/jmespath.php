@@ -62,18 +62,28 @@ abstract class AbstractRuntime implements RuntimeInterface
         return call_user_func($this->fn[$name], $args);
     }
 
-    public function debug($expression, $data, $out = STDOUT)
+    /**
+     * Returns a pretty-printed JSON document when using PHP 5.4+
+     *
+     * @param mixed    $json JSON data to format
+     *
+     * @return string
+     */
+    protected function prettyJson($json)
+    {
+        return defined('JSON_PRETTY_PRINT')
+            ? json_encode($json, JSON_PRETTY_PRINT)
+            : json_encode($json);
+    }
+
+    protected function printDebugTokens($out, $expression)
     {
         $lexer = new Lexer();
-        $printJson = function ($json) {
-            return defined('JSON_PRETTY_PRINT')
-                ? json_encode($json, JSON_PRETTY_PRINT)
-                : json_encode($json);
-        };
-
-        fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
         fwrite($out, "Tokens\n======\n\n");
+        $t = microtime(true);
         $tokens = $lexer->tokenize($expression);
+        $lexTime = (microtime(true) - $t) * 1000;
+
         $tokens->next();
         do {
             $t = $tokens->token;
@@ -82,37 +92,18 @@ abstract class AbstractRuntime implements RuntimeInterface
         } while ($tokens->token['type'] != Lexer::T_EOF);
         fwrite($out, "\n");
 
+        return array($tokens, $lexTime);
+    }
+
+    protected function printDebugAst($out, $expression)
+    {
         $t = microtime(true);
         $ast = $this->parser->parse($expression);
         $parseTime = (microtime(true) - $t) * 1000;
+
         fwrite($out, "AST\n========\n\n");
-        fwrite($out, (defined('JSON_PRETTY_PRINT')
-                ? json_encode($ast, JSON_PRETTY_PRINT)
-                : json_encode($ast)) . "\n");
-        fprintf($out, "\nData\n====\n\n%s\n\n", $printJson($data));
+        fwrite($out, $this->prettyJson($ast) . "\n");
 
-        $t = microtime(true);
-        $result = $this->debugInterpret($expression, $ast, $data, $out);
-        $interpretTime = (microtime(true) - $t) * 1000;
-        fprintf($out, "\nResult\n======\n\n%s\n\n", $printJson($result));
-
-        fwrite($out, "Time\n====\n\n");
-        fprintf($out, "Parse time:     %f ms\n", $parseTime);
-        fprintf($out, "Interpret time: %f ms\n", $interpretTime);
-        fprintf($out, "Total time:     %f ms\n\n", $parseTime + $interpretTime);
-
-        return $result;
+        return array($ast, $parseTime);
     }
-
-    /**
-     * Interprets the AST and returns the result
-     *
-     * @param string   $expression Expression being run
-     * @param array    $ast        AST to interpret
-     * @param mixed    $data       Data to evaluate
-     * @param resource $out        Where debug output is written
-     *
-     * @return mixed Returns the result
-     */
-    abstract protected function debugInterpret($expression, array $ast, $data, $out);
 }

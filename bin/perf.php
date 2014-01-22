@@ -3,6 +3,7 @@
 
 require 'vendor/autoload.php';
 
+use JmesPath\Runtime;
 use JmesPath\Lexer;
 use JmesPath\Parser;
 use JmesPath\Tree\TreeInterpreter;
@@ -10,12 +11,17 @@ use JmesPath\Tree\TreeInterpreter;
 $dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance' : $argv[1];
 is_dir($dir) or die('Dir not found: ' . $dir);
 $files = glob($dir . '/*.json');
+
 $parser = new Parser(new Lexer());
 $interpreter = new TreeInterpreter();
 $total = 0;
 
 // Warm up the runner
-$interpreter->visit($parser->compile('foo.bar'), array('foo' => array('bar' => 1)));
+$interpreter->visit(
+    $parser->parse('foo.bar'),
+    array('foo' => array('bar' => 1)),
+    array('runtime' => Runtime::createRuntime())
+);
 
 foreach ($files as $file) {
     if (!strpos($file, 'syntax')) {
@@ -54,14 +60,15 @@ function runCase(
 ) {
     $bestParse = 99999;
     $bestInterpret = 99999;
+    $runtime = Runtime::createRuntime();
 
     for ($i = 0; $i < 1000; $i++) {
         $t = microtime(true);
         try {
-            $opcodes = $parser->compile($expression);
+            $opcodes = $parser->parse($expression);
             $parseTime = (microtime(true) - $t) * 1000;
             $t = microtime(true);
-            $interpreter->visit($opcodes, $given);
+            $interpreter->visit($opcodes, $given, array('runtime' => $runtime));
             $interpretTime = (microtime(true) - $t) * 1000;
         } catch (\Exception $e) {
             $parseTime = (microtime(true) - $t) * 1000;
