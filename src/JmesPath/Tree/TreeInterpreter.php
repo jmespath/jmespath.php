@@ -3,7 +3,7 @@
 namespace JmesPath\Tree;
 
 use JmesPath\Lexer;
-use JmesPath\Fn\FnRegistry;
+use JmesPath\RuntimeInterface;
 
 /**
  * Tree visitor used to evaluates JMESPath AST expressions.
@@ -13,11 +13,19 @@ class TreeInterpreter extends AbstractTreeVisitor
     /** @var mixed The current evaluated root node */
     private $root;
 
-    public function visit(array $node, array $args = null)
+    /** @var RuntimeInterface Runtime used to manage function calls */
+    private $runtime;
+
+    public function visit(array $node, $data, array $args = null)
     {
+        if (!isset($args['runtime'])) {
+            throw new \InvalidArgumentException('A runtime arg must be provided');
+        }
+
+        $this->runtime = $args['runtime'];
         $this->root = $args;
 
-        return $this->dispatch($node, $args);
+        return $this->dispatch($node, $data);
     }
 
     /**
@@ -188,7 +196,7 @@ class TreeInterpreter extends AbstractTreeVisitor
             $args[] = $this->dispatch($arg, $value);
         }
 
-        return FnRegistry::invoke($node['fn'], $args);
+        return $this->runtime->callFunction($node['fn'], $args);
     }
 
     /**
@@ -196,7 +204,7 @@ class TreeInterpreter extends AbstractTreeVisitor
      */
     private function visit_slice(array $node, $value)
     {
-        return FnRegistry::invoke('array_slice', array(
+        return $this->runtime->callFunction('array_slice', array(
             $value,
             $node['args'][0],
             $node['args'][1],

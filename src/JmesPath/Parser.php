@@ -60,14 +60,14 @@ class Parser
     }
 
     /**
-     * Compile a JMESPath expression into an AST
+     * Parses a JMESPath expression into an AST
      *
      * @param string $expression JMESPath expression to compile
      *
      * @return array Returns an array based AST
      * @throws SyntaxErrorException
      */
-    public function compile($expression)
+    public function parse($expression)
     {
         if (!$expression) {
             return array();

@@ -18,11 +18,15 @@ class TreeCompiler extends AbstractTreeVisitor
     /** @var array Hash of indentation level to cached str_padded value */
     private $cachedIndents;
 
-    public function visit(array $node, array $args = null)
+    public function visit(array $node, $data, array $args = null)
     {
+        if (!isset($args['function_name'])) {
+            throw new \InvalidArgumentException('A function_name arg is required');
+        }
+
         $this->source = '';
         $this->indentation = 0;
-        $this->write("function {$args['fn']}(\$value)\n{")
+        $this->write("<?php\n\nfunction {$args['function_name']}(JmesPath\\RuntimeInterface \$runtime, \$value)\n{")
              ->indent();
         $this->write('$current = $value;');
         $this->dispatch($node);
@@ -250,12 +254,12 @@ class TreeCompiler extends AbstractTreeVisitor
                 ->write("\$value = {$value};");
         }
 
-        $this->write("\$value = JmesPath\\Fn\\FnRegistry::invoke('{$node['fn']}', \${$args});");
+        $this->write("\$value = \$runtime->callFunction('{$node['fn']}', \${$args});");
     }
 
     private function visit_slice(array $node)
     {
-        $this->write("\$value = JmesPath\\Fn\\FnRegistry::invoke('array_slice', array(")
+        $this->write("\$value = \$runtime->callFunction('array_slice', array(")
             ->indent()
             ->write(sprintf(
                 '$value, %s, %s, %s',

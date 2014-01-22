@@ -17,7 +17,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testMatchesFirstTokens()
     {
         $p = new Parser(new Lexer());
-        $p->compile('.bar');
+        $p->parse('.bar');
     }
 
     /**
@@ -27,7 +27,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testThrowsSyntaxErrorForInvalidSequence()
     {
         $p = new Parser(new Lexer());
-        $p->compile('a,');
+        $p->parse('a,');
     }
 
     /**
@@ -37,12 +37,12 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testMatchesAfterFirstToken()
     {
         $p = new Parser(new Lexer());
-        $p->compile('a.,');
+        $p->parse('a.,');
     }
 
     public function testHandlesEmptyExpressions()
     {
         $p = new Parser(new Lexer());
-        $this->assertEquals(array(), $p->compile(''));
+        $this->assertEquals(array(), $p->parse(''));
     }
 }
