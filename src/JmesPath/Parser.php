@@ -7,7 +7,7 @@ namespace JmesPath;
  */
 class Parser
 {
-    /** @var LexerInterface */
+    /** @var Lexer */
     private $lexer;
 
     /** @var TokenStream Stream of tokens */
@@ -52,9 +52,9 @@ class Parser
     private static $currentNode = array('type' => 'current_node');
 
     /**
-     * @param LexerInterface $lexer Lexer used to tokenize expressions
+     * @param Lexer $lexer Lexer used to tokenize expressions
      */
-    public function __construct(LexerInterface $lexer)
+    public function __construct(Lexer $lexer)
     {
         $this->lexer = $lexer;
     }
