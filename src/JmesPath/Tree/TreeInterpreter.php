@@ -3,7 +3,7 @@
 namespace JmesPath\Tree;
 
 use JmesPath\Lexer;
-use JmesPath\RuntimeInterface;
+use JmesPath\Runtime\RuntimeInterface;
 
 /**
  * Tree visitor used to evaluates JMESPath AST expressions.

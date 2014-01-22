@@ -1,6 +1,6 @@
 <?php
 
-namespace JmesPath;
+namespace JmesPath\Runtime;
 
 /**
  * Represents a JMESPath runtime environment, encapsulating how JMESPath

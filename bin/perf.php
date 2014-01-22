@@ -3,7 +3,6 @@
 
 require 'vendor/autoload.php';
 
-use JmesPath\Runtime;
 use JmesPath\Lexer;
 use JmesPath\Parser;
 use JmesPath\Tree\TreeInterpreter;
@@ -20,7 +19,7 @@ $total = 0;
 $interpreter->visit(
     $parser->parse('foo.bar'),
     array('foo' => array('bar' => 1)),
-    array('runtime' => Runtime::createRuntime())
+    array('runtime' => \JmesPath\createRuntime())
 );
 
 foreach ($files as $file) {
@@ -60,7 +59,7 @@ function runCase(
 ) {
     $bestParse = 99999;
     $bestInterpret = 99999;
-    $runtime = Runtime::createRuntime();
+    $runtime = \JmesPath\createRuntime();
 
     for ($i = 0; $i < 1000; $i++) {
         $t = microtime(true);

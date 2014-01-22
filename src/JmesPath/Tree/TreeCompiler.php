@@ -26,7 +26,7 @@ class TreeCompiler extends AbstractTreeVisitor
 
         $this->source = '';
         $this->indentation = 0;
-        $this->write("<?php\n\nfunction {$args['function_name']}(JmesPath\\RuntimeInterface \$runtime, \$value)\n{")
+        $this->write("<?php\n\nfunction {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value)\n{")
              ->indent();
         $this->write('$current = $value;');
         $this->dispatch($node);

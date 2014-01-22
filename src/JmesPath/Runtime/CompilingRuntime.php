@@ -1,8 +1,9 @@
 <?php
 
-namespace JmesPath;
+namespace JmesPath\Runtime;
 
 use JmesPath\Tree\TreeCompiler;
+use JmesPath\Parser;
 
 /**
  * JMESPath runtime environment that compiles JMESPath expressions to PHP

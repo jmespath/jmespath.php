@@ -2,6 +2,11 @@
 
 namespace JmesPath;
 
+use JmesPath\Tree\TreeInterpreter;
+use JmesPath\Runtime\RuntimeInterface;
+use JmesPath\Runtime\DefaultRuntime;
+use JmesPath\Runtime\CompilingRuntime;
+
 define('JMESPATH_SERVER_KEY', 'jmespath');
 
 /**
@@ -15,7 +20,7 @@ define('JMESPATH_SERVER_KEY', 'jmespath');
 function search($expression, array $data)
 {
     if (!isset($_SERVER[JMESPATH_SERVER_KEY])) {
-        $_SERVER[JMESPATH_SERVER_KEY] = Runtime::createRuntime();
+        $_SERVER[JMESPATH_SERVER_KEY] = createRuntime();
     }
 
     return $_SERVER[JMESPATH_SERVER_KEY]->search($expression, $data);
@@ -33,8 +38,35 @@ function search($expression, array $data)
 function debugSearch($expression, $data, $out = STDOUT)
 {
     if (!isset($_SERVER[JMESPATH_SERVER_KEY])) {
-        $_SERVER[JMESPATH_SERVER_KEY] = Runtime::createRuntime();
+        $_SERVER[JMESPATH_SERVER_KEY] = createRuntime();
     }
 
     return $_SERVER[JMESPATH_SERVER_KEY]->debug($expression, $data, $out);
+}
+
+/**
+ * Function used to easily create a customized JMESPath runtime environment.
+ *
+ * @param array $options Options used to create the runtime
+ *  'parser'            => Parser used to parse expressions into an AST
+ *  'interpreter'       => Tree interpreter used to interpret the AST
+ *  'cache_dir'         => If specified, the parsed AST will be compiled
+ *                         to PHP code and saved to the given directory.
+ *                         Specifying this option will meant that a provided
+ *                         'interpreter' will be ignored.
+ * @return RuntimeInterface
+ */
+function createRuntime(array $options = array())
+{
+    $parser = isset($options['parser'])
+        ? $options['parser'] : new Parser(new Lexer());
+
+    if (isset($options['cache_dir'])) {
+        return new CompilingRuntime($parser, $options['cache_dir']);
+    }
+
+    return new DefaultRuntime(
+        $parser,
+        isset($options['interpreter']) ? $options['interpreter'] : new TreeInterpreter()
+    );
 }

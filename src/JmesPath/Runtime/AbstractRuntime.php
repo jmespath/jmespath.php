@@ -1,6 +1,9 @@
 <?php
 
-namespace JmesPath;
+namespace JmesPath\Runtime;
+
+use JmesPath\Parser;
+use JmesPath\Lexer;
 
 abstract class AbstractRuntime implements RuntimeInterface
 {
