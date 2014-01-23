@@ -5,7 +5,7 @@ namespace JmesPath;
 use JmesPath\Tree\TreeInterpreter;
 use JmesPath\Runtime\RuntimeInterface;
 use JmesPath\Runtime\DefaultRuntime;
-use JmesPath\Runtime\CompilingRuntime;
+use JmesPath\Runtime\CompilerRuntime;
 
 define('JMESPATH_SERVER_KEY', 'jmespath');
 
@@ -48,21 +48,30 @@ function debugSearch($expression, $data, $out = STDOUT)
  * Function used to easily create a customized JMESPath runtime environment.
  *
  * @param array $options Options used to create the runtime
- *  'parser'            => Parser used to parse expressions into an AST
- *  'interpreter'       => Tree interpreter used to interpret the AST
- *  'cache_dir'         => If specified, the parsed AST will be compiled
- *                         to PHP code and saved to the given directory.
- *                         Specifying this option will meant that a provided
- *                         'interpreter' will be ignored.
+ *  'parser'      => Parser used to parse expressions into an AST
+ *  'interpreter' => Tree interpreter used to interpret the AST
+ *  'compile'     => If specified, the parsed AST will be compiled
+ *                   to PHP code. If set to `true` the compiled PHP code will
+ *                   be saved to PHP's temp directory. You can specify the
+ *                   directory used to store the cached PHP code by passing
+ *                   a string. Note: If this value is set, then any provided
+ *                   'interpreter' value will be ignored.
  * @return RuntimeInterface
+ * @throws \InvalidArgumentException if the provided compile option is invalid
  */
 function createRuntime(array $options = array())
 {
     $parser = isset($options['parser'])
         ? $options['parser'] : new Parser(new Lexer());
 
-    if (isset($options['cache_dir'])) {
-        return new CompilingRuntime($parser, $options['cache_dir']);
+    if (isset($options['compile']) && $options['compile'] !== false) {
+        if ($options['compile'] === true) {
+            $options['compile'] = sys_get_temp_dir();
+        } elseif (!is_string($options['compile'])) {
+            throw new \InvalidArgumentException('compile must be a string or boolean');
+        }
+
+        return new CompilerRuntime($parser, $options['compile']);
     }
 
     return new DefaultRuntime(

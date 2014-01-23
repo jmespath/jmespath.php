@@ -41,8 +41,7 @@ class DefaultRuntime extends AbstractRuntime
         if (!isset($this->cache[$expression])) {
             // Clear the AST cache when it hits 1024 entries
             if (++$this->cachedCount > 1024) {
-                $this->cache = array();
-                $this->cachedCount = 0;
+                $this->clearCache();
             }
             $this->cache[$expression] = $this->parser->parse($expression);
         }
@@ -73,5 +72,11 @@ class DefaultRuntime extends AbstractRuntime
         fprintf($out, "Total time:     %f ms\n\n", $parseTime + $interpretTime);
 
         return $result;
+    }
+
+    public function clearCache()
+    {
+        $this->cache = array();
+        $this->cachedCount = 0;
     }
 }

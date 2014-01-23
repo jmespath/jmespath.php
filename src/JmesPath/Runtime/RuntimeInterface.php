@@ -56,4 +56,9 @@ interface RuntimeInterface
      * @throws \RuntimeException If the function is undefined
      */
     public function callFunction($name, $args);
+
+    /**
+     * Clears the internal cache of the runtime
+     */
+    public function clearCache();
 }

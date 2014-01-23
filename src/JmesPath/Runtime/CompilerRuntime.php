@@ -9,7 +9,7 @@ use JmesPath\Parser;
  * JMESPath runtime environment that compiles JMESPath expressions to PHP
  * source code
  */
-class CompilingRuntime extends AbstractRuntime
+class CompilerRuntime extends AbstractRuntime
 {
     /** @var TreeCompiler */
     private $compiler;
@@ -60,9 +60,6 @@ class CompilingRuntime extends AbstractRuntime
         return $functionName($this, $data);
     }
 
-    /**
-     * Deletes any cached functions
-     */
     public function clearCache()
     {
         $files = glob($this->cacheDir . '/jmespath_*.php');
