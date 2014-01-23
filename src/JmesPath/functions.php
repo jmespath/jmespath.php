@@ -27,24 +27,6 @@ function search($expression, array $data)
 }
 
 /**
- * Executes a JMESPath expression while emitting debug information to a resource
- *
- * @param string   $expression JMESPath expression to evaluate
- * @param mixed    $data       JSON like data to search
- * @param resource $out        Resource as returned from fopen to write to
- *
- * @return mixed Returns the expression result
- */
-function debugSearch($expression, $data, $out = STDOUT)
-{
-    if (!isset($_SERVER[JMESPATH_SERVER_KEY])) {
-        $_SERVER[JMESPATH_SERVER_KEY] = createRuntime();
-    }
-
-    return $_SERVER[JMESPATH_SERVER_KEY]->debug($expression, $data, $out);
-}
-
-/**
  * Function used to easily create a customized JMESPath runtime environment.
  *
  * @param array $options Options used to create the runtime

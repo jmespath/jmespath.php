@@ -6,6 +6,13 @@ use JmesPath\SyntaxErrorException;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
 {
+    private $runtime;
+
+    public function setUp()
+    {
+        $this->runtime = \JmesPath\createRuntime();
+    }
+
     /**
      * @dataProvider complianceProvider
      */
@@ -15,7 +22,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         $debug = fopen('php://temp', 'r+');
 
         try {
-            $evalResult = \JmesPath\debugSearch($expression, $data, $debug);
+            $evalResult = $this->runtime->debug($expression, $data, $debug);
         } catch (\Exception $e) {
             $failed = $e instanceof SyntaxErrorException ? 'syntax' : 'runtime';
             $failureMsg = sprintf('%s (%s line %d)', $e->getMessage(), $e->getFile(), $e->getLine());

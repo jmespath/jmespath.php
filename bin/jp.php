@@ -32,18 +32,24 @@ for ($i = 1, $total = count($argv); $i < $total; $i++) {
     }
 }
 
+$runtime = null;
 $expression = $currentKey;
 
 if (isset($args['compile'])) {
     if ($args['compile'] == '1' || $args['compile'] == 'true' || $args['compile'] == 'false') {
-        $_SERVER[JMESPATH_SERVER_KEY] = \JmesPath\createRuntime(array(
+        $runtime = \JmesPath\createRuntime(array(
             'cache_dir' => sys_get_temp_dir()
         ));
     }
-    if ($args['compile'] == 'false') {
-        $_SERVER[JMESPATH_SERVER_KEY]->clearCache();
-        exit(0);
-    }
+}
+
+if (!$runtime) {
+    $runtime = \JmesPath\createRuntime();
+}
+
+if (isset($args['compile']) && $args['compile'] == 'false') {
+    $runtime->clearCache();
+    exit(0);
 }
 
 if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
@@ -79,7 +85,7 @@ if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
 }
 
 if (isset($args['twice']) && $args['twice'] == '1') {
-    JmesPath\search($expression, $data);
+    $runtime->search($expression, $data);
 }
 
-JmesPath\debugSearch($expression, $data);
+$runtime->debug($expression, $data);
