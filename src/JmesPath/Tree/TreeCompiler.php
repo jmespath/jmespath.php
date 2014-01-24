@@ -102,18 +102,24 @@ class TreeCompiler extends AbstractTreeVisitor
      * Creates array access code for a given node
      *
      * @param array $node AST node
-     * @return string Returns the array access code
+     * @return string|bool Returns the array access code
      * @throws \RuntimeException if the node is not a field or index node
      */
     private function createArrayAccess($node)
     {
         if ($node['type'] == 'field') {
-            return "['{$node['key']}']";
+            return "['" . str_replace('\\', '\\\\', $node['key']) . "']";
         } elseif ($node['type'] == 'index') {
-            return "[{$node['index']}]";
-        } else {
-            throw new \RuntimeException("Invalid subexpression: {$node['type']}");
+            return $node['index'] >= 0 ? "[{$node['index']}]" : false;
+        } elseif ($node['type'] == 'subexpression') {
+            if ($left = $this->createArrayAccess($node['children'][0])) {
+                if ($right = $this->createArrayAccess($node['children'][1])) {
+                    return $left . $right;
+                }
+            }
         }
+
+        return false;
     }
 
     /**
@@ -122,41 +128,33 @@ class TreeCompiler extends AbstractTreeVisitor
      */
     private function visit_subexpression(array $node)
     {
-        if ($node['children'][0]['type'] != 'field' && $node['children'][0]['type'] != 'index') {
-            $this->dispatch($node['children'][0]);
-            $this->dispatch($node['children'][1]);
-            return $this;
-        }
-
-        $key = $this->createArrayAccess($node['children'][0]);
-
-        if ($node['children'][1]['type'] == 'subexpression') {
+        if (($node['children'][0]['type'] == 'field' ||
+            $node['children'][0]['type'] == 'index') &&
+            $node['children'][1]['type'] == 'subexpression'
+        ) {
             // Create an optimized isset() check using a combination of
-            // subexpression accessors
-            $check = $node['children'][1];
-            while ($check['type'] == 'subexpression') {
-                $key .= $this->createArrayAccess($check['children'][0]);
-                $check = $check['children'][1];
+            // subexpression accessors when it is possible. It is not possible
+            // to perform this optimization if any of the subexpressions are
+            // something other than field or indexes or an index with a
+            // negative index.
+            if ($key = $this->createArrayAccess($node)) {
+                $check = '$value' . $key;
+                $checkArr = substr($check, 0, strrpos($check, '['));
+                $this->write("\$value = (isset($check) && is_array($checkArr))")
+                    ->indent()
+                    ->write("? $check")
+                    ->write(': null;')
+                    ->outdent();
+                return $this;
             }
-            $key .= $this->createArrayAccess($check);
-            $this->write("\$value = (isset(\$value$key))")
-                ->indent()
-                ->write("? \$value$key")
-                ->write(': null;')
-                ->outdent();
-        } else {
-            // A single accessor expression
-            $this->write("if (isset(\$value$key)) {")
-                ->indent()
-                ->write("\$value = \$value$key;");
-            $this->dispatch($node['children'][1]);
-            $this->outdent()
-                ->write('} else {')
-                ->indent()
-                ->write('$value = null;')
-                ->outdent()
-                ->write('}');
         }
+
+        $this->dispatch($node['children'][0]);
+        $this->write('if ($value !== null) {')
+                ->indent()
+                ->dispatch($node['children'][1])
+                ->outdent()
+            ->write('}');
 
         return $this;
     }
@@ -166,8 +164,8 @@ class TreeCompiler extends AbstractTreeVisitor
      */
     private function visit_field(array $node)
     {
-        $check = '$value[\'' . $node['key'] . '\']';
-        $this->write("\$value = isset($check) ? $check : null;");
+        $check = '$value[\'' . str_replace('\\', '\\\\', $node['key']) . '\']';
+        $this->write("\$value = is_array(\$value) && isset($check) ? $check : null;");
 
         return $this;
     }
@@ -177,8 +175,23 @@ class TreeCompiler extends AbstractTreeVisitor
      */
     private function visit_index(array $node)
     {
-        $check = '$value[' . $node['index'] . ']';
-        $this->write("\$value = isset($check) ? $check : null;");
+        if ($node['index'] >= 0) {
+            $check = '$value[' . $node['index'] . ']';
+            $this->write("\$value = is_array(\$value) && isset($check) ? $check : null;");
+        } else {
+            // Account for negative indices
+            $tmpCount = uniqid('count_');
+            $this->write('if (is_array($value)) {')
+                ->indent()
+                ->write("\${$tmpCount} = count(\$value) + {$node['index']};")
+                ->write("\$value = isset(\$value[\${$tmpCount}]) ? \$value[\${$tmpCount}] : null;")
+                ->outdent()
+                ->write('} else {')
+                ->indent()
+                ->write('$value = null;')
+                ->outdent()
+                ->write('}');
+        }
 
         return $this;
     }
@@ -192,7 +205,9 @@ class TreeCompiler extends AbstractTreeVisitor
 
     private function visit_pipe(array $node)
     {
+        $this->dispatch($node['children'][0]);
         $this->write('$current = $value;');
+        $this->dispatch($node['children'][1]);
 
         return $this;
     }
@@ -222,7 +237,8 @@ class TreeCompiler extends AbstractTreeVisitor
             $first = false;
             if ($node['type'] == 'multi_select_hash') {
                 $this->dispatch($child['children'][0]);
-                $this->write("\${$listVal}['{$child['key']}'] = \$value;");
+                $key = str_replace('\\', '\\\\', $child['key']);
+                $this->write("\${$listVal}['{$key}'] = \$value;");
             } else {
                 $this->dispatch($child);
                 $this->write("\${$listVal}[] = \$value;");
@@ -245,16 +261,18 @@ class TreeCompiler extends AbstractTreeVisitor
 
         $this->write("\${$value} = \$value;")
             ->write("\${$current} = \$current;")
-            ->write("\${$args} = array()");
+            ->write("\${$args} = array();");
 
         foreach ($node['children'] as $arg) {
             $this->dispatch($arg);
-            $this->write("\${$args}[] = $value;")
-                ->write("\$current = {$current};")
-                ->write("\$value = {$value};");
+            $this->write("\${$args}[] = \$value;")
+                ->write("\$current = \${$current};")
+                ->write("\$value = \${$value};");
         }
 
         $this->write("\$value = \$runtime->callFunction('{$node['fn']}', \${$args});");
+
+        return $this;
     }
 
     private function visit_slice(array $node)
@@ -269,6 +287,8 @@ class TreeCompiler extends AbstractTreeVisitor
             ))
             ->outdent()
             ->write('));');
+
+        return $this;
     }
 
     private function visit_current_node(array $node)

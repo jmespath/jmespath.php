@@ -25,10 +25,10 @@ class CompilerRuntime extends AbstractRuntime
     public function __construct(Parser $parser, $cacheDir)
     {
         $this->parser = $parser;
-        $this->cacheDir = $cacheDir;
+        $this->cacheDir = realpath($cacheDir);
         $this->compiler = new TreeCompiler();
 
-        if (!is_dir($cacheDir) && !mkdir($cacheDir, 0600, true)) {
+        if (!is_dir($cacheDir) && !mkdir($cacheDir, 3755, true)) {
             throw new \RuntimeException("Unable to create cache directory: {$cacheDir}");
         }
     }
@@ -62,7 +62,7 @@ class CompilerRuntime extends AbstractRuntime
 
     public function clearCache()
     {
-        $files = glob($this->cacheDir . '/jmespath_*.php');
+        $files = glob("{$this->cacheDir}/jmespath_*.php");
         foreach ($files as $file) {
             unlink($file);
         }
@@ -74,12 +74,15 @@ class CompilerRuntime extends AbstractRuntime
         list($tokens, $lexTime) = $this->printDebugTokens($out, $expression);
         list($ast, $parseTime) = $this->printDebugAst($out, $expression);
 
+        $hash = md5($expression);
+        $functionName = "jmespath_{$hash}";
+        $filename = "{$this->cacheDir}/{$functionName}.php";
+
         $t = microtime(true);
         $result = $this->search($expression, $data);
         $interpretTime = (microtime(true) - $t) * 1000;
 
-        fprintf($out, "\nSource\n======\n\n%s", file_get_contents(
-            $this->cacheDir . '/jmespath_' . md5($expression) . '.php'));
+        fprintf($out, "\nSource\n======\n\n%s", file_get_contents($filename));
         fprintf($out, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
         fprintf($out, "\nResult\n======\n\n%s\n\n", $this->prettyJson($result));
         fwrite($out, "Time\n====\n\n");

@@ -38,7 +38,7 @@ $expression = $currentKey;
 if (isset($args['compile'])) {
     if ($args['compile'] == '1' || $args['compile'] == 'true' || $args['compile'] == 'false') {
         $runtime = \JmesPath\createRuntime(array(
-            'cache_dir' => sys_get_temp_dir()
+            'compile' => __DIR__ . '/../compiled'
         ));
     }
 }

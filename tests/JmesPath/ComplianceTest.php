@@ -6,30 +6,47 @@ use JmesPath\SyntaxErrorException;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
 {
-    private $runtime;
+    private static $defaultRuntime;
+    private static $compilerRuntime;
 
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->runtime = \JmesPath\createRuntime();
+        self::$defaultRuntime = \JmesPath\createRuntime();
+        self::$compilerRuntime = \JmesPath\createRuntime(array(
+            'compile' => __DIR__ . '/../../compiled'
+        ));
+        self::$compilerRuntime->clearCache();
+    }
+
+    public static function tearDownAfterClass()
+    {
+        self::$compilerRuntime->clearCache();
     }
 
     /**
      * @dataProvider complianceProvider
      */
-    public function testPassesCompliance($data, $expression, $result, $error, $file, $suite, $case)
+    public function testPassesCompliance($data, $expression, $result, $error, $file, $suite, $case, $compiled)
     {
         $failed = $evalResult = $failureMsg = false;
         $debug = fopen('php://temp', 'r+');
+        $compiledStr = '';
 
         try {
-            $evalResult = $this->runtime->debug($expression, $data, $debug);
+            if ($compiled) {
+                $compiledStr = ' --compiled 1';
+                $evalResult = self::$defaultRuntime->debug($expression, $data, $debug);
+            } else {
+                $evalResult = self::$compilerRuntime->debug($expression, $data, $debug);
+            }
         } catch (\Exception $e) {
             $failed = $e instanceof SyntaxErrorException ? 'syntax' : 'runtime';
             $failureMsg = sprintf('%s (%s line %d)', $e->getMessage(), $e->getFile(), $e->getLine());
         }
 
         rewind($debug);
-        $failure = "\nphp bin/jp.php {$file} {$suite} {$case}\n\n"
+        $file = __DIR__ . '/compliance/' . $file . '.json';
+        $failure = "\nphp bin/jp.php --file {$file} --suite {$suite} --case {$case}{$compiledStr}\n\n"
             . stream_get_contents($debug) . "\n\n"
             . "Expected: " . $this->prettyJson($result) . "\n\n";
 
@@ -55,15 +72,19 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
             $json = json_decode($contents, true);
             foreach ($json as $suiteNumber => $suite) {
                 foreach ($suite['cases'] as $caseNumber => $case) {
-                    $cases[] = array(
+                    $caseData = array(
                         $suite['given'],
                         $case['expression'],
                         isset($case['result']) ? $case['result'] : null,
                         isset($case['error']) ? $case['error'] : false,
                         $name,
                         $suiteNumber,
-                        $caseNumber
+                        $caseNumber,
+                        false
                     );
+                    $cases[] = $caseData;
+                    $caseData[7] = true;
+                    $cases[] = $caseData;
                 }
             }
         }
