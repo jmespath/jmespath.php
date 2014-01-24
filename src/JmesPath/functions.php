@@ -7,23 +7,21 @@ use JmesPath\Runtime\RuntimeInterface;
 use JmesPath\Runtime\DefaultRuntime;
 use JmesPath\Runtime\CompilerRuntime;
 
-define('JMESPATH_SERVER_KEY', 'jmespath');
-
 /**
  * Returns data from the input array that matches a given JMESPath expression.
  *
  * @param string $expression JMESPath expression to evaluate
- * @param array  $data       Data to search
+ * @param mixed  $data       JSON-like data to search
  *
  * @return mixed|null Returns the matching data or null
  */
-function search($expression, array $data)
+function search($expression, $data)
 {
-    if (!isset($_SERVER[JMESPATH_SERVER_KEY])) {
-        $_SERVER[JMESPATH_SERVER_KEY] = createRuntime();
+    if (!DefaultRuntime::$globalRuntime) {
+        DefaultRuntime::$globalRuntime = createRuntime();
     }
 
-    return $_SERVER[JMESPATH_SERVER_KEY]->search($expression, $data);
+    return DefaultRuntime::$globalRuntime->search($expression, $data);
 }
 
 /**
