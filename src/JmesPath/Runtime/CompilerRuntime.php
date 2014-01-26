@@ -25,12 +25,13 @@ class CompilerRuntime extends AbstractRuntime
     public function __construct(Parser $parser, $cacheDir)
     {
         $this->parser = $parser;
-        $this->cacheDir = realpath($cacheDir);
         $this->compiler = new TreeCompiler();
 
-        if (!is_dir($cacheDir) && !mkdir($cacheDir, 3755, true)) {
+        if (!is_dir($cacheDir) && !mkdir($cacheDir, 0755, true)) {
             throw new \RuntimeException("Unable to create cache directory: {$cacheDir}");
         }
+
+        $this->cacheDir = realpath($cacheDir);
     }
 
     public function search($expression, $data)
