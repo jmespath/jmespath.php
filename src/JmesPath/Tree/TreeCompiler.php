@@ -26,14 +26,19 @@ class TreeCompiler extends AbstractTreeVisitor
 
         $this->source = '';
         $this->indentation = 0;
-        $this->write("<?php\n\nfunction {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value)\n{")
-             ->indent();
-        $this->write('$current = $value;');
-        $this->dispatch($node);
-        $this->write('')
-             ->write('return $value;')
-             ->outdent()
-             ->write('}');
+        $this->write("<?php\n");
+        if (isset($args['expression'])) {
+            $this->write("// {$args['expression']}");
+        }
+        $this->write("function {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value)")
+             ->write('{')
+                ->indent()
+                ->write('$current = $value;')
+                ->dispatch($node)
+                ->write('')
+                ->write('return $value;')
+                ->outdent()
+            ->write('}');
 
         return $this->source;
     }
@@ -87,15 +92,14 @@ class TreeCompiler extends AbstractTreeVisitor
 
     private function visit_or(array $node)
     {
-        $this->dispatch($node['children'][0]);
-        $this->write('');
-        $this->write('if ($value === null) {')->indent();
-        $this->write('$value = $current;');
-        $this->dispatch($node['children'][1]);
-        $this->outdent()
-             ->write('}');
-
-        return $this;
+        return $this
+            ->dispatch($node['children'][0])
+            ->write('')
+            ->write('if ($value === null) {')->indent()
+            ->write('$value = $current;')
+            ->dispatch($node['children'][1])
+            ->outdent()
+            ->write('}');
     }
 
     /**
@@ -108,7 +112,7 @@ class TreeCompiler extends AbstractTreeVisitor
     private function createArrayAccess($node)
     {
         if ($node['type'] == 'field') {
-            return "['" . str_replace('\\', '\\\\', $node['key']) . "']";
+            return '[' . var_export($node['key'], true) . ']';
         } elseif ($node['type'] == 'index') {
             return $node['index'] >= 0 ? "[{$node['index']}]" : false;
         } elseif ($node['type'] == 'subexpression') {
@@ -149,14 +153,13 @@ class TreeCompiler extends AbstractTreeVisitor
             }
         }
 
-        $this->dispatch($node['children'][0]);
-        $this->write('if ($value !== null) {')
+        return $this
+            ->dispatch($node['children'][0])
+            ->write('if ($value !== null) {')
                 ->indent()
                 ->dispatch($node['children'][1])
                 ->outdent()
             ->write('}');
-
-        return $this;
     }
 
     /**
@@ -164,7 +167,7 @@ class TreeCompiler extends AbstractTreeVisitor
      */
     private function visit_field(array $node)
     {
-        $check = '$value[\'' . str_replace('\\', '\\\\', $node['key']) . '\']';
+        $check = '$value[' . var_export($node['key'], true) . ']';
         $this->write("\$value = is_array(\$value) && isset($check) ? $check : null;");
 
         return $this;
@@ -198,18 +201,15 @@ class TreeCompiler extends AbstractTreeVisitor
 
     private function visit_literal(array $node)
     {
-        $this->write('$value = ' . var_export($node['value'], true) . ';');
-
-        return $this;
+        return $this->write('$value = ' . var_export($node['value'], true) . ';');
     }
 
     private function visit_pipe(array $node)
     {
-        $this->dispatch($node['children'][0]);
-        $this->write('$current = $value;');
-        $this->dispatch($node['children'][1]);
-
-        return $this;
+        return $this
+            ->dispatch($node['children'][0])
+            ->write('$current = $value;')
+            ->dispatch($node['children'][1]);
     }
 
     private function visit_multi_select_list(array $node)
@@ -237,20 +237,19 @@ class TreeCompiler extends AbstractTreeVisitor
             $first = false;
             if ($node['type'] == 'multi_select_hash') {
                 $this->dispatch($child['children'][0]);
-                $key = str_replace('\\', '\\\\', $child['key']);
-                $this->write("\${$listVal}['{$key}'] = \$value;");
+                $key = var_export($child['key'], true);
+                $this->write("\${$listVal}[{$key}] = \$value;");
             } else {
                 $this->dispatch($child);
                 $this->write("\${$listVal}[] = \$value;");
             }
         }
 
-        $this->write("\$value = \${$listVal};")
+        return $this
+            ->write("\$value = \${$listVal};")
             ->write("\$current = \${$tmpCurrent};")
             ->outdent()
             ->write('}');
-
-        return $this;
     }
 
     private function visit_function(array $node)
@@ -270,30 +269,27 @@ class TreeCompiler extends AbstractTreeVisitor
                 ->write("\$value = \${$value};");
         }
 
-        $this->write("\$value = \$runtime->callFunction('{$node['fn']}', \${$args});");
-
-        return $this;
+        return $this->write("\$value = \$runtime->callFunction('{$node['fn']}', \${$args});");
     }
 
     private function visit_slice(array $node)
     {
-        $this->write("\$value = \$runtime->callFunction('array_slice', array(")
+        return $this
+            ->write("\$value = \$runtime->callFunction('array_slice', array(")
             ->indent()
-            ->write(sprintf(
-                '$value, %s, %s, %s',
-                var_export($node['args'][0], true),
-                var_export($node['args'][1], true),
-                var_export($node['args'][2], true)
-            ))
-            ->outdent()
+                ->write(sprintf(
+                    '$value, %s, %s, %s',
+                    var_export($node['args'][0], true),
+                    var_export($node['args'][1], true),
+                    var_export($node['args'][2], true)
+                ))
+                ->outdent()
             ->write('));');
-
-        return $this;
     }
 
     private function visit_current_node(array $node)
     {
-        return $this;
+        return $this->write('// Visiting current node (no-op)');
     }
 
     private function visit_merge(array $node)
@@ -304,6 +300,7 @@ class TreeCompiler extends AbstractTreeVisitor
         $tmpVal = uniqid('val_');
 
         $this
+            ->write('// Visting merge node')
             ->write('if (is_array($value)) {')
             ->indent()
                 ->write('$invalid = false;')
@@ -355,7 +352,8 @@ class TreeCompiler extends AbstractTreeVisitor
         $tmpVal = uniqid('v');
         $tmpCollected = uniqid('collected_');
 
-        $this->dispatch($node['children'][0])
+        $this->write('// Visiting projection node')
+            ->dispatch($node['children'][0])
             ->write('')
             ->write('if (!is_array($value)) {')
                 ->indent()
@@ -391,29 +389,28 @@ class TreeCompiler extends AbstractTreeVisitor
 
         if (isset($node['from'])) {
             $this->outdent()
-            ->write('} else {')
-                ->indent()
-                ->write('$value = null;')
-                ->outdent()
-            ->write('}');
+                ->write('} else {')
+                    ->indent()
+                    ->write('$value = null;')
+                    ->outdent()
+                ->write('}');
         }
 
-        $this->outdent()
+        return $this
+            ->outdent()
             ->write('}');
-
-        return $this;
     }
 
     private function visit_condition(array $node)
     {
-        $this->dispatch($node['children'][0]);
-        $this->write('if ($value !== null) {')
+        return $this
+            ->write('// Visiting projection node')
+            ->dispatch($node['children'][0])
+            ->write('if ($value !== null) {')
                 ->indent()
                 ->dispatch($node['children'][1])
                 ->outdent()
             ->write('}');
-
-        return $this;
     }
 
     private function visit_comparator(array $node)
@@ -423,23 +420,25 @@ class TreeCompiler extends AbstractTreeVisitor
         $tmpA = uniqid('left_');
         $tmpB = uniqid('right_');
 
-        $this->write("\${$tmpValue} = \$value;")
+        $this
+            ->write('// Visiting comparator node')
+            ->write("\${$tmpValue} = \$value;")
             ->write("\${$tmpCurrent} = \$current;")
             ->dispatch($node['children'][0])
             ->write("\${$tmpA} = \$value;")
+            ->write("\$value = \${$tmpValue};")
             ->dispatch($node['children'][1])
             ->write("\${$tmpB} = \$value;");
 
         Lexer::validateBinaryOperator($node['relation']);
         if ($node['relation'] == '==' || $node['relation'] == '!=') {
-            $this->write("\$result = \${$tmpA} {$node['relation']} \${$tmpB};");
+            $this->write("\$result = \${$tmpA} {$node['relation']}= \${$tmpB};");
         } else {
             $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} {$node['relation']} \${$tmpB};");
         }
 
-        $this->write("\$value = \$result === true ? \${$tmpValue} : null;");
-        $this->write("\$current = \${$tmpCurrent};");
-
-        return $this;
+        return $this
+            ->write("\$value = \$result === true ? \${$tmpValue} : null;")
+            ->write("\$current = \${$tmpCurrent};");
     }
 }

@@ -1,0 +1,48 @@
+<?php
+
+namespace JmesPath\Tests\Runtime;
+
+class AbstractRuntimeTest extends \PHPUnit_Framework_TestCase
+{
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Function must be callable
+     */
+    public function testEnsuresFunctionsAreCallable()
+    {
+        $r = $this->getMockBuilder('JmesPath\Runtime\AbstractRuntime')
+            ->getMockForAbstractClass();
+        $r->registerFunction('foo', 'bar');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Cannot override the built-in function abs
+     */
+    public function testCannotOverrideBuiltInFunctions()
+    {
+        $r = $this->getMockBuilder('JmesPath\Runtime\AbstractRuntime')
+            ->getMockForAbstractClass();
+        $r->registerFunction('abs', function () {});
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Call to undefined function: foo
+     */
+    public function testThrowsWhenNoFunctionMatchesName()
+    {
+        $r = $this->getMockBuilder('JmesPath\Runtime\AbstractRuntime')
+            ->getMockForAbstractClass();
+        $r->callFunction('foo', array('bar'));
+    }
+
+    public function testCanCallFunctions()
+    {
+        $r = $this->getMockBuilder('JmesPath\Runtime\AbstractRuntime')
+            ->getMockForAbstractClass();
+        $r->registerFunction('foo', function () { return 'abc'; });
+        $this->assertEquals('abc', $r->callFunction('foo', array()));
+        $this->assertEquals('1', $r->callFunction('abs', array(-1)));
+    }
+}

@@ -48,7 +48,7 @@ function createRuntime(array $options = array())
         if ($options['compile'] === true) {
             $options['compile'] = sys_get_temp_dir();
         } elseif (!is_string($options['compile'])) {
-            throw new \InvalidArgumentException('compile must be a string or boolean');
+            throw new \InvalidArgumentException('"compile" must be a string or Boolean');
         }
 
         return new CompilerRuntime($parser, $options['compile']);

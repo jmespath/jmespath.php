@@ -44,9 +44,9 @@ abstract class AbstractRuntime implements RuntimeInterface
     {
         if (!is_callable($fn)) {
             throw new \InvalidArgumentException('Function must be callable');
-        } elseif (isset($this->fnMap)) {
+        } elseif (isset($this->fnMap[$name])) {
             throw new \InvalidArgumentException(
-                "Cannot override the built-in function, {$name}");
+                "Cannot override the built-in function {$name}");
         }
 
         $this->fn[$name] = $fn;

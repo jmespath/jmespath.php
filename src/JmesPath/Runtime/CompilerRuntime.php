@@ -35,8 +35,7 @@ class CompilerRuntime extends AbstractRuntime
 
     public function search($expression, $data)
     {
-        $hash = md5($expression);
-        $functionName = "jmespath_{$hash}";
+        $functionName = 'jmespath_' . md5($expression);
 
         if (!function_exists($functionName)) {
             $filename = "{$this->cacheDir}/{$functionName}.php";
@@ -44,7 +43,10 @@ class CompilerRuntime extends AbstractRuntime
                 $code = $this->compiler->visit(
                     $this->parser->parse($expression),
                     $data,
-                    array('function_name' => $functionName)
+                    array(
+                        'function_name' => $functionName,
+                        'expression'    => $expression
+                    )
                 );
                 if (!file_put_contents($filename, $code)) {
                     throw new \RuntimeException(sprintf(
