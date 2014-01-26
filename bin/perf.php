@@ -6,26 +6,33 @@ require 'vendor/autoload.php';
 use JmesPath\Lexer;
 use JmesPath\Parser;
 use JmesPath\Tree\TreeInterpreter;
+use JmesPath\Runtime\RuntimeInterface;
 
 $dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance' : $argv[1];
 is_dir($dir) or die('Dir not found: ' . $dir);
 $files = glob($dir . '/*.json');
+
+$runtime = \JmesPath\createRuntime();
 $parser = new Parser(new Lexer());
 $interpreter = new TreeInterpreter();
 $total = 0;
 
 // Warm up the runner
-$interpreter->visit($parser->compile('foo.bar'), array('foo' => array('bar' => 1)));
+$interpreter->visit(
+    $parser->parse('foo.bar'),
+    array('foo' => array('bar' => 1)),
+    array('runtime' => $runtime)
+);
 
 foreach ($files as $file) {
     if (!strpos($file, 'syntax')) {
-        $total += runSuite($parser, $interpreter, $file);
+        $total += runSuite($parser, $interpreter, $file, $runtime);
     }
 }
 
 echo "\nTotal time: {$total}ms\n";
 
-function runSuite($parser, $interpreter, $file)
+function runSuite($parser, $interpreter, $file, RuntimeInterface $runtime)
 {
     $contents = file_get_contents($file);
     $json = json_decode($contents, true);
@@ -37,7 +44,8 @@ function runSuite($parser, $interpreter, $file)
                 $suite['given'],
                 $case['expression'],
                 $parser,
-                $interpreter
+                $interpreter,
+                $runtime
             );
         }
     }
@@ -50,7 +58,8 @@ function runCase(
     $given,
     $expression,
     Parser $parser,
-    TreeInterpreter $interpreter
+    TreeInterpreter $interpreter,
+    RuntimeInterface $runtime
 ) {
     $bestParse = 99999;
     $bestInterpret = 99999;
@@ -58,10 +67,10 @@ function runCase(
     for ($i = 0; $i < 1000; $i++) {
         $t = microtime(true);
         try {
-            $opcodes = $parser->compile($expression);
+            $opcodes = $parser->parse($expression);
             $parseTime = (microtime(true) - $t) * 1000;
             $t = microtime(true);
-            $interpreter->visit($opcodes, $given);
+            $interpreter->visit($opcodes, $given, array('runtime' => $runtime));
             $interpretTime = (microtime(true) - $t) * 1000;
         } catch (\Exception $e) {
             $parseTime = (microtime(true) - $t) * 1000;

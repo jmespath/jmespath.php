@@ -2,77 +2,30 @@
 
 namespace JmesPath\Tree;
 
+use JmesPath\Lexer;
+use JmesPath\Runtime\RuntimeInterface;
+
 /**
  * Tree visitor used to evaluates JMESPath AST expressions.
  */
-class TreeInterpreter implements TreeVisitorInterface
+class TreeInterpreter extends AbstractTreeVisitor
 {
     /** @var mixed The current evaluated root node */
     private $root;
 
-    /** @var array Map of function names to class names */
-    private $fnMap = array(
-        'abs' => 'JmesPath\Fn\FnAbs',
-        'avg' => 'JmesPath\Fn\FnAvg',
-        'ceil' => 'JmesPath\Fn\FnCeil',
-        'concat' => 'JmesPath\Fn\FnConcat',
-        'contains' => 'JmesPath\Fn\FnContains',
-        'floor' => 'JmesPath\Fn\FnFloor',
-        'get' => 'JmesPath\Fn\FnGet',
-        'join' => 'JmesPath\Fn\FnJoin',
-        'keys' => 'JmesPath\Fn\FnKeys',
-        'matches' => 'JmesPath\Fn\FnMatches',
-        'max' => 'JmesPath\Fn\FnMax',
-        'min' => 'JmesPath\Fn\FnMin',
-        'length' => 'JmesPath\Fn\FnLength',
-        'lowercase' => 'JmesPath\Fn\FnLowercase',
-        'reverse' => 'JmesPath\Fn\FnReverse',
-        'sort' => 'JmesPath\Fn\FnSort',
-        'sort_by' => 'JmesPath\Fn\FnSortBy',
-        'substring' => 'JmesPath\Fn\FnSubstring',
-        'type' => 'JmesPath\Fn\FnType',
-        'union' => 'JmesPath\Fn\FnUnion',
-        'uppercase' => 'JmesPath\Fn\FnUppercase',
-        'values' => 'JmesPath\Fn\FnValues',
-        '_array_slice' => 'JmesPath\Fn\FnArraySlice'
-    );
+    /** @var RuntimeInterface Runtime used to manage function calls */
+    private $runtime;
 
-    /** @var array Map of function names to instantiated function objects */
-    private $fn = array();
-
-    /**
-     * Handles evaluating undefined types without paying the cost of validation
-     */
-    public function __call($method, $args)
+    public function visit(array $node, $data, array $args = null)
     {
-        throw new \RuntimeException('Invalid node encountered: ' . json_encode($args[0]));
-    }
-
-    /**
-     * Register a custom function with the interpreter.
-     *
-     * A function must be callable, receives an array of arguments, and returns
-     * a function return value.
-     *
-     * @param string   $name Name of the function
-     * @param callable $fn   Function
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function registerFunction($name, $fn)
-    {
-        if (!is_callable($fn)) {
-            throw new \InvalidArgumentException('Function must be callable');
+        if (!isset($args['runtime'])) {
+            throw new \InvalidArgumentException('A runtime arg must be provided');
         }
 
-        $this->fn[$name] = $fn;
-    }
-
-    public function visit(array $node, array $args = null)
-    {
+        $this->runtime = $args['runtime'];
         $this->root = $args;
 
-        return $this->dispatch($node, $args);
+        return $this->dispatch($node, $data);
     }
 
     /**
@@ -218,7 +171,6 @@ class TreeInterpreter implements TreeVisitorInterface
     {
         $left = $this->dispatch($node['children'][0], $value);
         $right = $this->dispatch($node['children'][1], $value);
-
         switch ($node['relation']) {
             case '==': return $left === $right;
             case '!=': return $left !== $right;
@@ -226,9 +178,8 @@ class TreeInterpreter implements TreeVisitorInterface
             case '>=': return is_int($left) && is_int($right) && $left >= $right;
             case '<': return is_int($left) && is_int($right) && $left < $right;
             case '<=': return is_int($left) && is_int($right) && $left <= $right;
+            default: Lexer::validateBinaryOperator($node['relation']);
         }
-
-        throw new \RuntimeException('Invalid relation: ' . $node['relation']);
     }
 
     /**
@@ -245,7 +196,7 @@ class TreeInterpreter implements TreeVisitorInterface
             $args[] = $this->dispatch($arg, $value);
         }
 
-        return $this->callFunction($node['fn'], $args);
+        return $this->runtime->callFunction($node['fn'], $args);
     }
 
     /**
@@ -253,7 +204,7 @@ class TreeInterpreter implements TreeVisitorInterface
      */
     private function visit_slice(array $node, $value)
     {
-        return $this->callFunction('_array_slice', array(
+        return $this->runtime->callFunction('array_slice', array(
             $value,
             $node['args'][0],
             $node['args'][1],
@@ -345,27 +296,5 @@ class TreeInterpreter implements TreeVisitorInterface
         return true === $this->dispatch($node['children'][0], $value)
             ? $this->dispatch($node['children'][1], $value)
             : null;
-    }
-
-    /**
-     * Invokes a named function. If the function has not already been
-     * instantiated, the function object is created and cached.
-     *
-     * @param string $name Name of the function to invoke
-     * @param array  $args Function arguments
-     * @return mixed Returns the function invocation result
-     * @throws \RuntimeException If the function is undefined
-     */
-    private function callFunction($name, $args)
-    {
-        if (!isset($this->fn[$name])) {
-            if (!isset($this->fnMap[$name])) {
-                throw new \RuntimeException("Call to undefined function: {$name}");
-            } else {
-                $this->fn[$name] = new $this->fnMap[$name];
-            }
-        }
-
-        return call_user_func($this->fn[$name], $args);
     }
 }

@@ -2,3 +2,4 @@ coverage
 vendor
 composer.lock
 phpunit.xml
+compiled

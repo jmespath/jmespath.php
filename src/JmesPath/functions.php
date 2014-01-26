@@ -3,87 +3,59 @@
 namespace JmesPath;
 
 use JmesPath\Tree\TreeInterpreter;
+use JmesPath\Runtime\RuntimeInterface;
+use JmesPath\Runtime\DefaultRuntime;
+use JmesPath\Runtime\CompilerRuntime;
 
 /**
  * Returns data from the input array that matches a given JMESPath expression.
  *
- * This method maintains a cache of 1024 compiled JMESPath expressions. When the
- * cache exceeds 1024, the cache is cleared.
- *
  * @param string $expression JMESPath expression to evaluate
- * @param array  $data       Data to search
+ * @param mixed  $data       JSON-like data to search
  *
  * @return mixed|null Returns the matching data or null
  */
-function search($expression, array $data)
+function search($expression, $data)
 {
-    static $interpreter, $parser, $cache = array(), $cacheSize = 0;
-
-    if (!isset($cache[$expression])) {
-        if (!$parser) {
-            $parser = new Parser(new Lexer());
-        }
-        // Reset the cache when it exceeds 1024 entries
-        if (++$cacheSize > 1024) {
-            $cache = array();
-            $cacheSize = 0;
-        }
-        $cache[$expression] = $parser->compile($expression);
+    if (!DefaultRuntime::$globalRuntime) {
+        DefaultRuntime::$globalRuntime = createRuntime();
     }
 
-    if (!$interpreter) {
-        $interpreter = new TreeInterpreter();
-    }
-
-    return $interpreter->visit($cache[$expression], $data);
+    return DefaultRuntime::$globalRuntime->search($expression, $data);
 }
 
 /**
- * Executes a JMESPath expression while emitting debug information to a resource
+ * Function used to easily create a customized JMESPath runtime environment.
  *
- * @param string   $expression JMESPath expression to evaluate
- * @param mixed    $data       JSON like data to search
- * @param resource $out        Resource as returned from fopen to write to
- *
- * @return mixed Returns the expression result
+ * @param array $options Options used to create the runtime
+ *  'parser'      => Parser used to parse expressions into an AST
+ *  'interpreter' => Tree interpreter used to interpret the AST
+ *  'compile'     => If specified, the parsed AST will be compiled
+ *                   to PHP code. If set to `true` the compiled PHP code will
+ *                   be saved to PHP's temp directory. You can specify the
+ *                   directory used to store the cached PHP code by passing
+ *                   a string. Note: If this value is set, then any provided
+ *                   'interpreter' value will be ignored.
+ * @return RuntimeInterface
+ * @throws \InvalidArgumentException if the provided compile option is invalid
  */
-function debugSearch($expression, $data, $out = STDOUT)
+function createRuntime(array $options = array())
 {
-    $lexer = new Lexer();
-    $parser = new Parser($lexer);
-    $interpreter = new TreeInterpreter($out);
-    $printJson = function ($json) {
-        return defined('JSON_PRETTY_PRINT') ? json_encode($json, JSON_PRETTY_PRINT) : json_encode($json);
-    };
+    $parser = isset($options['parser'])
+        ? $options['parser'] : new Parser(new Lexer());
 
-    fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
-    fwrite($out, "Tokens\n======\n\n");
-    $tokens = $lexer->tokenize($expression);
-    $tokens->next();
-    do {
-        $t = $tokens->token;
-        fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'], json_encode($t['value']));
-        $tokens->next();
-    } while ($tokens->token['type'] != Lexer::T_EOF);
-    fwrite($out, "\n");
+    if (isset($options['compile']) && $options['compile'] !== false) {
+        if ($options['compile'] === true) {
+            $options['compile'] = sys_get_temp_dir();
+        } elseif (!is_string($options['compile'])) {
+            throw new \InvalidArgumentException('"compile" must be a string or Boolean');
+        }
 
-    $t = microtime(true);
-    $ast = $parser->compile($expression);
-    $parseTime = (microtime(true) - $t) * 1000;
+        return new CompilerRuntime($parser, $options['compile']);
+    }
 
-    fwrite($out, "AST\n========\n\n");
-    fwrite($out, json_encode($ast, JSON_PRETTY_PRINT) . "\n");
-    fprintf($out, "\nData\n====\n\n%s\n\n", $printJson($data));
-
-    $t = microtime(true);
-    $result = $interpreter->visit($ast, $data);
-    $interpretTime = (microtime(true) - $t) * 1000;
-
-    fprintf($out, "Result\n======\n\n%s\n\n", $printJson($result));
-    fwrite($out, "Time\n====\n\n");
-    fprintf($out, "Parse time:     %f ms\n", $parseTime);
-    fprintf($out, "Interpret time: %f ms\n", $interpretTime);
-    fprintf($out, "Total time:     %f ms\n\n", $parseTime + $interpretTime);
-
-    return $result;
+    return new DefaultRuntime(
+        $parser,
+        isset($options['interpreter']) ? $options['interpreter'] : new TreeInterpreter()
+    );
 }

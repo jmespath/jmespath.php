@@ -5,9 +5,9 @@ namespace JmesPath;
 /**
  * LL(1) recursive descent JMESPath parser utilizing a Pratt parsing technique
  */
-class Parser implements ParserInterface
+class Parser
 {
-    /** @var LexerInterface */
+    /** @var Lexer */
     private $lexer;
 
     /** @var TokenStream Stream of tokens */
@@ -52,14 +52,22 @@ class Parser implements ParserInterface
     private static $currentNode = array('type' => 'current_node');
 
     /**
-     * @param LexerInterface $lexer Lexer used to tokenize expressions
+     * @param Lexer $lexer Lexer used to tokenize expressions
      */
-    public function __construct(LexerInterface $lexer)
+    public function __construct(Lexer $lexer)
     {
         $this->lexer = $lexer;
     }
 
-    public function compile($expression)
+    /**
+     * Parses a JMESPath expression into an AST
+     *
+     * @param string $expression JMESPath expression to compile
+     *
+     * @return array Returns an array based AST
+     * @throws SyntaxErrorException
+     */
+    public function parse($expression)
     {
         if (!$expression) {
             return array();
