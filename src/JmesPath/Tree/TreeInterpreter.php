@@ -10,9 +10,6 @@ use JmesPath\Runtime\RuntimeInterface;
  */
 class TreeInterpreter extends AbstractTreeVisitor
 {
-    /** @var mixed The current evaluated root node */
-    private $root;
-
     /** @var RuntimeInterface Runtime used to manage function calls */
     private $runtime;
 
@@ -23,7 +20,6 @@ class TreeInterpreter extends AbstractTreeVisitor
         }
 
         $this->runtime = $args['runtime'];
-        $this->root = $args;
 
         return $this->dispatch($node, $data);
     }
@@ -73,9 +69,7 @@ class TreeInterpreter extends AbstractTreeVisitor
             return null;
         }
 
-        return isset($value[$node['key']])
-            ? $value[$node['key']]
-            : null;
+        return isset($value[$node['key']]) ? $value[$node['key']] : null;
     }
 
     /**
@@ -93,9 +87,7 @@ class TreeInterpreter extends AbstractTreeVisitor
             $index += count($value);
         }
 
-        return isset($value[$index])
-            ? $value[$index]
-            : null;
+        return isset($value[$index]) ? $value[$index] : null;
     }
 
     /**
@@ -113,7 +105,6 @@ class TreeInterpreter extends AbstractTreeVisitor
     private function visit_pipe(array $node, $value)
     {
         $value = $this->dispatch($node['children'][0], $value);
-        $this->root = $value;
 
         return $this->dispatch($node['children'][1], $value);
     }
