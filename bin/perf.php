@@ -3,36 +3,47 @@
 
 require 'vendor/autoload.php';
 
-use JmesPath\Lexer;
-use JmesPath\Parser;
-use JmesPath\Tree\TreeInterpreter;
 use JmesPath\Runtime\RuntimeInterface;
 
-$dir = !isset($argv[1]) ? __DIR__ . '/tests/JmesPath/compliance' : $argv[1];
-is_dir($dir) or die('Dir not found: ' . $dir);
-$files = glob($dir . '/*.json');
+$_SERVER['jp_cache'] = false;
+$runtimeArgs = $extra = array();
+for ($i = 1, $t = count($argv); $i < $t; $i++) {
+    $arg = $argv[$i];
+    if ($arg == '--compile') {
+        $runtimeArgs['compile'] = true;
+        $_SERVER['jp_compile'] = true;
+    } elseif ($arg == '--cache') {
+        $_SERVER['jp_cache'] = true;
+    } else {
+        $extra[] = $arg;
+    }
+}
 
-$runtime = \JmesPath\createRuntime();
-$parser = new Parser(new Lexer());
-$interpreter = new TreeInterpreter();
-$total = 0;
+$dir = __DIR__ . '/../tests/JmesPath/compliance/perf';
+if (count($extra)) {
+    if (count($extra) > 1 || strpos($extra[0], '--') === 0) {
+        die("perf.php [--compile] [--cache] [script_directory]\n\n");
+    } else {
+        $dir = $extra[0];
+    }
+}
+
+is_dir($dir) or die('Dir not found: ' . $dir);
+$runtime = \JmesPath\createRuntime($runtimeArgs);
 
 // Warm up the runner
-$interpreter->visit(
-    $parser->parse('foo.bar'),
-    array('foo' => array('bar' => 1)),
-    array('runtime' => $runtime)
-);
+$runtime->search('abcdefg', array());
 
-foreach ($files as $file) {
+$total = 0;
+foreach (glob($dir . '/*.json') as $file) {
     if (!strpos($file, 'syntax')) {
-        $total += runSuite($parser, $interpreter, $file, $runtime);
+        $total += runSuite($file, $runtime);
     }
 }
 
 echo "\nTotal time: {$total}ms\n";
 
-function runSuite($parser, $interpreter, $file, RuntimeInterface $runtime)
+function runSuite($file, RuntimeInterface $runtime)
 {
     $contents = file_get_contents($file);
     $json = json_decode($contents, true);
@@ -43,8 +54,6 @@ function runSuite($parser, $interpreter, $file, RuntimeInterface $runtime)
                 str_replace(getcwd(), '.', $file),
                 $suite['given'],
                 $case['expression'],
-                $parser,
-                $interpreter,
                 $runtime
             );
         }
@@ -57,36 +66,28 @@ function runCase(
     $file,
     $given,
     $expression,
-    Parser $parser,
-    TreeInterpreter $interpreter,
     RuntimeInterface $runtime
 ) {
-    $bestParse = 99999;
-    $bestInterpret = 99999;
+    $best = 99999;
 
     for ($i = 0; $i < 1000; $i++) {
+        if (!$_SERVER['jp_cache']) {
+            $runtime->clearCache();
+        }
         $t = microtime(true);
         try {
-            $opcodes = $parser->parse($expression);
-            $parseTime = (microtime(true) - $t) * 1000;
-            $t = microtime(true);
-            $interpreter->visit($opcodes, $given, array('runtime' => $runtime));
-            $interpretTime = (microtime(true) - $t) * 1000;
+            $runtime->search($expression, $given);
         } catch (\Exception $e) {
-            $parseTime = (microtime(true) - $t) * 1000;
-            $interpretTime = 0;
         }
-        if ($parseTime < $bestParse) {
-            $bestParse = $parseTime;
-        }
-        if ($interpretTime < $bestInterpret) {
-            $bestInterpret = $interpretTime;
+        $tryTime = (microtime(true) - $t) * 1000;
+        if ($tryTime < $best) {
+            $best = $tryTime;
         }
     }
 
-    $template = "parse_time: %fms, search_time: %fms description: %s name: %s\n";
+    $template = "time: %fms, description: %s, name: %s\n";
     $expression = str_replace("\n", '\n', $expression);
-    printf($template, $bestParse, $bestInterpret, $file, $expression);
+    printf($template, $best, $file, $expression);
 
-    return $bestInterpret + $bestParse;
+    return $best;
 }
