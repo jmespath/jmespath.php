@@ -241,9 +241,9 @@ class Lexer
         static $primitives = array('true' => 0, 'false' => 1, 'null' => 2);
         static $primitiveMap = array(true, false, null);
         // If a literal starts with these characters, it is JSON decoded
-        static $decodeCharacters = array('"' => 1, '[' => 1, '{' => 1, '-' => 1,
-            0 => 1, 1 => 1, 2 => 1, 3 => 1, 4 => 1, 5 => 1, 6 => 1, 7 => 1,
-            8 => 1, 9 => 1);
+        static $decodeCharacters = array('"' => 1, '[' => 1, '{' => 1);
+        static $decodeNumbers = array('-' => 1, 0 => 1, 1 => 1, 2 => 1, 3 => 1,
+            4 => 1, 5 => 1, 6 => 1, 7 => 1, 8 => 1, 9 => 1);
 
         $literal = array('type' => self::T_LITERAL, 'pos' => $this->pos);
 
@@ -261,10 +261,19 @@ class Lexer
             $value = $primitiveMap[$primitives[$value]];
         } elseif (strlen($value) == 0) {
             $this->throwSyntax('Empty JSON literal', $this->pos - 2);
-        } elseif (!isset($decodeCharacters[$value[0]])) {
-            $value = $this->decodeJson('"' . $value . '"');
-        } else {
+        } elseif (isset($decodeCharacters[$value[0]])) {
+            // Always decode the JSON directly if it starts with these chars
             $value = $this->decodeJson($value);
+        } elseif (isset($decodeNumbers[$value[0]])) {
+            // If it starts with a "-" or numbers, then attempt to JSON decode
+            try {
+                $value = $this->decodeJson($value);
+            } catch (SyntaxErrorException $e) {
+                // if it failed to decode, treat it as a string
+                $value = $this->decodeJson('"' . $value . '"');
+            }
+        } else {
+            $value = $this->decodeJson('"' . $value . '"');
         }
 
         $literal['value'] = $value;
