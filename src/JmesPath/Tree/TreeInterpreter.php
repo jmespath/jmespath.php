@@ -65,11 +65,9 @@ class TreeInterpreter extends AbstractTreeVisitor
      */
     private function visit_field(array $node, $value)
     {
-        if (!is_array($value)) {
-            return null;
-        }
-
-        return isset($value[$node['key']]) ? $value[$node['key']] : null;
+        return is_array($value) && isset($value[$node['key']])
+            ? $value[$node['key']]
+            : null;
     }
 
     /**
@@ -104,9 +102,10 @@ class TreeInterpreter extends AbstractTreeVisitor
      */
     private function visit_pipe(array $node, $value)
     {
-        $value = $this->dispatch($node['children'][0], $value);
-
-        return $this->dispatch($node['children'][1], $value);
+        return $this->dispatch(
+            $node['children'][1],
+            $this->dispatch($node['children'][0], $value)
+        );
     }
 
     /**
@@ -258,11 +257,11 @@ class TreeInterpreter extends AbstractTreeVisitor
         }
 
         // Validate the expected type of the projection
-        if (isset($node['from'])) {
+        if (isset($node['from']) && $left) {
             $keys = array_keys($left);
-            if ($node['from'] == 'object' && $keys && $keys[0] === 0) {
+            if ($node['from'] == 'object' && $keys[0] === 0) {
                 return null;
-            } elseif ($node['from'] == 'array' && $keys && $keys[0] !== 0) {
+            } elseif ($node['from'] == 'array' && $keys[0] !== 0) {
                 return null;
             }
         }
