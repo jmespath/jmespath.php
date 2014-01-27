@@ -139,7 +139,7 @@ class TreeInterpreter extends AbstractTreeVisitor
      */
     private function visit_multi_select_hash(array $node, $value)
     {
-        if (!is_array($value)) {
+        if ($value === null) {
             return null;
         }
 
