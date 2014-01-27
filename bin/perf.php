@@ -74,12 +74,14 @@ function runCase(
         if (!$_SERVER['jp_cache']) {
             $runtime->clearCache();
         }
-        $t = microtime(true);
         try {
+            $t = microtime(true);
             $runtime->search($expression, $given);
+            $tryTime = (microtime(true) - $t) * 1000;
         } catch (\Exception $e) {
+            // Failure test cases shouldn't be tested
+            return 0;
         }
-        $tryTime = (microtime(true) - $t) * 1000;
         if ($tryTime < $best) {
             $best = $tryTime;
         }
