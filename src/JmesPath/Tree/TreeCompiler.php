@@ -7,7 +7,7 @@ use JmesPath\Lexer;
 /**
  * Tree visitor used to compile JMESPath expressions into native PHP code.
  */
-class TreeCompiler extends AbstractTreeVisitor
+class TreeCompiler implements TreeVisitorInterface
 {
     /** @var int Current level of indentation */
     private $indentation;
@@ -41,6 +41,16 @@ class TreeCompiler extends AbstractTreeVisitor
             ->write('}');
 
         return $this->source;
+    }
+
+    /**
+     * Handles evaluating undefined types without paying the cost of validation
+     */
+    public function __call($method, $args)
+    {
+        throw new \RuntimeException(
+            sprintf('Invalid node encountered: %s', json_encode($args[0]))
+        );
     }
 
     private function dispatch(array $node)
