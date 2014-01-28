@@ -52,8 +52,8 @@ DefaultRuntime and CompilerRuntime.
 DefaultRuntime is utilized by ``JmesPath\search()`` by default. Depending on
 your application, it may be useful to customize the runtime used by
 ``JmesPath\search()``. You can change the runtime utilized by
-``JmesPath\search()`` by setting a custom ``RuntimeInterface`` object on the
-``JmesPath\Runtime\DefaultRuntime::$globalRuntime`` public static property.
+``JmesPath\search()`` by calling ``JmesPath\registerRuntime()``, passing in an
+instance of ``JmesPath\Runtime\RuntimeInterface``.
 
 DefaultRuntime
 ~~~~~~~~~~~~~~
@@ -96,7 +96,7 @@ PHP source code in a specific directory, or to ``true`` to compile JMESPath
 expressions to your system's temporary directory.
 
 The following example shows how to register a CompilerRuntime with
-``JmesPath\seach()``:
+``JmesPath\search()``:
 
 .. code-block:: php
 
@@ -104,7 +104,7 @@ The following example shows how to register a CompilerRuntime with
         'compile' => '/path/to/compile_directory'
     ));
 
-    JmesPath\Runtime\DefaultRuntime::$globalInstance = $runtime;
+    JmesPath\registerRuntime($runtime);
 
 Testing
 =======

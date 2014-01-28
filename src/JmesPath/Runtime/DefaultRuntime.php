@@ -12,10 +12,8 @@ use JmesPath\Tree\TreeVisitorInterface;
 class DefaultRuntime extends AbstractRuntime
 {
     /**
-     * @var RuntimeInterface The Runtime used in \JmesPath::search. This
-     *     variable can be modified to change the global instance. This is set
-     *     to an instance of DefaultRuntime if it is still null when the first
-     *     JmesPath\search() method is called.
+     * @var RuntimeInterface The Runtime used in \JmesPath::search.
+     * @private Use JmesPath\registerRuntime() rather than relying on this var
      */
     public static $globalRuntime;
 

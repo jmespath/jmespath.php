@@ -25,6 +25,16 @@ function search($expression, $data)
 }
 
 /**
+ * Registers a runtime that will be used in JmesPath\search()
+ *
+ * @param RuntimeInterface $runtime Runtime to register
+ */
+function registerRuntime(RuntimeInterface $runtime)
+{
+    DefaultRuntime::$globalRuntime = $runtime;
+}
+
+/**
  * Function used to easily create a customized JMESPath runtime environment.
  *
  * @param array $options Options used to create the runtime
