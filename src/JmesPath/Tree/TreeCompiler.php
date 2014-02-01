@@ -285,7 +285,7 @@ class TreeCompiler implements TreeVisitorInterface
     private function visit_slice(array $node)
     {
         return $this
-            ->write("\$value = \$runtime->callFunction('array_slice', array(")
+            ->write("\$value = \$runtime->callFunction('slice', array(")
             ->indent()
                 ->write(sprintf(
                     '$value, %s, %s, %s',

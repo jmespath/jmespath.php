@@ -214,7 +214,7 @@ class TreeInterpreter implements TreeVisitorInterface
 
             case 'slice':
                 // Returns an array slice of the current value
-                return $this->runtime->callFunction('array_slice', array(
+                return $this->runtime->callFunction('slice', array(
                     $value,
                     $node['args'][0],
                     $node['args'][1],

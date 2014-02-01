@@ -3,7 +3,8 @@
     "foo": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     "bar": {
       "baz": 1
-    }
+    },
+    "str": "abc 123, and above all listen to me"
   },
   "cases": [
     {
@@ -44,15 +45,15 @@
     },
     {
       "expression": "foo[10:0:-1]",
-      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1]
     },
     {
       "expression": "foo[10:5:-1]",
-      "result": [9, 8, 7, 6, 5]
+      "result": [9, 8, 7, 6]
     },
     {
       "expression": "foo[8:2:-2]",
-      "result": [8, 6, 4, 2]
+      "result": [8, 6, 4]
     },
     {
       "expression": "foo[0:20]",
@@ -60,7 +61,7 @@
     },
     {
       "expression": "foo[10:-20:-1]",
-      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1]
     },
     {
       "expression": "foo[10:-20]",
@@ -72,7 +73,7 @@
     },
     {
       "expression": "foo[:-5:-1]",
-      "result": [9, 8, 7, 6, 5]
+      "result": [9, 8, 7, 6]
     },
     {
       "expression": "foo[8:2:0]",
@@ -81,6 +82,18 @@
     {
       "expression": "foo[8:2:0:1]",
       "error": "syntax"
+    },
+    {
+      "expression": "str[::-1]",
+      "result": "em ot netsil lla evoba dna ,321 cba"
+    },
+    {
+      "expression": "str[:-5:-1]",
+      "result": "em o"
+    },
+    {
+      "expression": "str[2:3]",
+      "result": "c"
     }
   ]
 }]

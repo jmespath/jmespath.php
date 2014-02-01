@@ -3,17 +3,17 @@
 namespace JmesPath\Fn;
 
 /**
- * array _array_slice(array $arr, $start = null, $end = null, $step = null)
+ * array|string slice($subject, $start = null, $end = null, $step = null)
  *
- * Slices an array using Python slicing syntax.
+ * Slices an array or string using Python slicing syntax.
  * @link http://docs.python.org/2/tutorial/introduction.html#strings
  */
-class FnArraySlice extends AbstractFn
+class FnSlice extends AbstractFn
 {
     protected $rules = array(
         'arity' => array(4, 4),
         'args' => array(
-            0 => array('type' => array('array'), 'failure' => 'null'),
+            0 => array('type' => array('array', 'string'), 'failure' => 'null'),
             1 => array('type' => array('integer', 'NULL')),
             2 => array('type' => array('integer', 'NULL')),
             3 => array('type' => array('integer', 'NULL'))
@@ -67,22 +67,27 @@ class FnArraySlice extends AbstractFn
         return array($start, $stop, $step);
     }
 
-    private function sliceIndices($arr, $start, $stop, $step)
+    private function sliceIndices($subject, $start, $stop, $step)
     {
-        $length = count($arr);
-        list($start, $stop, $step) = $this->adjustSlice($length, $start, $stop, $step);
+        $type = gettype($subject);
+        list($start, $stop, $step) = $this->adjustSlice(
+            $type == 'string' ? strlen($subject) : count($subject),
+            $start,
+            $stop,
+            $step
+        );
 
         $result = array();
         if ($step > 0) {
             for ($i = $start; $i < $stop; $i += $step) {
-                $result[] = $arr[$i];
+                $result[] = $subject[$i];
             }
         } else {
-            for ($i = $start; $i >= $stop; $i += $step) {
-                $result[] = $arr[$i];
+            for ($i = $start; $i > $stop; $i += $step) {
+                $result[] = $subject[$i];
             }
         }
 
-        return $result;
+        return $type == 'string' ? implode($result, '') : $result;
     }
 }

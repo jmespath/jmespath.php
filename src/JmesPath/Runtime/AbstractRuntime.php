@@ -34,7 +34,7 @@ abstract class AbstractRuntime implements RuntimeInterface
         'union'       => 'JmesPath\Fn\FnUnion',
         'uppercase'   => 'JmesPath\Fn\FnUppercase',
         'values'      => 'JmesPath\Fn\FnValues',
-        'array_slice' => 'JmesPath\Fn\FnArraySlice'
+        'slice'       => 'JmesPath\Fn\FnSlice'
     );
 
     /** @var array Map of function names to instantiated function objects */
