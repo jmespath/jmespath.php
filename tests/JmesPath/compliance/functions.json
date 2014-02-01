@@ -341,26 +341,6 @@
       "result": null
     },
     {
-      "expression": "reverse(@.arr)",
-      "result": ["100", "a", 5, 4, 3, -1]
-    },
-    {
-      "expression": "reverse(@.strings)",
-      "result":  ["c", "b", "a"]
-    },
-    {
-      "expression": "reverse(abc)",
-      "result": null
-    },
-    {
-      "expression": "reverse(@.empty)",
-      "result": null
-    },
-    {
-      "expression": "reverse(@)",
-      "result": null
-    },
-    {
       "expression": "sort(@.arr)",
       "result": [-1, 3, 4, 5, "a", "100"]
     },
@@ -379,34 +359,6 @@
     {
       "expression": "sort(@)",
       "result": null
-    },
-    {
-      "expression": "substring(`abc`, `0`, `-1`)",
-      "result": "ab"
-    },
-    {
-      "expression": "substring(`abc`, `-2`)",
-      "result": "bc"
-    },
-    {
-      "expression": "substring(`abc123`, `1`)",
-      "result": "bc123"
-    },
-    {
-      "expression": "substring(`false`, `1`, `1`)",
-      "result": null
-    },
-    {
-      "expression": "substring(`abc`, `true`)",
-      "error": "runtime"
-    },
-    {
-      "expression": "substring(`abc`, `1`, `false`)",
-      "error": "runtime"
-    },
-    {
-      "expression": "substring()",
-      "error": "runtime"
     },
     {
       "expression": "type(`abc`)",
