@@ -16,17 +16,6 @@ class AbstractRuntimeTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Cannot override the built-in function abs
-     */
-    public function testCannotOverrideBuiltInFunctions()
-    {
-        $r = $this->getMockBuilder('JmesPath\Runtime\AbstractRuntime')
-            ->getMockForAbstractClass();
-        $r->registerFunction('abs', function () {});
-    }
-
-    /**
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Call to undefined function: foo
      */

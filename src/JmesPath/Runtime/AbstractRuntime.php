@@ -10,57 +10,44 @@ abstract class AbstractRuntime implements RuntimeInterface
     /** @var Parser */
     protected $parser;
 
-    /** @var array Map of function names to class names */
+    /** @var array Map of function names to callables */
     private $fnMap = array(
-        'abs'         => 'JmesPath\Fn\FnAbs',
-        'avg'         => 'JmesPath\Fn\FnAvg',
-        'ceil'        => 'JmesPath\Fn\FnCeil',
-        'concat'      => 'JmesPath\Fn\FnConcat',
-        'contains'    => 'JmesPath\Fn\FnContains',
-        'floor'       => 'JmesPath\Fn\FnFloor',
-        'get'         => 'JmesPath\Fn\FnGet',
-        'join'        => 'JmesPath\Fn\FnJoin',
-        'keys'        => 'JmesPath\Fn\FnKeys',
-        'matches'     => 'JmesPath\Fn\FnMatches',
-        'max'         => 'JmesPath\Fn\FnMax',
-        'min'         => 'JmesPath\Fn\FnMin',
-        'length'      => 'JmesPath\Fn\FnLength',
-        'lowercase'   => 'JmesPath\Fn\FnLowercase',
-        'sort'        => 'JmesPath\Fn\FnSort',
-        'sort_by'     => 'JmesPath\Fn\FnSortBy',
-        'type'        => 'JmesPath\Fn\FnType',
-        'union'       => 'JmesPath\Fn\FnUnion',
-        'uppercase'   => 'JmesPath\Fn\FnUppercase',
-        'values'      => 'JmesPath\Fn\FnValues',
-        'slice'       => 'JmesPath\Fn\FnSlice'
+        'abs'      => array('JmesPath\DefaultFunctions', 'abs'),
+        'avg'      => array('JmesPath\DefaultFunctions', 'avg'),
+        'ceil'     => array('JmesPath\DefaultFunctions', 'ceil'),
+        'concat'   => array('JmesPath\DefaultFunctions', 'concat'),
+        'contains' => array('JmesPath\DefaultFunctions', 'contains'),
+        'floor'    => array('JmesPath\DefaultFunctions', 'floor'),
+        'get'      => array('JmesPath\DefaultFunctions', 'get'),
+        'join'     => array('JmesPath\DefaultFunctions', 'join'),
+        'keys'     => array('JmesPath\DefaultFunctions', 'keys'),
+        'max'      => array('JmesPath\DefaultFunctions', 'max'),
+        'min'      => array('JmesPath\DefaultFunctions', 'min'),
+        'length'   => array('JmesPath\DefaultFunctions', 'length'),
+        'sort'     => array('JmesPath\DefaultFunctions', 'sort'),
+        'sort_by'  => array('JmesPath\DefaultFunctions', 'sort_by'),
+        'type'     => array('JmesPath\DefaultFunctions', 'type'),
+        'union'    => array('JmesPath\DefaultFunctions', 'union'),
+        'values'   => array('JmesPath\DefaultFunctions', 'values'),
+        'slice'    => array('JmesPath\DefaultFunctions', 'slice'),
     );
-
-    /** @var array Map of function names to instantiated function objects */
-    private $fn = array();
 
     public function registerFunction($name, $fn)
     {
         if (!is_callable($fn)) {
             throw new \InvalidArgumentException('Function must be callable');
-        } elseif (isset($this->fnMap[$name])) {
-            throw new \InvalidArgumentException(
-                "Cannot override the built-in function {$name}");
         }
 
-        $this->fn[$name] = $fn;
+        $this->fnMap[$name] = $fn;
     }
 
     public function callFunction($name, $args)
     {
-        if (!isset($this->fn[$name])) {
-            if (!isset($this->fnMap[$name])) {
-                throw new \RuntimeException("Call to undefined function: {$name}");
-            } else {
-                $this->fn[$name] = new $this->fnMap[$name];
-            }
+        if (!isset($this->fnMap[$name])) {
+            throw new \RuntimeException("Call to undefined function: {$name}");
         }
 
-        return call_user_func($this->fn[$name], $args);
+        return call_user_func($this->fnMap[$name], $args);
     }
 
     /**

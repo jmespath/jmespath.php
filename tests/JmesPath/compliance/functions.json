@@ -126,7 +126,7 @@
     },
     {
       "expression": "concat(@.strings[0], @.strings[1], strings[2], @)",
-      "result": "abc"
+      "result": null
     },
     {
       "expression": "concat(`null`, `false`)",
@@ -157,12 +157,12 @@
       "result": true
     },
     {
-      "expression": "contains(@.dec, `1.9`)",
-      "error": "runtime"
+      "expression": "contains(dec, `1.9`)",
+      "result": true
     },
     {
-      "expression": "contains(@.dec, `false`)",
-      "error": "runtime"
+      "expression": "contains(dec, `false`)",
+      "result": null
     },
     {
       "expression": "length(@)",
@@ -273,38 +273,6 @@
       "result": null
     },
     {
-      "expression": "lowercase(@.str)",
-      "result": "str"
-    },
-    {
-      "expression": "lowercase(`false`)",
-      "result": null
-    },
-    {
-      "expression": "matches(@.str, `str`)",
-      "result": false
-    },
-    {
-      "expression": "matches(@.str, `str`, `i`)",
-      "result": true
-    },
-    {
-      "expression": "matches(@.str, `false`)",
-      "error": "runtime"
-    },
-    {
-      "expression": "matches(@.str, `ST`, `im`)",
-      "result": true
-    },
-    {
-      "expression": "matches(`false`, `str`)",
-      "result": null
-    },
-    {
-      "expression": "matches(`str`, `str`, `i`, `123`)",
-      "error": "runtime"
-    },
-    {
       "expression": "max(@.arr)",
       "result": 5
     },
@@ -362,51 +330,43 @@
     },
     {
       "expression": "type(`abc`)",
-      "result": "String"
+      "result": "string"
     },
     {
       "expression": "type(`123`)",
-      "result": "Number"
+      "result": "number"
     },
     {
       "expression": "type(`123`)",
-      "result": "Number"
+      "result": "number"
     },
     {
       "expression": "type(`1.2`)",
-      "result": "Number"
+      "result": "number"
     },
     {
       "expression": "type(`true`)",
-      "result": "Boolean"
+      "result": "boolean"
     },
     {
       "expression": "type(`false`)",
-      "result": "Boolean"
+      "result": "boolean"
     },
     {
       "expression": "type(@.empty)",
-      "result": "Array"
+      "result": "array"
     },
     {
       "expression": "type(empty)",
-      "result": "Array"
+      "result": "array"
     },
     {
       "expression": "type(@.strings)",
-      "result": "Array"
+      "result": "array"
     },
     {
       "expression": "type(@)",
-      "result": "Object"
-    },
-    {
-      "expression": "uppercase(@.str)",
-      "result": "STR"
-    },
-    {
-      "expression": "uppercase(`false`)",
-      "result": null
+      "result": "object"
     }
   ]
 }, {
