@@ -38,14 +38,13 @@ function registerRuntime(RuntimeInterface $runtime)
  * Function used to easily create a customized JMESPath runtime environment.
  *
  * @param array $options Options used to create the runtime
- *  'parser'      => Parser used to parse expressions into an AST
- *  'interpreter' => Tree interpreter used to interpret the AST
- *  'compile'     => If specified, the parsed AST will be compiled
- *                   to PHP code. If set to `true` the compiled PHP code will
- *                   be saved to PHP's temp directory. You can specify the
- *                   directory used to store the cached PHP code by passing
- *                   a string. Note: If this value is set, then any provided
- *                   'interpreter' value will be ignored.
+ *     - **parser**: Parser used to parse expressions into an AST
+ *     - **interpreter**: Tree interpreter used to interpret the AST
+ *     - **compile**: If specified, the parsed AST will be compiled to PHP
+ *       code. If set to `true` the compiled PHP code will be saved to PHP's
+ *       temp directory. You can specify the directory used to store the
+ *       cached PHP code by passing a string. Note: If this value is set, then
+ *       any provided 'interpreter' value will be ignored.
  * @return RuntimeInterface
  * @throws \InvalidArgumentException if the provided compile option is invalid
  */
