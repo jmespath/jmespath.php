@@ -32,6 +32,30 @@ data structures. It requires PHP 5.3+ and can be installed through
 - `JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
 - `JMESPath Python libary <https://github.com/boto/jmespath>`_
 
+Installing
+==========
+
+jmespath.php requires PHP 5.3 or greater.
+
+# Download and install Composer: https://getcomposer.org/doc/00-intro.md#installation-nix
+
+  .. code-block:: bash
+
+      curl -sS https://getcomposer.org/installer | php
+      ./composer.phar install
+
+# Update your project's composer.json (in the root directory of your project):
+
+  .. code-block:: js
+
+      {
+          "require": {
+              "mtdowling/jmespath.php": "<2"
+          }
+      }
+
+# Install dependencies using ``./composer.phar install``
+
 PHP Usage
 =========
 
@@ -42,6 +66,11 @@ function can be used in most cases when using the library.
 .. code-block:: php
 
     $result = JmesPath\search($expression, $data);
+
+.. note::
+
+    If you do not install through Composer, then you will need to manually
+    require the functions.php script.
 
 Runtimes
 --------
@@ -115,14 +144,8 @@ These compliance tests are utilized by jmespath.php to ensure consistency with
 other implementations, and can serve as examples of the language.
 
 jmespath.php is tested using PHPUnit. In order to run the tests, you need to
-first install the dependencies using Composer:
-
-.. code-block:: bash
-
-    curl -sS https://getcomposer.org/installer | php
-    ./composer.phar install
-
-Now you just need to run the tests using phpunit:
+first install the dependencies using Composer as described in the *Installation*
+section. Next you just need to run the tests using phpunit:
 
 .. code-block:: bash
 

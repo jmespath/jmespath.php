@@ -21,10 +21,10 @@
   },
 
   "autoload": {
-    "psr-0": {
-      "JmesPath": "src/"
+    "psr-4": {
+      "JmesPath\\": "src/"
     },
-    "files": ["src/JmesPath/functions.php"]
+    "files": ["src/functions.php"]
   },
 
   "bin": ["bin/jp.php"],

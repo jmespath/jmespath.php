@@ -16,7 +16,7 @@ class functionsTest extends \PHPUnit_Framework_TestCase
         $r = \JmesPath\createRuntime(array('compile' => 'compiled'));
         $this->assertInstanceOf('JmesPath\Runtime\CompilerRuntime', $r);
         $r->search('foo.bar.fn', array());
-        $file = sprintf('%s/../../compiled/jmespath_%s.php', __DIR__, md5('foo.bar.fn'));
+        $file = sprintf('%s/../compiled/jmespath_%s.php', __DIR__, md5('foo.bar.fn'));
         $this->assertFileExists($file);
         $r->clearCache();
         $this->assertFileNotExists($file);
