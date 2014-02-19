@@ -37,16 +37,16 @@ Installing
 
 jmespath.php requires PHP 5.3 or greater.
 
-# Download and install Composer: https://getcomposer.org/doc/00-intro.md#installation-nix
+1. Download and install Composer: https://getcomposer.org/doc/00-intro.md#installation-nix
 
-  .. code-block:: bash
+   .. code-block:: bash
 
       curl -sS https://getcomposer.org/installer | php
       ./composer.phar install
 
-# Update your project's composer.json (in the root directory of your project):
+2. Update your project's composer.json (in the root directory of your project):
 
-  .. code-block:: js
+   .. code-block:: js
 
       {
           "require": {
@@ -54,7 +54,7 @@ jmespath.php requires PHP 5.3 or greater.
           }
       }
 
-# Install dependencies using ``./composer.phar install``
+3. Install dependencies using ``./composer.phar install``
 
 PHP Usage
 =========
