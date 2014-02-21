@@ -77,7 +77,7 @@ class TreeCompiler implements TreeVisitorInterface
     }
 
     /**
-     * Increases the indentation level of code being written
+     * Decreases the indentation level of code being written
      *
      * @return $this
      */
@@ -89,7 +89,7 @@ class TreeCompiler implements TreeVisitorInterface
     }
 
     /**
-     * Decreases the indentation level of code being written
+     * Increases the indentation level of code being written
      *
      * @return $this
      */
