@@ -19,7 +19,7 @@ for ($i = 1, $t = count($argv); $i < $t; $i++) {
     }
 }
 
-$dir = __DIR__ . '/../tests/JmesPath/compliance/perf';
+$dir = __DIR__ . '/../tests/compliance/perf';
 if (count($extra)) {
     if (count($extra) > 1 || strpos($extra[0], '--') === 0) {
         die("perf.php [--compile] [--cache] [script_directory]\n\n");
