@@ -60,14 +60,12 @@ class TokenStream
             $this->token = $this->tokens[++$this->pos];
         }
 
-        if ($match) {
-            if (!isset($match[$this->token['type']])) {
-                throw new SyntaxErrorException(
-                    $match,
-                    $this->tokens[$this->pos],
-                    (string) $this
-                );
-            }
+        if ($match && !isset($match[$this->token['type']])) {
+            throw new SyntaxErrorException(
+                $match,
+                $this->tokens[$this->pos],
+                (string) $this
+            );
         }
     }
 }
