@@ -8,9 +8,9 @@ php:
   - hhvm
 
 before_script:
-  - composer install --dev
+  - composer install
 
-script: vendor/bin/phpunit
+script: make test
 
 matrix:
   allow_failures:
