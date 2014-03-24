@@ -145,8 +145,14 @@ other implementations, and can serve as examples of the language.
 
 jmespath.php is tested using PHPUnit. In order to run the tests, you need to
 first install the dependencies using Composer as described in the *Installation*
-section. Next you just need to run the tests using phpunit:
+section. Next you just need to run the tests via make:
 
 .. code-block:: bash
 
-    vendor/bin/phpunit
+    make test
+
+You can run a suite of performance tests as well:
+
+.. code-block:: bash
+
+    make perf
