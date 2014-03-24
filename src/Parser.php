@@ -27,25 +27,25 @@ class Parser
     );
 
     private static $precedence = array(
-        Lexer::T_IDENTIFIER => 0,
-        Lexer::T_DOT        => 0,
-        Lexer::T_LPARENS    => 0,
-        Lexer::T_LITERAL    => 0,
-        Lexer::T_FUNCTION   => 0,
-        Lexer::T_LBRACKET   => 0,
-        Lexer::T_LBRACE     => 0,
-        Lexer::T_AT         => 0,
-        Lexer::T_COMPARATOR => 2,
-        Lexer::T_STAR       => 3,
-        Lexer::T_FILTER     => 3,
+        Lexer::T_EOF        => 0,
+        Lexer::T_PIPE       => 1,
+        Lexer::T_COMMA      => 2,
+        Lexer::T_RPARENS    => 2,
+        Lexer::T_RBRACKET   => 2,
+        Lexer::T_RBRACE     => 2,
+        Lexer::T_OR         => 3,
         Lexer::T_MERGE      => 4,
-        Lexer::T_OR         => 5,
-        Lexer::T_RBRACKET   => 6,
-        Lexer::T_RBRACE     => 6,
-        Lexer::T_RPARENS    => 6,
-        Lexer::T_COMMA      => 6,
-        Lexer::T_PIPE       => 7,
-        Lexer::T_EOF        => 99
+        Lexer::T_STAR       => 5,
+        Lexer::T_FILTER     => 5,
+        Lexer::T_COMPARATOR => 6,
+        Lexer::T_IDENTIFIER => 7,
+        Lexer::T_DOT        => 7,
+        Lexer::T_LPARENS    => 7,
+        Lexer::T_LITERAL    => 7,
+        Lexer::T_FUNCTION   => 7,
+        Lexer::T_LBRACKET   => 7,
+        Lexer::T_LBRACE     => 7,
+        Lexer::T_AT         => 7
     );
 
     /** @var array Cached current AST node */
@@ -76,29 +76,21 @@ class Parser
         $this->tokens = $this->lexer->tokenize($expression);
         $this->tokens->next(self::$exprTokens);
 
-        return $this->parseExpression(999);
+        return $this->parseExpression();
     }
 
     /**
-     * Parses an expression until a token is encountered greater than the
-     * provided precedence.
+     * Parses an expression while rbp < lbp.
      *
-     * @param int $precedence Precedence cut-off
+     * @param int   $rbp  Right bound precedence
+     * @param array $left Left node
      *
      * @return array
      */
-    private function parseExpression($precedence = 0)
-    {
-        return $this->precedenceParse(
-            $precedence,
-            $this->{'parse_' . $this->tokens->token['type']}()
-        );
-    }
-
-    private function precedenceParse($precedence = 0, $left = null)
+    private function parseExpression($rbp = 0, $left = null)
     {
         $type = $this->tokens->token['type'];
-        while ($type != Lexer::T_EOF && $precedence >= self::$precedence[$type]) {
+        while ($type != Lexer::T_EOF && $rbp < self::$precedence[$type]) {
             $left = $this->{'parse_' . $type}($left);
             $type = $type = $this->tokens->token['type'];
         }
@@ -150,7 +142,7 @@ class Parser
             $this->tokens->next();
             $next = $this->parseMultiSelectList();
         } else {
-            $next = $this->parseExpression();
+            $next = $this->parseExpression(6);
         }
 
         // Only create a sub-expression if there is a left node. If there's
@@ -188,7 +180,7 @@ class Parser
             'from'     => 'object',
             'children' => array(
                 $left ?: self::$currentNode,
-                $this->precedenceParse() ?: self::$currentNode
+                $this->parseExpression(6) ?: self::$currentNode
             )
         );
     }
@@ -205,7 +197,7 @@ class Parser
                     'type'     => 'merge',
                     'children' => array($left ?: self::$currentNode)
                 ),
-                $this->precedenceParse(3) ?: self::$currentNode
+                $this->parseExpression(self::$precedence['T_MERGE']) ?: self::$currentNode
             )
         );
     }
@@ -216,7 +208,7 @@ class Parser
 
         return array(
             'type'     => 'or',
-            'children' => array($left, $this->parseExpression())
+            'children' => array($left, $this->parseExpression(6))
         );
     }
 
@@ -234,7 +226,7 @@ class Parser
 
         return array(
             'type'     => 'pipe',
-            'children' => array($left, $this->parseExpression(5))
+            'children' => array($left, $this->parseExpression(self::$precedence['T_PIPE']))
         );
     }
 
@@ -259,7 +251,7 @@ class Parser
         return array(
             'type'     => 'comparator',
             'relation' => $token['value'],
-            'children' => array($left, $this->parseExpression())
+            'children' => array($left, $this->parseExpression(6))
         );
     }
 
@@ -270,7 +262,7 @@ class Parser
         $this->tokens->next();
 
         while ($this->tokens->token['type'] !== Lexer::T_RPARENS) {
-            $args[] = $this->parseExpression();
+            $args[] = $this->parseExpression(6);
             if ($this->tokens->token['type'] == Lexer::T_COMMA) {
                 $this->tokens->next();
             }
@@ -295,7 +287,7 @@ class Parser
     private function parse_T_FILTER(array $left = null)
     {
         $this->tokens->next(self::$exprTokens);
-        $expression = $this->parseExpression(5);
+        $expression = $this->parseExpression(self::$precedence['T_FILTER'] - 1);
         if ($this->tokens->token['type'] != Lexer::T_RBRACKET) {
             $this->throwSyntax('Expected a closing T_RBRACKET for the filter');
         }
@@ -309,7 +301,7 @@ class Parser
                     'type' => 'condition',
                     'children' => array(
                         $expression,
-                        $this->precedenceParse(3) ?: self::$currentNode
+                        $this->parseExpression(self::$precedence['T_FILTER'] - 1) ?: self::$currentNode
                     )
                 )
             )
@@ -361,7 +353,7 @@ class Parser
             'from'     => 'array',
             'children' => array(
                 $left ?: self::$currentNode,
-                $this->precedenceParse(3) ?: self::$currentNode
+                $this->parseExpression(self::$precedence['T_STAR'] - 1) ?: self::$currentNode
             )
         );
     }
@@ -411,7 +403,7 @@ class Parser
     {
         $nodes = array();
         do {
-            $nodes[] = $this->parseExpression(5);
+            $nodes[] = $this->parseExpression(self::$precedence['T_OR'] - 1);
             $this->assertNotEof();
             if ($this->tokens->token['type'] == Lexer::T_COMMA) {
                 $this->tokens->next(self::$exprTokens);
@@ -445,11 +437,11 @@ class Parser
         static $validColon = array(Lexer::T_COLON => true);
         $keyToken = $this->tokens->token;
         $this->tokens->next($validColon);
-        $this->tokens->next();
+        $this->tokens->next(self::$exprTokens);
 
         return array(
             'type'     => 'key_value_pair',
-            'children' => array($this->parseExpression(2)),
+            'children' => array($this->parseExpression(self::$precedence['T_COMMA'])),
             'key'      => $keyToken['value']
         );
     }
