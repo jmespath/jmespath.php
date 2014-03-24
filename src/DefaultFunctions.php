@@ -61,20 +61,6 @@ class DefaultFunctions
         return ceil($args[0]);
     }
 
-    public static function concat(array $args)
-    {
-        if (!self::validate($args, array('...' => array('string', 'number')), 2, -1)) {
-            return null;
-        }
-
-        $result = '';
-        foreach ($args as $arg) {
-            $result .= $arg;
-        }
-
-        return $result;
-    }
-
     public static function contains(array $args)
     {
         if (!self::validate($args, array(
@@ -101,14 +87,14 @@ class DefaultFunctions
         return floor($args[0]);
     }
 
-    public static function get(array $args)
+    public static function not_null(array $args)
     {
         if (!self::validate($args, array(), 1, -1)) {
             return null;
         }
 
         foreach ($args as $arg) {
-            if ($arg || $arg === 0) {
+            if ($arg !== null) {
                 return $arg;
             }
         }
@@ -203,54 +189,29 @@ class DefaultFunctions
         return $args[0];
     }
 
-    public static function sort_by(array $args)
-    {
-        if (!self::validate($args, array(
-                0 => array('array'),
-                1 => array('string')
-            ), 2, 2) ||
-            ($args[0] && !isset($args[0][0]))
-        ) {
-            return null;
-        }
-
-        static $order = array(
-            'array'   => 0,
-            'null'    => 1,
-            'boolean' => 2,
-            'number'  => 3,
-            'string'  => 4
-        );
-
-        // Must be an Array
-        if ($args[0] && !isset($args[0][0])) {
-            return null;
-        }
-
-        $key = $args[1];
-
-        usort($args[0], function ($a, $b) use ($key, $order) {
-            // Different types, so no comparison
-            $typea = DefaultFunctions::gettype($a);
-            $typeb = DefaultFunctions::gettype($b);
-            if ($typeCmp = $order[$typea] - $order[$typeb]) {
-                return $typeCmp;
-            } elseif (!isset($a[$key])) {
-                return !isset($b[$key]) ? 0 : 1;
-            } elseif (!isset($b[$key])) {
-                return -1;
-            } else {
-                return strnatcmp($a[$key], $b[$key]);
-            }
-        });
-
-        return $args[0];
-    }
-
     public static function type(array $args)
     {
         self::validateArity(1, 1, $args);
         return self::gettype($args[0]);
+    }
+
+    public static function to_string(array $args)
+    {
+        self::validateArity(1, 1, $args);
+        return is_string($args[0]) ? $args[0] : json_encode($args[0]);
+    }
+
+    public static function to_number(array $args)
+    {
+        self::validateArity(1, 1, $args);
+        switch (self::gettype($args[0])) {
+            case 'number':
+                return $args[0];
+            case 'string':
+                return strpos($args[0], '.') ? (float) $args[0] : (int) $args[0];
+            default:
+                return null;
+        }
     }
 
     public static function union(array $args)

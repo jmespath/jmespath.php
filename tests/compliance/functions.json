@@ -117,30 +117,6 @@
       "result": null
     },
     {
-      "expression": "concat(@.strings[0], strings[1], @.strings[2])",
-      "result": "abc"
-    },
-    {
-      "expression": "concat(strings[0], strings[1], @.strings[2], foo)",
-      "result": "abc-1"
-    },
-    {
-      "expression": "concat(@.strings[0], @.strings[1], strings[2], @)",
-      "result": null
-    },
-    {
-      "expression": "concat(`null`, `false`)",
-      "result": null
-    },
-    {
-      "expression": "concat(`foo`)",
-      "error": "runtime"
-    },
-    {
-      "expression": "concat()",
-      "error": "runtime"
-    },
-    {
       "expression": "contains(`abc`, `a`)",
       "result": true
     },
@@ -191,26 +167,6 @@
     {
       "expression": "floor(@.str)",
       "result": null
-    },
-    {
-      "expression": "get(@.empty)",
-      "result": null
-    },
-    {
-      "expression": "get(@.empty, @.\"false\")",
-      "result": null
-    },
-    {
-      "expression": "get(@.empty, @.\"false\", @.foo)",
-      "result": -1
-    },
-    {
-      "expression": "get(@.zero, `10`)",
-      "result": 0
-    },
-    {
-      "expression": "get(`null`, `false`, @.empty, `true`)",
-      "result": true
     },
     {
       "expression": "join(`, `, str)",
