@@ -45,7 +45,8 @@ class Parser
         Lexer::T_FUNCTION   => 7,
         Lexer::T_LBRACKET   => 7,
         Lexer::T_LBRACE     => 7,
-        Lexer::T_AT         => 7
+        Lexer::T_AT         => 7,
+        Lexer::T_NUMBER     => 7,
     );
 
     /** @var array Cached current AST node */
