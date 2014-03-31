@@ -9,20 +9,14 @@ class DefaultFunctions
 {
     public static function abs(array $args)
     {
-        if (!self::validate($args, array(array('number')))) {
-            return null;
-        }
+        self::validate($args, array(array('number')));
 
         return abs($args[0]);
     }
 
     public static function avg(array $args)
     {
-        if (!self::validate($args, array(array('array'))) ||
-            !isset($args[0][0])
-        ) {
-            return null;
-        }
+        self::validate($args, array(array('array')));
 
         $sum = $total = 0;
         foreach ($args[0] as $v) {
@@ -39,20 +33,16 @@ class DefaultFunctions
 
     public static function ceil(array $args)
     {
-        if (!self::validate($args, array(array('number')))) {
-            return null;
-        }
+        self::validate($args, array(array('number')));
 
         return ceil($args[0]);
     }
 
     public static function contains(array $args)
     {
-        if (!self::validate($args, array(
+        self::validate($args, array(
             0 => array('string', 'array')
-        ), 2, 2)) {
-            return null;
-        }
+        ), 2, 2);
 
         if (is_array($args[0])) {
             return in_array($args[1], $args[0]);
@@ -65,18 +55,14 @@ class DefaultFunctions
 
     public static function floor(array $args)
     {
-        if (!self::validate($args, array(array('number')))) {
-            return null;
-        }
+        self::validate($args, array(array('number')));
 
         return floor($args[0]);
     }
 
     public static function not_null(array $args)
     {
-        if (!self::validate($args, array(), 1, -1)) {
-            return null;
-        }
+        self::validate($args, array(), 1, -1);
 
         foreach ($args as $arg) {
             if ($arg !== null) {
@@ -89,12 +75,10 @@ class DefaultFunctions
 
     public static function join(array $args)
     {
-        if (!self::validate($args, array(
+        self::validate($args, array(
             0     => array('string'),
             '...' => array('array')
-        ), 2, -1)) {
-            return null;
-        }
+        ), 2, -1);
 
         $result = '';
         foreach ($args[1] as $ele) {
@@ -122,18 +106,14 @@ class DefaultFunctions
 
     public static function length(array $args)
     {
-        if (!self::validate($args, array(array('string', 'array', 'object')))) {
-            return null;
-        }
+        self::validate($args, array(array('string', 'array', 'object')));
 
         return is_array($args[0]) ? count($args[0]) : strlen($args[0]);
     }
 
     public static function max(array $args)
     {
-        if (!self::validate($args, array(array('array')), 1, 1)) {
-            return null;
-        }
+        self::validate($args, array(array('array')), 1, 1);
 
         $currentMax = null;
         foreach ($args[0] as $element) {
@@ -150,9 +130,7 @@ class DefaultFunctions
 
     public static function min(array $args)
     {
-        if (!self::validate($args, array(array('array')), 1, 1)) {
-            return null;
-        }
+        self::validate($args, array(array('array')), 1, 1);
 
         $currentMin = null;
         foreach ($args[0] as $element) {
@@ -169,9 +147,7 @@ class DefaultFunctions
 
     public static function sum(array $args)
     {
-        if (!self::validate($args, array(array('array')), 1, 1)) {
-            return null;
-        }
+        self::validate($args, array(array('array')), 1, 1);
 
         $sum = 0;
         foreach ($args[0] as $element) {
@@ -187,15 +163,26 @@ class DefaultFunctions
 
     public static function sort(array $args)
     {
-        if (!self::validate($args, array(array('array')), 1, 1) ||
-            ($args[0] && !isset($args[0][0]))
-        ) {
-            return null;
+        self::validate($args, array(array('array')), 1, 1);
+
+        if (empty($args[0])) {
+            return array();
+        }
+
+        $firstType = self::gettype($args[0][0]);
+        if ($firstType != 'number' && $firstType != 'string') {
+            self::typeError('sort', 0, 'must be an array of string or numbers');
+        }
+
+        for ($i = 1, $c = count($args[0]); $i < $c; $i++) {
+            if (self::gettype($args[0][$i]) != $firstType) {
+                self::typeError('sort', 0, 'must be an array of string or numbers');
+            }
         }
 
         natsort($args[0]);
 
-        return $args[0];
+        return array_values($args[0]);
     }
 
     public static function type(array $args)
@@ -231,9 +218,7 @@ class DefaultFunctions
 
     public static function values(array $args)
     {
-        if (!self::validate($args, array(array('array', 'object')), 1, 1)) {
-            return null;
-        }
+        self::validate($args, array(array('array', 'object')), 1, 1);
 
         return array_values($args[0]);
     }
@@ -241,15 +226,12 @@ class DefaultFunctions
     public static function slice(array $args)
     {
         try {
-            if (!self::validate($args, array(
-                    0 => array('array', 'string'),
-                    1 => array('number', 'null'),
-                    2 => array('number', 'null'),
-                    3 => array('number', 'null')
-                ), 4, 4) || ($args && !isset($args[0][0]))
-            ) {
-                return null;
-            }
+            self::validate($args, array(
+                0 => array('array', 'string'),
+                1 => array('number', 'null'),
+                2 => array('number', 'null'),
+                3 => array('number', 'null')
+            ), 4, 4);
         } catch (\Exception $e) {
             return null;
         }

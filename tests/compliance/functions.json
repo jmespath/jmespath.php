@@ -480,15 +480,4 @@
       "result": ["b", "c", "d", "e", "f"]
     }
   ]
-}, {
-  "given":
-  {
-    "people": [
-      {"age": 20, "age_str": "20", "bool": true, "name": "a", "extra": "foo"},
-      {"age": 40, "age_str": "40", "bool": false, "name": "b", "extra": "bar"},
-      {"age": 30, "age_str": "30", "bool": true, "name": "c"},
-      {"age": 50, "age_str": "50", "bool": false, "name": "d"},
-      {"age": 10, "age_str": "10", "bool": true, "name": 3}
-    ]
-  }
 }]
