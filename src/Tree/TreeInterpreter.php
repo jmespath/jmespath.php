@@ -207,7 +207,9 @@ class TreeInterpreter implements TreeVisitorInterface
                 // registered with the tree visitor.
                 $args = array();
                 foreach ($node['children'] as $arg) {
-                    $args[] = $this->dispatch($arg, $value);
+                    $args[] = $arg['type'] == 'expr'
+                        ? new ExprNode($arg['children'])
+                        : $this->dispatch($arg, $value);
                 }
 
                 return $this->runtime->callFunction($node['fn'], $args);
@@ -225,6 +227,10 @@ class TreeInterpreter implements TreeVisitorInterface
                 // No-op used to return the current node and ensures binary
                 // nodes have a left and right child.
                 return $value;
+
+            case 'expr':
+                // Handles expression tokens by executing child 0
+                return $this->dispatch($node['children'][0], $value);
 
             default:
                 throw new \RuntimeException("Unknown node type: {$node['type']}");

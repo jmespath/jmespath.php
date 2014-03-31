@@ -3,7 +3,8 @@
 namespace JmesPath;
 
 /**
- * LL(1) recursive descent JMESPath parser utilizing a Pratt parsing technique
+ * JMESPath Pratt parser
+ * @link http://hall.org.ua/halls/wizzard/pdf/Vaughan.Pratt.TDOP.pdf
  */
 class Parser
 {
@@ -24,6 +25,7 @@ class Parser
         Lexer::T_LITERAL    => true,
         Lexer::T_MERGE      => true,
         Lexer::T_AT         => true,
+        Lexer::T_EXPR       => true,
     );
 
     private static $precedence = array(
@@ -47,6 +49,7 @@ class Parser
         Lexer::T_LBRACE     => 7,
         Lexer::T_AT         => 7,
         Lexer::T_NUMBER     => 7,
+        Lexer::T_EXPR       => 7,
     );
 
     /** @var array Cached current AST node */
@@ -184,6 +187,16 @@ class Parser
                 $left ?: self::$currentNode,
                 $this->parseExpression(6) ?: self::$currentNode
             )
+        );
+    }
+
+    private function parse_T_EXPR()
+    {
+        $this->tokens->next(self::$exprTokens);
+
+        return array(
+            'type'     => 'expr',
+            'children' => array($this->parseExpression(2))
         );
     }
 

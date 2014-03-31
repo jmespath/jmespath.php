@@ -1,6 +1,7 @@
 <?php
 
 namespace JmesPath;
+use JmesPath\Tree\ExprNode;
 
 /**
  * Provides implementations for all of the built-in JMESPath functions
@@ -153,7 +154,7 @@ class DefaultFunctions
         foreach ($args[0] as $element) {
             $type = self::gettype($element);
             if ($type != 'number') {
-                self::typeError('sum', 0, 'must be an array of numbes');
+                self::typeError('sum', 0, 'must be an array of numbers');
             }
             $sum += $element;
         }
@@ -316,6 +317,10 @@ class DefaultFunctions
             'integer' => 'number'
         );
 
+        if ($arg instanceof ExprNode) {
+            return 'expression';
+        }
+
         $type = gettype($arg);
         if (isset($map[$type])) {
             return $map[gettype($arg)];
@@ -381,7 +386,7 @@ class DefaultFunctions
             if (!in_array(self::gettype($value), $tl)) {
                 $callers = debug_backtrace();
                 self::typeError(
-                    $callers[2]['function'],
+                    $callers[1]['function'],
                     $index,
                     'must be one of the following types: ' . implode(', ', $tl)
                 );
