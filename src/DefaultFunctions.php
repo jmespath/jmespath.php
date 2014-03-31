@@ -7,22 +7,6 @@ namespace JmesPath;
  */
 class DefaultFunctions
 {
-    public static function validate($args, $types, $minArity = 1, $maxArity = 1)
-    {
-        self::validateArity($minArity, $maxArity, $args);
-        $default = isset($types['...']) ? $types['...'] : null;
-
-        foreach ($args as $index => $value) {
-            if ($typeList = isset($types[$index]) ? $types[$index] : $default) {
-                if (!in_array(self::gettype($value), $typeList)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
     public static function abs(array $args)
     {
         if (!self::validate($args, array(array('number')))) {
@@ -43,10 +27,11 @@ class DefaultFunctions
         $sum = $total = 0;
         foreach ($args[0] as $v) {
             $type = self::gettype($v);
-            if ($type == 'number') {
-                $total++;
-                $sum += $v;
+            if ($type != 'number') {
+                self::typeError('avg', 0, 'an array of numbers');
             }
+            $total++;
+            $sum += $v;
         }
 
         return $total ? $sum / $total : null;
@@ -105,27 +90,31 @@ class DefaultFunctions
     public static function join(array $args)
     {
         if (!self::validate($args, array(
-            0 => array('string'),
+            0     => array('string'),
             '...' => array('array')
         ), 2, -1)) {
             return null;
         }
 
-        return implode(array_shift($args), array_filter($args[0], function ($arg) {
-            return is_string($arg) || is_numeric($arg);
-        }));
+        $result = '';
+        foreach ($args[1] as $ele) {
+            if (!is_string($ele)) {
+                self::typeError('join', 1, 'must be an array of strings');
+            }
+            $result .= $ele . $args[0];
+        }
+
+        return rtrim($result, $args[0]);
     }
 
     public static function keys(array $args)
     {
-        if (!self::validate($args, array(array('array', 'object')), 1, 1)) {
-            return null;
-        }
+        self::validateArity(1, 1, $args);
 
-        if (!$args[0]) {
+        if (empty($args[0]) && is_array($args[0])) {
             return array();
-        } elseif (isset($args[0][0])) {
-            return null;
+        } elseif (!self::validate($args, array(array('object')), 1, 1)) {
+            self::typeError('keys', 0, 'must be an object');
         } else {
             return array_keys($args[0]);
         }
@@ -149,9 +138,9 @@ class DefaultFunctions
         $currentMax = null;
         foreach ($args[0] as $element) {
             $type = self::gettype($element);
-            if (($type == 'number') &&
-                ($currentMax === null || $element > $currentMax)
-            ) {
+            if ($type !== 'number') {
+                self::typeError('max', 0, 'must be an array of numbers');
+            } elseif ($currentMax === null || $element > $currentMax) {
                 $currentMax = $element;
             }
         }
@@ -168,12 +157,32 @@ class DefaultFunctions
         $currentMin = null;
         foreach ($args[0] as $element) {
             $type = self::gettype($element);
-            if ($type == 'number' && ($currentMin === null || $element < $currentMin)) {
+            if ($type !== 'number') {
+                self::typeError('min', 0, 'must be an array of numbers');
+            } elseif ($currentMin === null || $element < $currentMin) {
                 $currentMin = $element;
             }
         }
 
         return $currentMin;
+    }
+
+    public static function sum(array $args)
+    {
+        if (!self::validate($args, array(array('array')), 1, 1)) {
+            return null;
+        }
+
+        $sum = 0;
+        foreach ($args[0] as $element) {
+            $type = self::gettype($element);
+            if ($type != 'number') {
+                self::typeError('sum', 0, 'must be an array of numbes');
+            }
+            $sum += $element;
+        }
+
+        return $sum;
     }
 
     public static function sort(array $args)
@@ -204,30 +213,20 @@ class DefaultFunctions
     public static function to_number(array $args)
     {
         self::validateArity(1, 1, $args);
+
+        if (!is_numeric($args[0])) {
+            return null;
+        }
+
         switch (self::gettype($args[0])) {
             case 'number':
                 return $args[0];
             case 'string':
-                return strpos($args[0], '.') ? (float) $args[0] : (int) $args[0];
+                return strpos($args[0], '.')
+                    ? (float) $args[0] : (int) $args[0];
             default:
                 return null;
         }
-    }
-
-    public static function union(array $args)
-    {
-        self::validateArity(2, -1, $args);
-
-        $result = array();
-        foreach ($args as $arg) {
-            if ($arg && is_array($arg)) {
-                if (!isset($arg[0])) {
-                    $result += $arg;
-                }
-            }
-        }
-
-        return $result ?: null;
     }
 
     public static function values(array $args)
@@ -241,14 +240,17 @@ class DefaultFunctions
 
     public static function slice(array $args)
     {
-        if (!self::validate($args, array(
-                0 => array('array', 'string'),
-                1 => array('number', 'null'),
-                2 => array('number', 'null'),
-                3 => array('number', 'null')
-            ), 4, 4) ||
-            ($args && !isset($args[0][0]))
-        ) {
+        try {
+            if (!self::validate($args, array(
+                    0 => array('array', 'string'),
+                    1 => array('number', 'null'),
+                    2 => array('number', 'null'),
+                    3 => array('number', 'null')
+                ), 4, 4) || ($args && !isset($args[0][0]))
+            ) {
+                return null;
+            }
+        } catch (\Exception $e) {
             return null;
         }
 
@@ -368,5 +370,42 @@ class DefaultFunctions
             $fn = $callers[2]['function'];
             throw new \RuntimeException(sprintf($err, $fn));
         }
+    }
+
+    private static function typeError($fn, $index, $failure)
+    {
+        throw new \RuntimeException(sprintf(
+            'Argument %d of %s %s',
+            $index,
+            $fn,
+            $failure
+        ));
+    }
+
+    private static function validate(
+        $args,
+        $types,
+        $minArity = 1,
+        $maxArity = 1
+    ) {
+        self::validateArity($minArity, $maxArity, $args);
+        $default = isset($types['...']) ? $types['...'] : null;
+
+        foreach ($args as $index => $value) {
+            $tl = isset($types[$index]) ? $types[$index] : $default;
+            if (!$tl) {
+                continue;
+            }
+            if (!in_array(self::gettype($value), $tl)) {
+                $callers = debug_backtrace();
+                self::typeError(
+                    $callers[2]['function'],
+                    $index,
+                    'must be one of the following types: ' . implode(', ', $tl)
+                );
+            }
+        }
+
+        return true;
     }
 }

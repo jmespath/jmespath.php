@@ -131,6 +131,7 @@ class Parser
             Lexer::T_LBRACE     => true, // foo[1]
             Lexer::T_LBRACKET   => true, // foo{a: 0}
             Lexer::T_FILTER     => true, // foo.[?bar = 10]
+            Lexer::T_FUNCTION   => true, // foo.*.to_string(@)
         );
 
         $this->tokens->next($nextTypes);
@@ -263,7 +264,7 @@ class Parser
         $this->tokens->next();
 
         while ($this->tokens->token['type'] !== Lexer::T_RPARENS) {
-            $args[] = $this->parseExpression(6);
+            $args[] = $this->parseExpression(3);
             if ($this->tokens->token['type'] == Lexer::T_COMMA) {
                 $this->tokens->next();
             }

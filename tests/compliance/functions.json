@@ -3,17 +3,20 @@
   {
     "foo": -1,
     "zero": 0,
-    "arr": [-1, 3, 4, 5, "a", "100"],
+    "numbers": [-1, 3, 4, 5],
+    "array": [-1, 3, 4, 5, "a", "100"],
     "strings": ["a", "b", "c"],
-    "dec": [1.01, 1.9, -1.5],
+    "decimals": [1.01, 1.2, -1.5],
     "str": "Str",
     "false": false,
-    "empty": [],
-    "empty2": {}
+    "empty_list": [],
+    "empty_hash": {},
+    "objects": {"foo": "bar", "bar": "baz"},
+    "null_key": null
   },
   "cases": [
     {
-      "expression": "abs(@.foo)",
+      "expression": "abs(foo)",
       "result": 1
     },
     {
@@ -21,100 +24,84 @@
       "result": 1
     },
     {
-      "expression": "abs(@.str)",
-      "result": null
-    },
-    {
       "expression": "abs(str)",
-      "result": null
+      "error": "invalid-type"
     },
     {
-      "expression": "abs(@.arr[1])",
+      "expression": "abs(array[1])",
       "result": 3
     },
     {
-      "expression": "abs(arr[1])",
+      "expression": "abs(array[1])",
       "result": 3
-    },
-    {
-      "expression": "abs(false)",
-      "result": null
     },
     {
       "expression": "abs(`false`)",
-      "result": null
+      "error": "invalid-type"
     },
     {
-      "expression": "abs(`1`, `2`, `3`)",
-      "error": "runtime"
+      "expression": "abs(`-24`)",
+      "result": 24
+    },
+    {
+      "expression": "abs(`-24`)",
+      "result": 24
+    },
+    {
+      "expression": "abs(`1`, `2`)",
+      "error": "invalid-arity"
     },
     {
       "expression": "abs()",
-      "error": "runtime"
+      "error": "invalid-arity"
     },
     {
-      "expression": "avg(@.arr)",
+      "expression": "unknown_function(`1`, `2`)",
+      "error": "unknown-function"
+    },
+    {
+      "expression": "avg(numbers)",
       "result": 2.75
     },
     {
-      "expression": "avg(arr)",
-      "result": 2.75
+      "expression": "avg(array)",
+      "error": "invalid-type"
     },
     {
       "expression": "avg(`abc`)",
-      "result": null
-    },
-    {
-      "expression": "avg(@.foo)",
-      "result": null
+      "error": "invalid-type"
     },
     {
       "expression": "avg(foo)",
-      "result": null
+      "error": "invalid-type"
     },
     {
       "expression": "avg(@)",
-      "result": null
-    },
-    {
-      "expression": "avg(@.strings)",
-      "result": null
+      "error": "invalid-type"
     },
     {
       "expression": "avg(strings)",
-      "result": null
+      "error": "invalid-type"
     },
     {
-      "expression": "ceil(@.dec[0])",
+      "expression": "ceil(`1.2`)",
       "result": 2
     },
     {
-      "expression": "ceil(dec[0])",
+      "expression": "ceil(decimals[0])",
       "result": 2
     },
     {
-      "expression": "ceil(@.dec[1])",
+      "expression": "ceil(decimals[1])",
       "result": 2
     },
     {
-      "expression": "ceil(dec[1])",
-      "result": 2
-    },
-    {
-      "expression": "ceil(@.dec[2])",
+      "expression": "ceil(decimals[2])",
       "result": -1
     },
     {
-      "expression": "ceil(dec[2])",
-      "result": -1
-    },
-    {
-      "expression": "ceil(abc)",
-      "result": null
-    },
-    {
-      "expression": "ceil(`abc`)",
-      "result": null
+      "expression": "ceil(`string`)",
+      "error": "invalid-type"
     },
     {
       "expression": "contains(`abc`, `a`)",
@@ -126,87 +113,39 @@
     },
     {
       "expression": "contains(`false`, `d`)",
-      "result": null
+      "error": "invalid-type"
     },
     {
-      "expression": "contains(@.strings, `a`)",
+      "expression": "contains(strings, `a`)",
       "result": true
     },
     {
-      "expression": "contains(dec, `1.9`)",
+      "expression": "contains(decimals, `1.2`)",
       "result": true
     },
     {
-      "expression": "contains(dec, `false`)",
-      "result": null
+      "expression": "contains(decimals, `false`)",
+      "result": false
     },
     {
-      "expression": "length(@)",
-      "result": 9
-    },
-    {
-      "expression": "length(arr)",
-      "result": 6
-    },
-    {
-      "expression": "length(@.str)",
-      "result": 3
-    },
-    {
-      "expression": "floor(@.dec[0])",
+      "expression": "floor(`1.2`)",
       "result": 1
     },
     {
-      "expression": "floor(dec[0])",
+      "expression": "floor(`string`)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "floor(decimals[0])",
       "result": 1
     },
     {
-      "expression": "floor(@.foo)",
+      "expression": "floor(foo)",
       "result": -1
     },
     {
-      "expression": "floor(@.str)",
-      "result": null
-    },
-    {
-      "expression": "join(`, `, str)",
-      "result": null
-    },
-    {
-      "expression": "join(`, `, strings)",
-      "result": "a, b, c"
-    },
-    {
-      "expression": "join(`|`, strings)",
-      "result": "a|b|c"
-    },
-    {
-      "expression": "join(`|`, @.dec)",
-      "result": "1.01|1.9|-1.5"
-    },
-    {
-      "expression": "join(`\"|\"`, @.empty)",
-      "result": ""
-    },
-    {
-      "expression": "keys(@)",
-      "result": ["foo", "zero", "arr", "strings", "dec", "str", "false", "empty", "empty2"]
-    },
-    {
-      "expression": "keys(@.empty2)",
-      "result": []
-    },
-    {
-      "expression": "keys(@.strings)",
-      "result": null
-    },
-    {
-      "expression": "keys(`abc`)",
-      "result": null
-    },
-    {
-      "expression": "keys(`false`)",
-      "result": null
+      "expression": "floor(str)",
+      "error": "invalid-type"
     },
     {
       "expression": "length(`abc`)",
@@ -217,87 +156,95 @@
       "result": 0
     },
     {
-      "expression": "length(@.foo)",
-      "result": null
+      "expression": "length(@)",
+      "result": 12
     },
     {
-      "expression": "length(@.strings[0])",
+      "expression": "length(strings[0])",
       "result": 1
     },
     {
+      "expression": "length(str)",
+      "result": 3
+    },
+    {
+      "expression": "length(array)",
+      "result": 6
+    },
+    {
+      "expression": "length(objects)",
+      "result": 2
+    },
+    {
       "expression": "length(`false`)",
-      "result": null
+      "error": "invalid-type"
     },
     {
-      "expression": "max(@.arr)",
+      "expression": "length(foo)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "length(strings[0])",
+      "result": 1
+    },
+    {
+      "expression": "max(numbers)",
       "result": 5
     },
     {
-      "expression": "max(arr)",
-      "result": 5
-    },
-    {
-      "expression": "max(@.dec)",
-      "result": 1.9
+      "expression": "max(decimals)",
+      "result": 1.2
     },
     {
       "expression": "max(abc)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "max(array)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "max(decimals)",
+      "result": 1.2
+    },
+    {
+      "expression": "max(empty_list)",
       "result": null
     },
     {
-      "expression": "max(@.empty)",
-      "result": null
-    },
-    {
-      "expression": "min(@.arr)",
+      "expression": "min(numbers)",
       "result": -1
     },
     {
-      "expression": "min(@.dec)",
+      "expression": "min(decimals)",
       "result": -1.5
     },
     {
       "expression": "min(abc)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "min(array)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "min(empty_list)",
       "result": null
     },
     {
-      "expression": "min(@.empty)",
-      "result": null
-    },
-    {
-      "expression": "sort(@.arr)",
-      "result": [-1, 3, 4, 5, "a", "100"]
-    },
-    {
-      "expression": "sort(@.strings)",
-      "result":  ["a", "b", "c"]
-    },
-    {
-      "expression": "sort(abc)",
-      "result": null
-    },
-    {
-      "expression": "sort(@.empty)",
-      "result": []
-    },
-    {
-      "expression": "sort(@)",
-      "result": null
+      "expression": "min(decimals)",
+      "result": -1.5
     },
     {
       "expression": "type(`abc`)",
       "result": "string"
     },
     {
-      "expression": "type(`123`)",
+      "expression": "type(`1.0`)",
       "result": "number"
     },
     {
-      "expression": "type(`123`)",
-      "result": "number"
-    },
-    {
-      "expression": "type(`1.2`)",
+      "expression": "type(`2`)",
       "result": "number"
     },
     {
@@ -309,64 +256,239 @@
       "result": "boolean"
     },
     {
-      "expression": "type(@.empty)",
+      "expression": "type(`null`)",
+      "result": "null"
+    },
+    {
+      "expression": "type(`[0]`)",
       "result": "array"
     },
     {
-      "expression": "type(empty)",
-      "result": "array"
-    },
-    {
-      "expression": "type(@.strings)",
-      "result": "array"
+      "expression": "type(`{\"a\": \"b\"}`)",
+      "result": "object"
     },
     {
       "expression": "type(@)",
       "result": "object"
+    },
+    {
+      "expression": "keys(objects)",
+      "result": ["foo", "bar"]
+    },
+    {
+      "expression": "keys(foo)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "keys(strings)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "keys(`false`)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "values(objects)",
+      "result": ["bar", "baz"]
+    },
+    {
+      "expression": "keys(empty_hash)",
+      "result": []
+    },
+    {
+      "expression": "values(foo)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "join(`\", \"`, strings)",
+      "result": "a, b, c"
+    },
+    {
+      "expression": "join(`, `, strings)",
+      "result": "a, b, c"
+    },
+    {
+      "expression": "join(`,`, `[\"a\", \"b\"]`)",
+      "result": "a,b"
+    },
+    {
+      "expression": "join(`,`, `[\"a\", 0]`)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "join(`, `, str)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "join(`|`, strings)",
+      "result": "a|b|c"
+    },
+    {
+      "expression": "join(`2`, strings)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "join(`|`, decimals)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "join(`|`, decimals[].to_string(@))",
+      "result": "1.01|1.2|-1.5"
+    },
+    {
+      "expression": "join(`|`, empty_list)",
+      "result": ""
+    },
+    {
+      "expression": "sum(numbers)",
+      "result": 11
+    },
+    {
+      "expression": "sum(decimals)",
+      "result": 0.71
+    },
+    {
+      "expression": "sum(array)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "sum(array[].to_number(@))",
+      "result": 111
+    },
+    {
+      "expression": "sum(`[]`)",
+      "result": 0
+    },
+    {
+      "expression": "to_string(`foo`)",
+      "result": "foo"
+    },
+    {
+      "expression": "to_string(`1.0`)",
+      "result": "1.0"
+    },
+    {
+      "expression": "to_string(`[0, 1]`)",
+      "result": "[0,1]"
+    },
+    {
+      "expression": "to_number(`\"1.0\"`)",
+      "result": 1.0
+    },
+    {
+      "expression": "to_number(`\"1.1\"`)",
+      "result": 1.1
+    },
+    {
+      "expression": "to_number(`\"4\"`)",
+      "result": 4
+    },
+    {
+      "expression": "to_number(`\"notanumber\"`)",
+      "result": null
+    },
+    {
+      "expression": "to_number(`false`)",
+      "result": null
+    },
+    {
+      "expression": "to_number(`null`)",
+      "result": null
+    },
+    {
+      "expression": "to_number(`[0]`)",
+      "result": null
+    },
+    {
+      "expression": "to_number(`{\"foo\": 0}`)",
+      "result": null
+    },
+    {
+      "expression": "\"to_string\"(`1.0`)",
+      "error": "syntax"
+    },
+    {
+      "expression": "sort(numbers)",
+      "result": [-1, 3, 4, 5]
+    },
+    {
+      "expression": "sort(strings)",
+      "result": ["a", "b", "c"]
+    },
+    {
+      "expression": "sort(decimals)",
+      "result": [-1.5, 1.01, 1.2]
+    },
+    {
+      "expression": "sort(array)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "sort(abc)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "sort(empty_list)",
+      "result": []
+    },
+    {
+      "expression": "sort(@)",
+      "error": "invalid-type"
+    },
+    {
+      "expression": "not_null(unknown_key, str)",
+      "result": "Str"
+    },
+    {
+      "expression": "not_null(unknown_key, foo.bar, empty_list, str)",
+      "result": []
+    },
+    {
+      "expression": "not_null(unknown_key, null_key, empty_list, str)",
+      "result": []
+    },
+    {
+      "expression": "not_null(all, expressions, are_null)",
+      "result": null
+    },
+    {
+      "description": "function projection on single arg function",
+      "expression": "numbers[].to_string(@)",
+      "result": ["-1", "3", "4", "5"]
+    },
+    {
+      "description": "function projection on single arg function",
+      "expression": "array[].to_number(@)",
+      "result": [-1, 3, 4, 5, 100]
     }
   ]
 }, {
   "given":
-    [
-      {"foo": "baz", "bar": "bam"},
-      {"foo": "123"},
-      {"abc": "def", "fez": "qux"},
-      [1, 2, 3],
-      "abc",
-      true
-    ],
+  {
+    "foo": [
+      {"b": "b", "a": "a"},
+      {"c": "c", "b": "b"},
+      {"d": "d", "c": "c"},
+      {"e": "e", "d": "d"},
+      {"f": "f", "e": "e"}
+    ]
+  },
   "cases": [
     {
-      "expression": "union(@[0], @[1])",
-      "result": {"foo": "baz", "bar": "bam"}
-    },
-    {
-      "expression": "union(@[0], @[2])",
-      "result": {"foo": "baz", "bar": "bam", "abc": "def", "fez": "qux"}
-    },
-    {
-      "expression": "union(@[3], @[4])",
-      "result": null
-    },
-    {
-      "expression": "union(true, false)",
-      "result": null
-    },
-    {
-      "expression": "values(@[0])",
-      "result": ["baz", "bam"]
-    },
-    {
-      "expression": "values(@[1])",
-      "result": ["123"]
-    },
-    {
-      "expression": "values(@[3])",
-      "result": [1, 2, 3]
-    },
-    {
-      "expression": "values(@[4])",
-      "result": null
+      "description": "function projection on variadic function",
+      "expression": "foo[].not_null(f, e, d, c, b, a)",
+      "result": ["b", "c", "d", "e", "f"]
     }
   ]
+}, {
+  "given":
+  {
+    "people": [
+      {"age": 20, "age_str": "20", "bool": true, "name": "a", "extra": "foo"},
+      {"age": 40, "age_str": "40", "bool": false, "name": "b", "extra": "bar"},
+      {"age": 30, "age_str": "30", "bool": true, "name": "c"},
+      {"age": 50, "age_str": "50", "bool": false, "name": "d"},
+      {"age": 10, "age_str": "10", "bool": true, "name": 3}
+    ]
+  }
 }]
