@@ -208,7 +208,7 @@ class TreeInterpreter implements TreeVisitorInterface
                 $args = array();
                 foreach ($node['children'] as $arg) {
                     $args[] = $arg['type'] == 'expr'
-                        ? new ExprNode($arg['children'])
+                        ? new ExprNode($this, $arg['children'])
                         : $this->dispatch($arg, $value);
                 }
 
