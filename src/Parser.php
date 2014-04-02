@@ -195,7 +195,7 @@ class Parser
         $this->tokens->next(self::$exprTokens);
 
         return array(
-            'type'     => 'expr',
+            'type'     => 'expression',
             'children' => array($this->parseExpression(2))
         );
     }

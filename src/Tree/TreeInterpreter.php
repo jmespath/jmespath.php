@@ -3,6 +3,7 @@
 namespace JmesPath\Tree;
 
 use JmesPath\Lexer;
+use JmesPath\Runtime\DefaultRuntime;
 use JmesPath\Runtime\RuntimeInterface;
 
 /**
@@ -15,11 +16,11 @@ class TreeInterpreter implements TreeVisitorInterface
 
     public function visit(array $node, $data, array $args = null)
     {
-        if (!isset($args['runtime'])) {
-            throw new \InvalidArgumentException('A runtime arg must be provided');
+        if (!$this->runtime) {
+            $this->runtime = !isset($args['runtime'])
+                ? DefaultRuntime::$globalRuntime
+                : $args['runtime'];
         }
-
-        $this->runtime = $args['runtime'];
 
         return $this->dispatch($node, $data);
     }
@@ -207,9 +208,7 @@ class TreeInterpreter implements TreeVisitorInterface
                 // registered with the tree visitor.
                 $args = array();
                 foreach ($node['children'] as $arg) {
-                    $args[] = $arg['type'] == 'expr'
-                        ? new ExprNode($this, $arg['children'])
-                        : $this->dispatch($arg, $value);
+                    $args[] = $this->dispatch($arg, $value);
                 }
 
                 return $this->runtime->callFunction($node['fn'], $args);
@@ -228,9 +227,9 @@ class TreeInterpreter implements TreeVisitorInterface
                 // nodes have a left and right child.
                 return $value;
 
-            case 'expr':
+            case 'expression':
                 // Handles expression tokens by executing child 0
-                return $this->dispatch($node['children'][0], $value);
+                return new ExprNode($this, $node['children']);
 
             default:
                 throw new \RuntimeException("Unknown node type: {$node['type']}");

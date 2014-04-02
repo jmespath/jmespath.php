@@ -1,6 +1,7 @@
 <?php
 
 namespace JmesPath;
+
 use JmesPath\Tree\ExprNode;
 
 /**
@@ -184,6 +185,29 @@ class DefaultFunctions
         natsort($args[0]);
 
         return array_values($args[0]);
+    }
+
+    public static function sort_by(array $args)
+    {
+        self::validate($args, array(array('array'), array('expression')), 2, 2);
+
+        $i = $args[1]->interpreter;
+        $expr = $args[1]->expression;
+        usort($args[0], function ($a, $b) use ($i, $expr) {
+            $va = $i->visit($expr, $a);
+            $vb = $i->visit($expr, $b);
+            $ta = DefaultFunctions::gettype($va);
+            $tb = DefaultFunctions::gettype($vb);
+            if (($ta != 'number' && $ta != 'string') ||
+                ($tb != 'number' && $tb != 'string')) {
+                DefaultFunctions::typeError(
+                    'sort_by', 1, 'must be strings or numbers'
+                );
+            }
+            return strnatcmp($va, $vb);
+        });
+
+        return $args[0];
     }
 
     public static function type(array $args)
@@ -389,6 +413,7 @@ class DefaultFunctions
                     $callers[1]['function'],
                     $index,
                     'must be one of the following types: ' . implode(', ', $tl)
+                    . ', ' . self::gettype($value) . ' given'
                 );
             }
         }
