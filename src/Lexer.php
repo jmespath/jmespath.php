@@ -79,6 +79,9 @@ class Lexer
     private static $numbers = array('0' => 1, '1' => 1, '2' => 1, '3' => 1,
         '4' => 1, '5' => 1, '6' => 1, '7' => 1, '8' => 1, '9' => 1);
 
+    /** @var array Hash of the start of an operator token */
+    private static $opStart = array('=' => 1, '<' => 1, '>' => 1, '!' => 1);
+
     private $input;
     private $pos;
     private $c;
@@ -102,7 +105,7 @@ class Lexer
         );
 
         if (!isset($valid[$value])) {
-            throw new \RuntimeException("Invalid relational operator: {$value}");
+            throw new \RuntimeException("Invalid relational operator: $value");
         }
     }
 
@@ -143,7 +146,7 @@ class Lexer
                 $tokens[] = $this->consumeLiteral();
             } elseif ($this->c == '[') {
                 $tokens[] = $this->consumeLbracket();
-            } elseif ($this->c == '=' || $this->c == '<' || $this->c == '>' || $this->c == '!') {
+            } elseif (isset(self::$opStart[$this->c])) {
                 $tokens[] = $this->consumeOperator($this->c);
             } elseif ($this->c == '|') {
                 $tokens[] = $this->consumePipe();
