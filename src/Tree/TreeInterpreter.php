@@ -127,6 +127,11 @@ class TreeInterpreter implements TreeVisitorInterface
                 // Returns the literal value
                 return $node['value'];
 
+            case 'current':
+                // No-op used to return the current node and ensures binary
+                // nodes have a left and right child.
+                return $value;
+
             case 'or':
                 // Evaluates the left child, and if it yields a falsey value,
                 // then it evaluates and returns the result of the right child.
@@ -222,11 +227,6 @@ class TreeInterpreter implements TreeVisitorInterface
                     $node['args'][1],
                     $node['args'][2],
                 ));
-
-            case 'current':
-                // No-op used to return the current node and ensures binary
-                // nodes have a left and right child.
-                return $value;
 
             case 'expression':
                 // Handles expression tokens by executing child 0

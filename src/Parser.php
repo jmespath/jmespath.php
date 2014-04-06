@@ -178,16 +178,7 @@ class Parser
 
     private function nud_star()
     {
-        $this->tokens->next();
-
-        return [
-            'type'     => 'projection',
-            'from'     => 'object',
-            'children' => [
-                self::$currentNode,
-                $this->parseProjection(self::$bp['star'])
-            ]
-        ];
+        return $this->parseWildcardObject(self::$currentNode);
     }
 
     private function nud_lbracket()
@@ -200,7 +191,7 @@ class Parser
 
         if ($type == 'star') {
             try {
-                return $this->parseWildcardIndex();
+                return $this->parseWildcardArray();
             } catch (SyntaxErrorException $e) {
                 $this->tokens->backtrack();
             }
@@ -220,7 +211,7 @@ class Parser
                 'children' => [$left, $this->parseArrayIndexExpression()]
             ];
         } else {
-            return $this->parseWildcardIndex($left);
+            return $this->parseWildcardArray($left);
         }
     }
 
@@ -243,15 +234,7 @@ class Parser
         $this->tokens->next(self::$afterDot);
 
         if ($this->tokens->token['type'] == 'star') {
-            $this->tokens->next();
-            return [
-                'type'     => 'projection',
-                'from'     => 'object',
-                'children' => [
-                    $left,
-                    $this->parseProjection(self::$bp['star'])
-                ]
-            ];
+            return $this->parseWildcardObject($left);
         }
 
         return [
@@ -322,20 +305,7 @@ class Parser
 
     private function led_comparator(array $left)
     {
-        static $operators = [
-            '==' => true,
-            '!=' => true,
-            '>'  => true,
-            '>=' => true,
-            '<'  => true,
-            '<=' => true
-        ];
-
         $token = $this->tokens->token;
-        if (!isset($operators[$token['value']])) {
-            $this->throwSyntax('Invalid operator: ' . $token['value']);
-        }
-
         $this->tokens->next();
 
         return [
@@ -384,7 +354,21 @@ class Parser
         ];
     }
 
-    private function parseWildcardIndex(array $left = null)
+    private function parseWildcardObject(array $left = null)
+    {
+        $this->tokens->next();
+
+        return [
+            'type'     => 'projection',
+            'from'     => 'object',
+            'children' => [
+                $left ?: self::$currentNode,
+                $this->parseProjection(self::$bp['star'])
+            ]
+        ];
+    }
+
+    private function parseWildcardArray(array $left = null)
     {
         static $getRbracket = ['rbracket' => true];
         $this->tokens->next($getRbracket);
