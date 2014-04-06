@@ -81,7 +81,7 @@ abstract class AbstractRuntime implements RuntimeInterface
             $t = $tokens->token;
             fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'], json_encode($t['value']));
             $tokens->next();
-        } while ($tokens->token['type'] != Lexer::T_EOF);
+        } while ($tokens->token['type'] != 'eof');
         fwrite($out, "\n");
 
         return array($tokens, $lexTime);

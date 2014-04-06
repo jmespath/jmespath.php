@@ -7,52 +7,27 @@ namespace JmesPath;
  */
 class Lexer
 {
-    const T_EOF        = 'T_EOF';
-    const T_IDENTIFIER = 'T_IDENTIFIER';
-    const T_DOT        = 'T_DOT';
-    const T_STAR       = 'T_STAR';
-    const T_NUMBER     = 'T_NUMBER';
-    const T_OR         = 'T_OR';
-    const T_PIPE       = 'T_PIPE';
-    const T_LBRACKET   = 'T_LBRACKET';
-    const T_RBRACKET   = 'T_RBRACKET';
-    const T_COMMA      = 'T_COMMA';
-    const T_LBRACE     = 'T_LBRACE';
-    const T_RBRACE     = 'T_RBRACE';
-    const T_WHITESPACE = 'T_WHITESPACE';
-    const T_UNKNOWN    = 'T_UNKNOWN';
-    const T_COLON      = 'T_COLON';
-    const T_COMPARATOR = 'T_COMPARATOR';
-    const T_FUNCTION   = 'T_FUNCTION';
-    const T_LPARENS    = 'T_LPARENS';
-    const T_RPARENS    = 'T_RPARENS';
-    const T_MERGE      = 'T_MERGE';
-    const T_LITERAL    = 'T_LITERAL';
-    const T_FILTER     = 'T_FILTER';
-    const T_AT         = 'T_AT';
-    const T_EXPR       = 'T_EXPR';
-
     /** @var array Array of simple matches to token types */
-    private static $simpleTokens = array(
-        ' '  => self::T_WHITESPACE,
-        "\n" => self::T_WHITESPACE,
-        "\t" => self::T_WHITESPACE,
-        "\r" => self::T_WHITESPACE,
-        '.'  => self::T_DOT,
-        '*'  => self::T_STAR,
-        ','  => self::T_COMMA,
-        ':'  => self::T_COLON,
-        '{'  => self::T_LBRACE,
-        '}'  => self::T_RBRACE,
-        ']'  => self::T_RBRACKET,
-        '('  => self::T_LPARENS,
-        ')'  => self::T_RPARENS,
-        '@'  => self::T_AT,
-        '&'  => self::T_EXPR,
-    );
+    private static $simpleTokens = [
+        ' '  => false,
+        "\n" => false,
+        "\t" => false,
+        "\r" => false,
+        '.'  => 'dot',
+        '*'  => 'star',
+        ','  => 'comma',
+        ':'  => 'colon',
+        '{'  => 'lbrace',
+        '}'  => 'rbrace',
+        ']'  => 'rbracket',
+        '('  => 'lparen',
+        ')'  => 'rparen',
+        '@'  => 'current',
+        '&'  => 'expref',
+    ];
 
     /** @var array Valid identifier characters */
-    private static $identifiers = array(
+    private static $identifiers = [
         'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
         'h' => 1, 'i' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
         'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
@@ -62,10 +37,10 @@ class Lexer
         'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
         'X' => 1, 'Y' => 1, 'Z' => 1,  0  => 1,  1  => 1,  2  => 1,  3  => 1,
          4  => 1,  5  => 1,  6  => 1,  7  => 1,  8  => 1,  9  => 1,
-        '_' => 1, '-' => 1);
+        '_' => 1, '-' => 1];
 
     /** @var array Letters and "_" can start an identifier */
-    private static $identifierStart = array(
+    private static $identifierStart = [
         'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
         'h' => 1, 'i' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
         'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
@@ -73,18 +48,16 @@ class Lexer
         'C' => 1, 'D' => 1, 'E' => 1, 'F' => 1, 'G' => 1, 'H' => 1, 'I' => 1,
         'J' => 1, 'K' => 1, 'L' => 1, 'M' => 1, 'N' => 1, 'O' => 1, 'P' => 1,
         'Q' => 1, 'R' => 1, 'S' => 1, 'T' => 1, 'U' => 1, 'V' => 1, 'W' => 1,
-        'X' => 1, 'Y' => 1, 'Z' => 1, '_' => 1);
+        'X' => 1, 'Y' => 1, 'Z' => 1, '_' => 1];
 
     /** @var array Hash of number characters */
-    private static $numbers = array('0' => 1, '1' => 1, '2' => 1, '3' => 1,
-        '4' => 1, '5' => 1, '6' => 1, '7' => 1, '8' => 1, '9' => 1);
+    private static $numbers = ['0' => 1, '1' => 1, '2' => 1, '3' => 1,
+        '4' => 1, '5' => 1, '6' => 1, '7' => 1, '8' => 1, '9' => 1];
 
     /** @var array Hash of the start of an operator token */
-    private static $opStart = array('=' => 1, '<' => 1, '>' => 1, '!' => 1);
+    private static $opStart = ['=' => 1, '<' => 1, '>' => 1, '!' => 1];
 
-    private $input;
-    private $pos;
-    private $c;
+    private $input, $pos, $c;
 
     /**
      * Ensures that a binary relational operator is valid, and if not, throws
@@ -95,14 +68,8 @@ class Lexer
      */
     public static function validateBinaryOperator($value)
     {
-        static $valid = array(
-            '==' => true,
-            '!=' => true,
-            '>'  => true,
-            '>=' => true,
-            '<'  => true,
-            '<=' => true
-        );
+        static $valid = ['==' => true, '!=' => true, '>'  => true, '>=' => true,
+            '<'  => true, '<=' => true];
 
         if (!isset($valid[$value])) {
             throw new \RuntimeException("Invalid relational operator: $value");
@@ -123,19 +90,18 @@ class Lexer
         $len = strlen($input);
         $this->pos = 0;
         $this->c = $len ? $this->input[0] : null;
-        $tokens = array();
+        $tokens = [];
 
         while ($this->c !== null) {
             if (isset(self::$identifierStart[$this->c])) {
                 $tokens[] = $this->consumeIdentifier();
             } elseif (isset(self::$simpleTokens[$this->c])) {
-                $type = self::$simpleTokens[$this->c];
-                if ($type != self::T_WHITESPACE) {
-                    $tokens[] = array(
+                if ($type = self::$simpleTokens[$this->c]) {
+                    $tokens[] = [
                         'type'  => $type,
                         'value' => $this->c,
                         'pos'   => $this->pos
-                    );
+                    ];
                 }
                 $this->consume();
             } elseif (isset(self::$numbers[$this->c])) {
@@ -158,7 +124,7 @@ class Lexer
         }
 
         // Always end the token stream with an EOF token
-        $tokens[] = array('type' => self::T_EOF, 'pos' => $len, 'value' => null);
+        $tokens[] = ['type' => 'eof', 'pos' => $len, 'value' => null];
 
         return new TokenStream($tokens, $input);
     }
@@ -167,21 +133,21 @@ class Lexer
     {
         throw new SyntaxErrorException(
             $message,
-            array('value' => $this->c, 'pos' => $pos !== null ? $pos : $this->pos),
+            ['value' => $this->c, 'pos' => $pos !== null ? $pos : $this->pos],
             $this->input
         );
     }
 
     private function decodeJson($json)
     {
-        static $jsonErrors = array(
+        static $jsonErrors = [
             JSON_ERROR_NONE => 'JSON_ERROR_NONE - No errors',
             JSON_ERROR_DEPTH => 'JSON_ERROR_DEPTH - Maximum stack depth exceeded',
             JSON_ERROR_STATE_MISMATCH => 'JSON_ERROR_STATE_MISMATCH - Underflow or the modes mismatch',
             JSON_ERROR_CTRL_CHAR => 'JSON_ERROR_CTRL_CHAR - Unexpected control character found',
             JSON_ERROR_SYNTAX => 'JSON_ERROR_SYNTAX - Syntax error, malformed JSON',
             JSON_ERROR_UTF8 => 'JSON_ERROR_UTF8 - Malformed UTF-8 characters, possibly incorrectly encoded'
-        );
+        ];
 
         $value = json_decode($json, true);
         if ($error = json_last_error()) {
@@ -201,7 +167,7 @@ class Lexer
 
     private function consumeNumber()
     {
-        $token = array('type' => Lexer::T_NUMBER, 'pos' => $this->pos);
+        $token = ['type' => 'number', 'pos' => $this->pos];
         $str = '';
 
         do {
@@ -224,33 +190,20 @@ class Lexer
             $this->consume();
         } while (isset(self::$identifiers[$this->c]));
 
-        if ($this->c == '(') {
-            $this->consume();
-            return array(
-                'type'  => self::T_FUNCTION,
-                'value' => $value,
-                'pos'   => $pos
-            );
-        } else {
-            return array(
-                'type'  => self::T_IDENTIFIER,
-                'value' => $value,
-                'pos'   => $pos
-            );
-        }
+        return ['type' => 'identifier', 'value' => $value, 'pos' => $pos];
     }
 
     private function consumeLiteral()
     {
         // Maps common JavaScript primitives with a native PHP primitive
-        static $primitives = array('true' => 0, 'false' => 1, 'null' => 2);
-        static $primitiveMap = array(true, false, null);
+        static $primitives = ['true' => 0, 'false' => 1, 'null' => 2];
+        static $primitiveMap = [true, false, null];
         // If a literal starts with these characters, it is JSON decoded
-        static $decodeCharacters = array('"' => 1, '[' => 1, '{' => 1);
-        static $decodeNumbers = array('-' => 1, 0 => 1, 1 => 1, 2 => 1, 3 => 1,
-            4 => 1, 5 => 1, 6 => 1, 7 => 1, 8 => 1, 9 => 1);
+        static $decodeCharacters = ['"' => 1, '[' => 1, '{' => 1];
+        static $decodeNumbers = ['-' => 1, 0 => 1, 1 => 1, 2 => 1, 3 => 1,
+            4 => 1, 5 => 1, 6 => 1, 7 => 1, 8 => 1, 9 => 1];
 
-        $literal = array('type' => self::T_LITERAL, 'pos' => $this->pos);
+        $literal = ['type' => 'literal', 'pos' => $this->pos];
 
         // Consume until the closing literal is found or the end of string
         if (!preg_match('/`((\\\\\\\\|\\\\`|[^`])*)`/', $this->input, $matches, 0, $this->pos)) {
@@ -292,11 +245,11 @@ class Lexer
             $this->throwSyntax('Unclosed quote');
         }
 
-        $token = array(
-            'type'  => self::T_IDENTIFIER,
+        $token = [
+            'type'  => 'quoted_identifier',
             'pos'   => $this->pos,
             'value' => $this->decodeJson($matches[0])
-        );
+        ];
 
         $this->pos += strlen($matches[0]) - 1;
         $this->consume();
@@ -310,34 +263,30 @@ class Lexer
 
         if ($this->c == ']') {
             $this->consume();
-            return array(
-                'type'  => self::T_MERGE,
+            return [
+                'type'  => 'flatten',
                 'value' => '[]',
                 'pos'   => $this->pos - 2
-            );
+            ];
         } elseif ($this->c == '?') {
             $this->consume();
-            return array(
-                'type'  => self::T_FILTER,
+            return [
+                'type'  => 'filter',
                 'value' => '[?',
                 'pos'   => $this->pos - 2
-            );
-        } else {
-            return array(
-                'type'  => self::T_LBRACKET,
-                'value' => '[',
-                'pos'   => $this->pos - 1
-            );
+            ];
         }
+
+        return ['type' => 'lbracket', 'value' => '[', 'pos' => $this->pos - 1];
     }
 
     private function consumeOperator($operator)
     {
-        $token = array(
-            'type'  => self::T_COMPARATOR,
+        $token = [
+            'type'  => 'comparator',
             'pos'   => $this->pos,
             'value' => $operator
-        );
+        ];
 
         $this->consume();
 
@@ -359,19 +308,11 @@ class Lexer
 
         // Check for pipe-expression vs or-expression
         if ($this->c != '|') {
-            return array(
-                'type'  => Lexer::T_PIPE,
-                'value' => '|',
-                'pos'   => $this->pos - 1
-            );
+            return ['type' => 'pipe', 'value' => '|', 'pos' => $this->pos - 1];
         }
 
         $this->consume();
 
-        return array(
-            'type'  => Lexer::T_OR,
-            'value' => '||',
-            'pos'   => $this->pos - 2
-        );
+        return ['type' => 'or', 'value' => '||', 'pos' => $this->pos - 2];
     }
 }

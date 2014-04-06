@@ -82,34 +82,34 @@ EOT;
     public function inputProvider()
     {
         return array(
-            array('0', Lexer::T_NUMBER),
-            array('1', Lexer::T_NUMBER),
-            array('2', Lexer::T_NUMBER),
-            array('3', Lexer::T_NUMBER),
-            array('4', Lexer::T_NUMBER),
-            array('5', Lexer::T_NUMBER),
-            array('6', Lexer::T_NUMBER),
-            array('7', Lexer::T_NUMBER),
-            array('8', Lexer::T_NUMBER),
-            array('9', Lexer::T_NUMBER),
-            array('-1', Lexer::T_NUMBER),
-            array('-1.5', Lexer::T_NUMBER),
-            array('109.5', Lexer::T_NUMBER),
-            array('.', Lexer::T_DOT),
-            array('{', Lexer::T_LBRACE),
-            array('}', Lexer::T_RBRACE),
-            array('[', Lexer::T_LBRACKET),
-            array(']', Lexer::T_RBRACKET),
-            array(':', Lexer::T_COLON),
-            array(',', Lexer::T_COMMA),
-            array('||', Lexer::T_OR),
-            array('*', Lexer::T_STAR),
-            array('foo', Lexer::T_IDENTIFIER),
-            array('"foo"', Lexer::T_IDENTIFIER),
-            array('`true`', Lexer::T_LITERAL),
-            array('`false`', Lexer::T_LITERAL),
-            array('`null`', Lexer::T_LITERAL),
-            array('`"true"`', Lexer::T_LITERAL)
+            array('0', 'number'),
+            array('1', 'number'),
+            array('2', 'number'),
+            array('3', 'number'),
+            array('4', 'number'),
+            array('5', 'number'),
+            array('6', 'number'),
+            array('7', 'number'),
+            array('8', 'number'),
+            array('9', 'number'),
+            array('-1', 'number'),
+            array('-1.5', 'number'),
+            array('109.5', 'number'),
+            array('.', 'dot'),
+            array('{', 'lbrace'),
+            array('}', 'rbrace'),
+            array('[', 'lbracket'),
+            array(']', 'rbracket'),
+            array(':', 'colon'),
+            array(',', 'comma'),
+            array('||', 'or'),
+            array('*', 'star'),
+            array('foo', 'identifier'),
+            array('"foo"', 'quoted_identifier'),
+            array('`true`', 'literal'),
+            array('`false`', 'literal'),
+            array('`null`', 'literal'),
+            array('`"true"`', 'literal')
         );
     }
 
@@ -145,7 +145,7 @@ EOT;
         do {
             $result[] = $tokens->token;
             $tokens->next();
-        } while ($tokens->token['type'] != Lexer::T_EOF);
+        } while ($tokens->token['type'] != 'eof');
 
         return $result;
     }

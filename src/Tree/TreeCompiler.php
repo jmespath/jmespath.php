@@ -102,13 +102,17 @@ class TreeCompiler implements TreeVisitorInterface
 
     private function visit_or(array $node)
     {
+        $id = uniqid();
+
         return $this
+            ->write('$beforeOr_' . $id . ' = $value;')
             ->dispatch($node['children'][0])
             ->write('')
-            ->write('if ($value === null) {')->indent()
-            ->write('$value = $current;')
-            ->dispatch($node['children'][1])
-            ->outdent()
+            ->write('if (!$value && $value !== "0" && $value !== 0) {')
+                ->indent()
+                ->write('$value = $beforeOr_' . $id . ';')
+                ->dispatch($node['children'][1])
+                ->outdent()
             ->write('}');
     }
 
@@ -297,12 +301,12 @@ class TreeCompiler implements TreeVisitorInterface
             ->write('));');
     }
 
-    private function visit_current_node(array $node)
+    private function visit_current(array $node)
     {
         return $this->write('// Visiting current node (no-op)');
     }
 
-    private function visit_merge(array $node)
+    private function visit_flatten(array $node)
     {
         $this->dispatch($node['children'][0]);
 

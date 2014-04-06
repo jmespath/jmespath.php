@@ -32,7 +32,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
     {
         $t = new TreeInterpreter();
         $this->assertNull($t->visit(array(
-            'type' => 'merge',
+            'type' => 'flatten',
             'children' => array(
                 array('type' => 'literal', 'value' => 1),
                 array('type' => 'literal', 'value' => 1)

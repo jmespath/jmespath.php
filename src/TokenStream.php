@@ -22,7 +22,7 @@ class TokenStream
     private $expression;
 
     /** @var array Null token that is reused over and over */
-    private static $nullToken = array('type' => Lexer::T_EOF, 'value' => '');
+    private static $nullToken = array('type' => 'eof', 'value' => '');
 
     /**
      * @param array  $tokens     Tokens to stream
@@ -43,6 +43,14 @@ class TokenStream
     public function __toString()
     {
         return $this->expression;
+    }
+
+    /**
+     * Backtrack to the previous token
+     */
+    public function backtrack()
+    {
+        $this->token = $this->tokens[--$this->pos];
     }
 
     /**

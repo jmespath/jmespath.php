@@ -14,6 +14,7 @@ view-coverage:
 
 clean:
 	rm -rf artifacts/*
+	rm -rf compiled/*
 
 perf:
 	php bin/perf.php

@@ -14,7 +14,7 @@ class SyntaxErrorExceptionTest extends \PHPUnit_Framework_TestCase
     {
         $e = new SyntaxErrorException(
             'Found comma',
-            array('type' => Lexer::T_COMMA, 'pos' => 3, 'value' => ','),
+            ['type' => 'comma', 'pos' => 3, 'value' => ','],
             'abc,def'
         );
         $expected = <<<EOT
@@ -29,15 +29,15 @@ EOT;
     public function testCreatesWithArray()
     {
         $e = new SyntaxErrorException(
-            array(Lexer::T_DOT => true, Lexer::T_EOF => true),
-            array('type' => Lexer::T_COMMA, 'pos' => 3, 'value' => ','),
+            ['dot' => true, 'eof' => true],
+            ['type' => 'comma', 'pos' => 3, 'value' => ','],
             'abc,def'
         );
         $expected = <<<EOT
 Syntax error at character 3
 abc,def
    ^
-Expected T_DOT or T_EOF; found T_COMMA ","
+Expected dot or eof; found comma ","
 EOT;
         $this->assertContains($expected, $e->getMessage());
     }

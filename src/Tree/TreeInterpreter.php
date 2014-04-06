@@ -92,7 +92,7 @@ class TreeInterpreter implements TreeVisitorInterface
 
                 return $collected;
 
-            case 'merge':
+            case 'flatten':
                 // Evaluates the left child, then merges up arrays in the
                 // values of the evaluation if the result is an array. After
                 // merging, the result is passed to the evaluation of the right
@@ -128,12 +128,13 @@ class TreeInterpreter implements TreeVisitorInterface
                 return $node['value'];
 
             case 'or':
-                // Evaluates the left child, and if it yields a null value,
+                // Evaluates the left child, and if it yields a falsey value,
                 // then it evaluates and returns the result of the right child.
                 $result = $this->dispatch($node['children'][0], $value);
-                if ($result === null) {
+                if (!$result && $result !== '0' && $result !== 0) {
                     $result = $this->dispatch($node['children'][1], $value);
                 }
+
                 return $result;
 
             case 'pipe':
@@ -222,7 +223,7 @@ class TreeInterpreter implements TreeVisitorInterface
                     $node['args'][2],
                 ));
 
-            case 'current_node':
+            case 'current':
                 // No-op used to return the current node and ensures binary
                 // nodes have a left and right child.
                 return $value;

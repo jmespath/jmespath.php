@@ -40,9 +40,12 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $p->parse('a.,');
     }
 
+    /**
+     * @expectedException \JmesPath\SyntaxErrorException
+     * @expectedExceptionMessage Empty expression
+     */
     public function testHandlesEmptyExpressions()
     {
-        $p = new Parser(new Lexer());
-        $this->assertEquals(array(), $p->parse(''));
+        (new Parser(new Lexer()))->parse('');
     }
 }

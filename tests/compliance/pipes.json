@@ -72,7 +72,7 @@
       "result": {"baz": "two"}
     },
     {
-      "expression": "{\"a\": foo.bar, \"b\": foo.other} | *.baz",
+      "expression": "{\"a\": foo.bar, \"b\": foo.other} | sort(*.baz)",
       "result": ["one", "two"]
     },
     {
@@ -81,6 +81,28 @@
     },
     {
       "expression": "foo | not_there || bar",
+      "result": {"baz": "one"}
+    }
+  ]
+}, {
+  "given": {
+    "foo": [{
+      "bar": [{
+        "baz": "one"
+      }, {
+        "baz": "two"
+      }]
+    }, {
+      "bar": [{
+        "baz": "three"
+      }, {
+        "baz": "four"
+      }]
+    }]
+  },
+  "cases": [
+    {
+      "expression": "foo[*].bar[*] | [0][0]",
       "result": {"baz": "one"}
     }
   ]
