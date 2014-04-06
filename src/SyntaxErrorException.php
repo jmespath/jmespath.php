@@ -21,8 +21,8 @@ class SyntaxErrorException extends \InvalidArgumentException
             $message .= $expectedTypesOrMessage;
         } else {
             $message .= sprintf(
-                'Expected %s; found %s "%s"',
-                implode(' or ', array_keys($expectedTypesOrMessage)),
+                'Expected one of the following: %s; found %s "%s"',
+                implode(', ', array_keys($expectedTypesOrMessage)),
                 $token['type'],
                 $token['value']
             );

@@ -483,7 +483,17 @@ class Parser
         $prefix = substr($method, 0, 4);
         if ($prefix == 'nud_' || $prefix == 'led_') {
             $token = substr($method, 4);
-            $this->throwSyntax("Unexpected \"$token\" token ($method)");
+            $message = "Unexpected \"$token\" token ($method). Expected one of"
+                . " the following tokens: "
+                . implode(', ', array_map(function ($i) {
+                    return '"' . substr($i, 4) . '"';
+                }, array_filter(
+                    get_class_methods($this),
+                    function ($i) use ($prefix) {
+                        return strpos($i, $prefix) === 0;
+                    }
+                )));
+            $this->throwSyntax($message);
         }
 
         throw new \BadMethodCallException("Call to undefined method $method");
