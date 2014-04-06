@@ -171,6 +171,25 @@ class Parser
         return $this->led_flatten(self::$currentNode);
     }
 
+    private function nud_filter()
+    {
+        return $this->led_filter(self::$currentNode);
+    }
+
+    private function nud_star()
+    {
+        $this->tokens->next();
+
+        return [
+            'type'     => 'projection',
+            'from'     => 'object',
+            'children' => [
+                self::$currentNode,
+                $this->parseProjection(self::$bp['star'])
+            ]
+        ];
+    }
+
     private function nud_lbracket()
     {
         $this->tokens->next();
@@ -259,20 +278,6 @@ class Parser
         ];
     }
 
-    private function nud_star()
-    {
-        $this->tokens->next();
-
-        return [
-            'type'     => 'projection',
-            'from'     => 'object',
-            'children' => [
-                self::$currentNode,
-                $this->parseProjection(self::$bp['star'])
-            ]
-        ];
-    }
-
     private function led_lparen(array $left)
     {
         $args = [];
@@ -289,50 +294,6 @@ class Parser
         $this->tokens->next();
 
         return ['type' => 'function', 'fn' => $name, 'children' => $args];
-    }
-
-    private function parseProjection($bp)
-    {
-        $type = $this->tokens->token['type'];
-        if (self::$bp[$type] < 10) {
-            return self::$currentNode;
-        } elseif ($type == 'dot') {
-            $this->tokens->next(self::$afterDot);
-            return $this->parseDot($bp);
-        } elseif ($type == 'lbracket' || $type == 'filter') {
-            return $this->expr($bp);
-        }
-
-        $this->throwSyntax('Syntax error after projection');
-    }
-
-    private function parseDot($bp)
-    {
-        if ($this->tokens->token['type'] == 'lbracket') {
-            $this->tokens->next();
-            return $this->parseMultiSelectList();
-        }
-
-        return $this->expr($bp);
-    }
-
-    private function parseKeyValuePair()
-    {
-        static $validColon = ['colon' => true];
-        $key = $this->tokens->token['value'];
-        $this->tokens->next($validColon);
-        $this->tokens->next();
-
-        return [
-            'type'     => 'key_value_pair',
-            'key'      => $key,
-            'children' => [$this->expr()]
-        ];
-    }
-
-    private function nud_filter()
-    {
-        return $this->led_filter(self::$currentNode);
     }
 
     private function led_filter(array $left)
@@ -381,6 +342,45 @@ class Parser
             'type'     => 'comparator',
             'relation' => $token['value'],
             'children' => [$left, $this->expr()]
+        ];
+    }
+
+    private function parseProjection($bp)
+    {
+        $type = $this->tokens->token['type'];
+        if (self::$bp[$type] < 10) {
+            return self::$currentNode;
+        } elseif ($type == 'dot') {
+            $this->tokens->next(self::$afterDot);
+            return $this->parseDot($bp);
+        } elseif ($type == 'lbracket' || $type == 'filter') {
+            return $this->expr($bp);
+        }
+
+        $this->throwSyntax('Syntax error after projection');
+    }
+
+    private function parseDot($bp)
+    {
+        if ($this->tokens->token['type'] == 'lbracket') {
+            $this->tokens->next();
+            return $this->parseMultiSelectList();
+        }
+
+        return $this->expr($bp);
+    }
+
+    private function parseKeyValuePair()
+    {
+        static $validColon = ['colon' => true];
+        $key = $this->tokens->token['value'];
+        $this->tokens->next($validColon);
+        $this->tokens->next();
+
+        return [
+            'type'     => 'key_value_pair',
+            'key'      => $key,
+            'children' => [$this->expr()]
         ];
     }
 
