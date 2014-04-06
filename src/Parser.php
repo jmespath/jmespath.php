@@ -151,7 +151,7 @@ class Parser
     private function nud_lbrace()
     {
         static $validKeys = ['quoted_identifier' => true, 'identifier' => true];
-        $this->tokens->next();
+        $this->tokens->next($validKeys);
         $pairs = [];
 
         do {
