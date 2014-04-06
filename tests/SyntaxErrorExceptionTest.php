@@ -37,7 +37,7 @@ EOT;
 Syntax error at character 3
 abc,def
    ^
-Expected dot or eof; found comma ","
+Expected one of the following: dot, eof; found comma ","
 EOT;
         $this->assertContains($expected, $e->getMessage());
     }
