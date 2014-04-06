@@ -109,8 +109,7 @@ much better performance.
 
 Use the CompilerRuntime if you know that you will be executing JMESPath
 expressions more than once or if you can pre-compile JMESPath expressions
-before executing them. This runtime works really well for server-side
-applications that can incur a warm-up penalty or applications that
+before executing them (for example, server-side applications).
 
 Customizing the runtime
 ~~~~~~~~~~~~~~~~~~~~~~~
