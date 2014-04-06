@@ -80,7 +80,9 @@ class Parser
         $result = $this->expr();
 
         if ($this->tokens->token['type'] != 'eof') {
-            $this->throwSyntax('Syntax error');
+            $this->throwSyntax('Encountered an unexpected "'
+                . $this->tokens->token['type'] . '" token and did not reach'
+                . ' the end of the token stream');
         }
 
         return $result;
@@ -480,7 +482,8 @@ class Parser
     {
         $prefix = substr($method, 0, 4);
         if ($prefix == 'nud_' || $prefix == 'led_') {
-            $this->throwSyntax("Unexpected token, $method");
+            $token = substr($method, 4);
+            $this->throwSyntax("Unexpected \"$token\" token ($method)");
         }
 
         throw new \BadMethodCallException("Call to undefined method $method");
