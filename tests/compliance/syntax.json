@@ -133,6 +133,10 @@
       {
         "expression": "foo[*]bar",
         "error": "syntax"
+      },
+      {
+        "expression": "foo[*]*",
+        "error": "syntax"
       }
     ]
   },
@@ -606,6 +610,10 @@
     "comment": "Combined syntax",
     "given": [],
     "cases": [
+      {
+        "expression": "*||*|*|*",
+        "result": []
+      },
       {
         "expression": "*[]||[*]",
         "result": []
