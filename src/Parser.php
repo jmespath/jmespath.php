@@ -191,7 +191,10 @@ class Parser
 
         if ($type == 'star') {
             try {
-                return $this->parseWildcardArray();
+                $this->tokens->mark();
+                $result = $this->parseWildcardArray();
+                $this->tokens->unmark();
+                return $result;
             } catch (SyntaxErrorException $e) {
                 $this->tokens->backtrack();
             }

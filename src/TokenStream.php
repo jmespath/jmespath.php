@@ -18,6 +18,9 @@ class TokenStream
     /** @var int Current token position */
     private $pos;
 
+    /** @var int Backtrack token position */
+    private $markPos;
+
     /** @var string Current expression */
     private $expression;
 
@@ -46,11 +49,33 @@ class TokenStream
     }
 
     /**
+     * Mark the backtrack position
+     */
+    public function mark()
+    {
+        $this->markPos = $this->pos;
+    }
+
+    /**
+     * Remove the backtrack marker
+     */
+    public function unmark()
+    {
+        $this->markPos = null;
+    }
+
+    /**
      * Backtrack to the previous token
      */
     public function backtrack()
     {
-        $this->token = $this->tokens[--$this->pos];
+        if ($this->markPos === null) {
+            throw new \RuntimeException('No backtrack marker was specified!');
+        }
+
+        $this->pos = $this->markPos;
+        $this->token = $this->tokens[$this->pos];
+        $this->markPos = null;
     }
 
     /**
