@@ -5,14 +5,14 @@ namespace JmesPath\Tree;
 class ExprNode
 {
     /** @var array */
-    public $expression;
+    public $node;
 
     /** @var TreeInterpreter */
     public $interpreter;
 
-    public function __construct(TreeInterpreter $interpreter, array $children)
+    public function __construct(TreeInterpreter $interpreter, $node)
     {
         $this->interpreter = $interpreter;
-        $this->expression = $children[0];
+        $this->node = $node;
     }
 }

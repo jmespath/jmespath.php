@@ -306,6 +306,14 @@ class TreeCompiler implements TreeVisitorInterface
         return $this->write('// Visiting current node (no-op)');
     }
 
+    private function visit_expression(array $node)
+    {
+        $child = var_export($node['children'][0], true);
+
+        return $this->write("\$value = new \\JmesPath\\Tree\\ExprNode("
+            . "new \\JmesPath\\Tree\\TreeInterpreter(), $child);");
+    }
+
     private function visit_flatten(array $node)
     {
         $this->dispatch($node['children'][0]);

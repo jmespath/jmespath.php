@@ -165,7 +165,7 @@ class DefaultFunctions
 
     public static function sort(array $args)
     {
-        self::validate($args, array(array('array')), 1, 1);
+        self::validate($args, [['array']], 1, 1);
 
         if (empty($args[0])) {
             return array();
@@ -189,10 +189,10 @@ class DefaultFunctions
 
     public static function sort_by(array $args)
     {
-        self::validate($args, array(array('array'), array('expression')), 2, 2);
+        self::validate($args, [['array'], ['expression']], 2, 2);
 
         $i = $args[1]->interpreter;
-        $expr = $args[1]->expression;
+        $expr = $args[1]->node;
         usort($args[0], function ($a, $b) use ($i, $expr) {
             $va = $i->visit($expr, $a);
             $vb = $i->visit($expr, $b);
@@ -208,6 +208,41 @@ class DefaultFunctions
         });
 
         return $args[0];
+    }
+
+    public static function min_by(array $args)
+    {
+        return self::numberCmpBy($args, '<');
+    }
+
+    public static function max_by(array $args)
+    {
+        return self::numberCmpBy($args, '>');
+    }
+
+    private static function numberCmpBy(array $args, $cmp)
+    {
+        self::validate($args, [['array'], ['expression']], 2, 2);
+        $i = $args[1]->interpreter;
+        $expr = $args[1]->node;
+
+        $cur = $curValue = null;
+        foreach ($args[0] as $value) {
+            $result = $i->visit($expr, $value);
+            if (self::gettype($result) != 'number') {
+                throw new \InvalidArgumentException('Expected a number result');
+            }
+            if ($cur === null || (
+                    ($cmp == '<' && $result < $cur) ||
+                    ($cmp == '>' && $result > $cur)
+                )
+            ) {
+                $cur = $result;
+                $curValue = $value;
+            }
+        }
+
+        return $curValue;
     }
 
     public static function type(array $args)

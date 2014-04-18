@@ -14,12 +14,17 @@ class TreeInterpreter implements TreeVisitorInterface
     /** @var RuntimeInterface Runtime used to manage function calls */
     private $runtime;
 
+    public function __construct(RuntimeInterface $runtime = null)
+    {
+        $this->runtime = $runtime;
+    }
+
     public function visit(array $node, $data, array $args = null)
     {
         if (!$this->runtime) {
-            $this->runtime = !isset($args['runtime'])
-                ? DefaultRuntime::$globalRuntime
-                : $args['runtime'];
+            $this->runtime = isset($args['runtime'])
+                ? $args['runtime']
+                : (DefaultRuntime::$globalRuntime ?: \JmesPath\createRuntime());
         }
 
         return $this->dispatch($node, $data);
@@ -212,7 +217,7 @@ class TreeInterpreter implements TreeVisitorInterface
                 // Each child node is evaluated and collected into a list of
                 // arguments. The list of arguments are then fed to the function
                 // registered with the tree visitor.
-                $args = array();
+                $args = [];
                 foreach ($node['children'] as $arg) {
                     $args[] = $this->dispatch($arg, $value);
                 }
@@ -230,7 +235,7 @@ class TreeInterpreter implements TreeVisitorInterface
 
             case 'expression':
                 // Handles expression tokens by executing child 0
-                return new ExprNode($this, $node['children']);
+                return new ExprNode($this, $node['children'][0]);
 
             default:
                 throw new \RuntimeException("Unknown node type: {$node['type']}");

@@ -5,7 +5,6 @@ require 'vendor/autoload.php';
 
 use JmesPath\Runtime\RuntimeInterface;
 
-$_SERVER['jp_cache'] = false;
 $runtimeArgs = $extra = array();
 for ($i = 1, $t = count($argv); $i < $t; $i++) {
     $arg = $argv[$i];

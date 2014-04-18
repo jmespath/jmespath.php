@@ -11,30 +11,32 @@ abstract class AbstractRuntime implements RuntimeInterface
     protected $parser;
 
     /** @var array Map of function names to callables */
-    private $fnMap = array(
-        'abs'       => array('JmesPath\DefaultFunctions', 'abs'),
-        'avg'       => array('JmesPath\DefaultFunctions', 'avg'),
-        'ceil'      => array('JmesPath\DefaultFunctions', 'ceil'),
-        'concat'    => array('JmesPath\DefaultFunctions', 'concat'),
-        'contains'  => array('JmesPath\DefaultFunctions', 'contains'),
-        'floor'     => array('JmesPath\DefaultFunctions', 'floor'),
-        'get'       => array('JmesPath\DefaultFunctions', 'get'),
-        'join'      => array('JmesPath\DefaultFunctions', 'join'),
-        'keys'      => array('JmesPath\DefaultFunctions', 'keys'),
-        'max'       => array('JmesPath\DefaultFunctions', 'max'),
-        'min'       => array('JmesPath\DefaultFunctions', 'min'),
-        'not_null'  => array('JmesPath\DefaultFunctions', 'not_null'),
-        'length'    => array('JmesPath\DefaultFunctions', 'length'),
-        'sort'      => array('JmesPath\DefaultFunctions', 'sort'),
-        'sort_by'   => array('JmesPath\DefaultFunctions', 'sort_by'),
-        'type'      => array('JmesPath\DefaultFunctions', 'type'),
-        'union'     => array('JmesPath\DefaultFunctions', 'union'),
-        'values'    => array('JmesPath\DefaultFunctions', 'values'),
-        'slice'     => array('JmesPath\DefaultFunctions', 'slice'),
-        'sum'       => array('JmesPath\DefaultFunctions', 'sum'),
-        'to_number' => array('JmesPath\DefaultFunctions', 'to_number'),
-        'to_string' => array('JmesPath\DefaultFunctions', 'to_string'),
-    );
+    private $fnMap = [
+        'abs'       => ['JmesPath\DefaultFunctions', 'abs'],
+        'avg'       => ['JmesPath\DefaultFunctions', 'avg'],
+        'ceil'      => ['JmesPath\DefaultFunctions', 'ceil'],
+        'concat'    => ['JmesPath\DefaultFunctions', 'concat'],
+        'contains'  => ['JmesPath\DefaultFunctions', 'contains'],
+        'floor'     => ['JmesPath\DefaultFunctions', 'floor'],
+        'get'       => ['JmesPath\DefaultFunctions', 'get'],
+        'join'      => ['JmesPath\DefaultFunctions', 'join'],
+        'keys'      => ['JmesPath\DefaultFunctions', 'keys'],
+        'max'       => ['JmesPath\DefaultFunctions', 'max'],
+        'min'       => ['JmesPath\DefaultFunctions', 'min'],
+        'min_by'    => ['JmesPath\DefaultFunctions', 'min_by'],
+        'max_by'    => ['JmesPath\DefaultFunctions', 'max_by'],
+        'not_null'  => ['JmesPath\DefaultFunctions', 'not_null'],
+        'length'    => ['JmesPath\DefaultFunctions', 'length'],
+        'sort'      => ['JmesPath\DefaultFunctions', 'sort'],
+        'sort_by'   => ['JmesPath\DefaultFunctions', 'sort_by'],
+        'type'      => ['JmesPath\DefaultFunctions', 'type'],
+        'union'     => ['JmesPath\DefaultFunctions', 'union'],
+        'values'    => ['JmesPath\DefaultFunctions', 'values'],
+        'slice'     => ['JmesPath\DefaultFunctions', 'slice'],
+        'sum'       => ['JmesPath\DefaultFunctions', 'sum'],
+        'to_number' => ['JmesPath\DefaultFunctions', 'to_number'],
+        'to_string' => ['JmesPath\DefaultFunctions', 'to_string'],
+    ];
 
     public function registerFunction($name, $fn)
     {
@@ -51,7 +53,7 @@ abstract class AbstractRuntime implements RuntimeInterface
             throw new \RuntimeException("Call to undefined function: {$name}");
         }
 
-        return call_user_func($this->fnMap[$name], $args);
+        return $this->fnMap[$name]($args);
     }
 
     /**
@@ -79,7 +81,8 @@ abstract class AbstractRuntime implements RuntimeInterface
         $tokens->next();
         do {
             $t = $tokens->token;
-            fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'], json_encode($t['value']));
+            fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'],
+                json_encode($t['value']));
             $tokens->next();
         } while ($tokens->token['type'] != 'eof');
         fwrite($out, "\n");
