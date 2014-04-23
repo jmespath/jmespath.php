@@ -532,10 +532,6 @@
       "error": "invalid-type"
     },
     {
-      "expression": "sort_by(people, &name)",
-      "error": "invalid-type"
-    },
-    {
       "expression": "sort_by(people, name)",
       "error": "invalid-type"
     },
