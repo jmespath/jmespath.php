@@ -151,8 +151,11 @@ class Lexer
 
         $value = json_decode($json, true);
         if ($error = json_last_error()) {
-            $message = isset($jsonErrors[$error]) ? $jsonErrors[$error] : 'Unknown error';
-            $this->throwSyntax("Error decoding JSON: ({$error}) {$message}, given \"{$json}\"", $this->pos - 1);
+            $message = isset($jsonErrors[$error])
+                ? $jsonErrors[$error]
+                : 'Unknown error';
+            $this->throwSyntax("Error decoding JSON: ({$error}) {$message}, "
+                . "given \"{$json}\"", $this->pos - 1);
         }
 
         return $value;
@@ -200,13 +203,17 @@ class Lexer
         static $primitiveMap = [true, false, null];
         // If a literal starts with these characters, it is JSON decoded
         static $decodeCharacters = ['"' => 1, '[' => 1, '{' => 1];
-        static $decodeNumbers = ['-' => 1, 0 => 1, 1 => 1, 2 => 1, 3 => 1,
-            4 => 1, 5 => 1, 6 => 1, 7 => 1, 8 => 1, 9 => 1];
 
         $literal = ['type' => 'literal', 'pos' => $this->pos];
 
         // Consume until the closing literal is found or the end of string
-        if (!preg_match('/`((\\\\\\\\|\\\\`|[^`])*)`/', $this->input, $matches, 0, $this->pos)) {
+        if (!preg_match(
+            '/`((\\\\\\\\|\\\\`|[^`])*)`/',
+            $this->input,
+            $matches,
+            0,
+            $this->pos
+        )) {
             $this->throwSyntax('Unclosed JSON literal', $this->pos);
         }
 
@@ -222,14 +229,12 @@ class Lexer
         } elseif (isset($decodeCharacters[$value[0]])) {
             // Always decode the JSON directly if it starts with these chars
             $value = $this->decodeJson($value);
-        } elseif (isset($decodeNumbers[$value[0]])) {
+        } elseif (preg_match(
+            '/^\-?[0-9]*(\.[0-9]+)?([e|E][+|\-][0-9]+)?$/',
+            $value)
+        ) {
             // If it starts with a "-" or numbers, then attempt to JSON decode
-            try {
-                $value = $this->decodeJson($value);
-            } catch (SyntaxErrorException $e) {
-                // if it failed to decode, treat it as a string
-                $value = $this->decodeJson('"' . $value . '"');
-            }
+            $value = $this->decodeJson($value);
         } else {
             $value = $this->decodeJson('"' . $value . '"');
         }
@@ -241,7 +246,13 @@ class Lexer
 
     private function consumeQuotedString()
     {
-        if (!preg_match('/"(\\\\\\\\|\\\\"|[^"])*"/', $this->input, $matches, 0, $this->pos)) {
+        if (!preg_match(
+            '/"(\\\\\\\\|\\\\"|[^"])*"/',
+            $this->input,
+            $matches,
+            0,
+            $this->pos
+        )) {
             $this->throwSyntax('Unclosed quote');
         }
 

@@ -123,7 +123,7 @@ EOT;
         $this->assertEquals($tokens[0]['type'], $type);
     }
 
-    public function testTokenizesJavasriptLiterals()
+    public function testTokenizesJsonLiterals()
     {
         $l = new Lexer();
         $tokens = $this->tokenArray($l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`, `0`, `0.45`, `-0.5`'));
@@ -135,6 +135,17 @@ EOT;
         $this->assertSame(0, $tokens[10]['value']);
         $this->assertSame(0.45, $tokens[12]['value']);
         $this->assertSame(-0.5, $tokens[14]['value']);
+    }
+
+    public function testTokenizesJsonNumbers()
+    {
+        $l = new Lexer();
+        $tokens = $this->tokenArray($l->tokenize('`10`, `1.2`, `-10.20e-10`, `1.2E+2`, `2014-12`'));
+        $this->assertEquals(10, $tokens[0]['value']);
+        $this->assertEquals(1.2, $tokens[2]['value']);
+        $this->assertEquals(-1.02E-9, $tokens[4]['value']);
+        $this->assertEquals(120, $tokens[6]['value']);
+        $this->assertEquals('2014-12', $tokens[8]['value']);
     }
 
     private function tokenArray(TokenStream $tokens)
