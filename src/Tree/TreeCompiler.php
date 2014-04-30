@@ -322,7 +322,7 @@ class TreeCompiler implements TreeVisitorInterface
         $tmpVal = uniqid('val_');
 
         $this
-            ->write('// Visting merge node')
+            ->write('// Visiting merge node')
             ->write('if (is_array($value)) {')
             ->indent()
                 ->write('$invalid = false;')

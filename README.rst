@@ -30,7 +30,7 @@ data structures. It requires PHP 5.4+ and can be installed through
 
 - `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
 - `JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
-- `JMESPath Python libary <https://github.com/boto/jmespath>`_
+- `JMESPath Python library <https://github.com/boto/jmespath>`_
 
 Installing
 ==========
