@@ -189,15 +189,10 @@ class Parser
             return $this->parseArrayIndexExpression();
         }
 
-        if ($type == 'star') {
-            try {
-                $this->tokens->mark();
-                $result = $this->parseWildcardArray();
-                $this->tokens->unmark();
-                return $result;
-            } catch (SyntaxErrorException $e) {
-                $this->tokens->backtrack();
-            }
+        if ($type == 'star' &&
+            $this->tokens->lookahead(1)['type'] == 'rbracket'
+        ) {
+            return $this->parseWildcardArray();
         }
 
         return $this->parseMultiSelectList();
