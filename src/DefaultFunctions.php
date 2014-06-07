@@ -171,18 +171,14 @@ class DefaultFunctions
             return array();
         }
 
-        $firstType = self::gettype($args[0][0]);
-        if ($firstType != 'number' && $firstType != 'string') {
-            self::typeError('sort', 0, 'must be an array of string or numbers');
-        }
-
-        for ($i = 1, $c = count($args[0]); $i < $c; $i++) {
-            if (self::gettype($args[0][$i]) != $firstType) {
+        usort($args[0], function ($a, $b) {
+            $at = self::gettype($a);
+            $bt = self::gettype($b);
+            if ($at != $bt || ($at != 'number' && $at != 'string')) {
                 self::typeError('sort', 0, 'must be an array of string or numbers');
             }
-        }
-
-        natsort($args[0]);
+            return strnatcmp($a, $b);
+        });
 
         return array_values($args[0]);
     }
@@ -198,10 +194,9 @@ class DefaultFunctions
             $vb = $i->visit($expr, $b);
             $ta = DefaultFunctions::gettype($va);
             $tb = DefaultFunctions::gettype($vb);
-            if (($ta != 'number' && $ta != 'string') ||
-                ($tb != 'number' && $tb != 'string')) {
+            if ($ta != $tb || ($ta != 'number' && $ta != 'string')) {
                 DefaultFunctions::typeError(
-                    'sort_by', 1, 'must be strings or numbers'
+                    'sort_by', 1, 'must be strings or numbers of the same type'
                 );
             }
             return strnatcmp($va, $vb);
