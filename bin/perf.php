@@ -18,6 +18,10 @@ for ($i = 1, $t = count($argv); $i < $t; $i++) {
     }
 }
 
+if (!isset($_SERVER['jp_cache'])) {
+    $_SERVER['jp_cache'] = false;
+}
+
 $dir = __DIR__ . '/../tests/compliance/perf';
 if (count($extra)) {
     if (count($extra) > 1 || strpos($extra[0], '--') === 0) {
