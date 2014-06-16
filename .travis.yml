@@ -11,6 +11,6 @@ before_script:
 
 script: make test
 
-matrix:
-  allow_failures:
-    - php: hhvm
+after_script:
+  - make perf
+  - JP_PHP_COMPILE=on make perf
