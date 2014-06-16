@@ -20,7 +20,6 @@ class LexerTest extends \PHPUnit_Framework_TestCase
 Syntax error at character 6
 "foo"."baz
       ^
-Unclosed quote
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -37,7 +36,6 @@ EOT;
 Syntax error at character 0
 ``
 ^
-Empty JSON literal
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -54,7 +52,6 @@ EOT;
 Syntax error at character 0
 `{abc
 ^
-Unclosed JSON literal
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
@@ -68,10 +65,10 @@ EOT;
             $this->fail('Did not throw');
         } catch (SyntaxErrorException $e) {
             $expected = <<<EOT
-Syntax error at character 7
+Syntax error at character 0
 `{abc{}`
-       ^
-Error decoding JSON: (4) JSON_ERROR_SYNTAX - Syntax error, malformed JSON, given "{abc{}"
+^
+Error decoding JSON: (4) JSON_ERROR_SYNTAX, given "{abc{}"
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }
