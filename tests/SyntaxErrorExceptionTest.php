@@ -1,7 +1,6 @@
 <?php
 namespace JmesPath\Tests;
 
-use JmesPath\Lexer;
 use JmesPath\SyntaxErrorException;
 
 /**
