@@ -2,7 +2,6 @@
 namespace JmesPath\Tree;
 
 use JmesPath\Lexer;
-use JmesPath\Runtime\DefaultRuntime;
 use JmesPath\Runtime\RuntimeInterface;
 
 /**
@@ -23,7 +22,7 @@ class TreeInterpreter implements TreeVisitorInterface
         if (!$this->runtime) {
             $this->runtime = isset($args['runtime'])
                 ? $args['runtime']
-                : (DefaultRuntime::$globalRuntime ?: \JmesPath\createRuntime());
+                : \JmesPath\createRuntime();
         }
 
         return $this->dispatch($node, $data);

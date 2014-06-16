@@ -44,10 +44,10 @@ class CompilerRuntime extends AbstractRuntime
                 $code = $this->compiler->visit(
                     $this->parser->parse($expression),
                     $data,
-                    array(
+                    [
                         'function_name' => $functionName,
                         'expression'    => $expression
-                    )
+                    ]
                 );
                 if (!file_put_contents($filename, $code)) {
                     throw new \RuntimeException(sprintf(

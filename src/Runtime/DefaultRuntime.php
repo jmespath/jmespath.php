@@ -10,12 +10,6 @@ use JmesPath\Tree\TreeVisitorInterface;
  */
 class DefaultRuntime extends AbstractRuntime
 {
-    /**
-     * @var RuntimeInterface The Runtime used in \JmesPath::search.
-     * @private Use JmesPath\registerRuntime() rather than relying on this var
-     */
-    public static $globalRuntime;
-
     /** @var TreeVisitorInterface */
     private $interpreter;
 
@@ -23,7 +17,7 @@ class DefaultRuntime extends AbstractRuntime
     private $visitorOptions;
 
     /** @var array Internal AST cache */
-    private $cache = array();
+    private $cache = [];
 
     /** @var int Number of cached entries */
     private $cachedCount = 0;
@@ -38,7 +32,7 @@ class DefaultRuntime extends AbstractRuntime
     ) {
         $this->parser = $parser;
         $this->interpreter = $interpreter;
-        $this->visitorOptions = array('runtime' => $this);
+        $this->visitorOptions = ['runtime' => $this];
     }
 
     public function search($expression, $data)
@@ -61,7 +55,7 @@ class DefaultRuntime extends AbstractRuntime
     public function debug($expression, $data, $out = STDOUT)
     {
         fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
-        list($tokens, $lexTime) = $this->printDebugTokens($out, $expression);
+        list($_, $lexTime) = $this->printDebugTokens($out, $expression);
         list($ast, $parseTime) = $this->printDebugAst($out, $expression);
         fprintf($out, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
 
@@ -81,7 +75,7 @@ class DefaultRuntime extends AbstractRuntime
 
     public function clearCache()
     {
-        $this->cache = array();
+        $this->cache = [];
         $this->cachedCount = 0;
     }
 }

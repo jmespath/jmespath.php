@@ -83,7 +83,7 @@ abstract class AbstractRuntime implements RuntimeInterface
         }
         fwrite($out, "\n");
 
-        return array($tokens, $lexTime);
+        return [$tokens, $lexTime];
     }
 
     protected function printDebugAst($out, $expression)
@@ -95,6 +95,6 @@ abstract class AbstractRuntime implements RuntimeInterface
         fwrite($out, "AST\n========\n\n");
         fwrite($out, $this->prettyJson($ast) . "\n");
 
-        return array($ast, $parseTime);
+        return [$ast, $parseTime];
     }
 }

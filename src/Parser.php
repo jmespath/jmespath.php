@@ -14,7 +14,7 @@ class Parser
     private $tokens;
 
     /** @var array Current token */
-    public $token;
+    private $token;
 
     /** @var int Current token position */
     private $tpos;
@@ -66,9 +66,9 @@ class Parser
     /**
      * @param Lexer $lexer Lexer used to tokenize expressions
      */
-    public function __construct(Lexer $lexer)
+    public function __construct(Lexer $lexer = null)
     {
-        $this->lexer = $lexer;
+        $this->lexer = $lexer ?: new Lexer();
     }
 
     /**
@@ -502,7 +502,7 @@ class Parser
     }
 
     /**
-     * Handles parsing undefined tokens without paying the cost of validation
+     * @internal Handles undefined tokens without paying the cost of validation
      */
     public function __call($method, $args)
     {

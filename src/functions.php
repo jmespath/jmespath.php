@@ -2,8 +2,8 @@
 namespace JmesPath;
 
 use JmesPath\Tree\TreeInterpreter;
-use JmesPath\Runtime\RuntimeInterface;
 use JmesPath\Runtime\DefaultRuntime;
+use JmesPath\Runtime\RuntimeInterface;
 use JmesPath\Runtime\CompilerRuntime;
 
 /**
@@ -16,11 +16,11 @@ use JmesPath\Runtime\CompilerRuntime;
  */
 function search($expression, $data)
 {
-    if (!DefaultRuntime::$globalRuntime) {
-        DefaultRuntime::$globalRuntime = createRuntime();
+    if (!_CachedRuntime::$runtime) {
+        _CachedRuntime::$runtime = createRuntime();
     }
 
-    return DefaultRuntime::$globalRuntime->search($expression, $data);
+    return _CachedRuntime::$runtime->search($expression, $data);
 }
 
 /**
@@ -30,7 +30,7 @@ function search($expression, $data)
  */
 function registerRuntime(RuntimeInterface $runtime)
 {
-    DefaultRuntime::$globalRuntime = $runtime;
+    _CachedRuntime::$runtime = $runtime;
 }
 
 /**
@@ -57,7 +57,7 @@ function createRuntime(array $options = array())
             $options['compile'] = sys_get_temp_dir();
         } elseif (!is_string($options['compile'])) {
             throw new \InvalidArgumentException('"compile" must be a string '
-                . ' or Boolean');
+                . 'or Boolean');
         }
 
         return new CompilerRuntime($parser, $options['compile']);
@@ -69,4 +69,11 @@ function createRuntime(array $options = array())
             ? $options['interpreter']
             : new TreeInterpreter()
     );
+}
+
+/** @internal */
+final class _CachedRuntime
+{
+    /** @var RuntimeInterface The Runtime used in \JmesPath::search. */
+    public static $runtime;
 }
