@@ -3,6 +3,9 @@
 
 require 'vendor/autoload.php';
 
+use JmesPath\Runtime\CompilerRuntime;
+use JmesPath\Runtime\AstRuntime;
+
 $description = <<<EOT
 Runs a JMESPath expression on the provided input or a test case.
 
@@ -35,16 +38,15 @@ for ($i = 1, $total = count($argv); $i < $total; $i++) {
 $runtime = null;
 $expression = $currentKey;
 
-if (isset($args['compile'])) {
-    if ($args['compile'] == '1' || $args['compile'] == 'true' || $args['compile'] == 'false') {
-        $runtime = \JmesPath\createRuntime(array(
-            'compile' => __DIR__ . '/../compiled'
-        ));
-    }
+if (isset($args['compile']) && ($args['compile'] == '1' ||
+                                $args['compile'] == 'true' ||
+                                $args['compile'] == 'false')
+) {
+    $runtime = new CompilerRuntime(['dir' => __DIR__ . '/../compiled']);
 }
 
 if (!$runtime) {
-    $runtime = \JmesPath\createRuntime();
+    $runtime = new AstRuntime();
 }
 
 if (isset($args['compile']) && $args['compile'] == 'false') {

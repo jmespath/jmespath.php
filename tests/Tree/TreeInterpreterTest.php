@@ -2,6 +2,7 @@
 
 namespace JmesPath\Tests\Tree;
 
+use JmesPath\Runtime\AstRuntime;
 use JmesPath\Tree\TreeInterpreter;
 
 /**
@@ -24,7 +25,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
                 array('type' => 'literal', 'value' => 1)
             )
         ), array(), array(
-            'runtime' => \JmesPath\createRuntime()
+            'runtime' => new AstRuntime()
         ));
     }
 
@@ -38,7 +39,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
                 array('type' => 'literal', 'value' => 1)
             )
         ), array(), array(
-            'runtime' => \JmesPath\createRuntime()
+            'runtime' => new AstRuntime()
         )));
     }
 }

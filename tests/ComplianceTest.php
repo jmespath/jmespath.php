@@ -2,6 +2,8 @@
 
 namespace JmesPath\Tests;
 
+use JmesPath\Runtime\AstRuntime;
+use JmesPath\Runtime\CompilerRuntime;
 use JmesPath\SyntaxErrorException;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
@@ -11,10 +13,10 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
     public static function setUpBeforeClass()
     {
-        self::$defaultRuntime = \JmesPath\createRuntime();
-        self::$compilerRuntime = \JmesPath\createRuntime(array(
-            'compile' => __DIR__ . '/../../compiled'
-        ));
+        self::$defaultRuntime = new AstRuntime();
+        self::$compilerRuntime = new CompilerRuntime([
+            'dir' => __DIR__ . '/../../compiled'
+        ]);
         self::$compilerRuntime->clearCache();
     }
 

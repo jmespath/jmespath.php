@@ -2,13 +2,14 @@
 namespace JmesPath\Runtime;
 
 use JmesPath\Parser;
+use JmesPath\Tree\TreeInterpreter;
 use JmesPath\Tree\TreeVisitorInterface;
 
 /**
  * Default JMESPath runtime environment that uses an external tree visitor to
  * interpret an AST.
  */
-class DefaultRuntime extends AbstractRuntime
+class AstRuntime extends AbstractRuntime
 {
     /** @var TreeVisitorInterface */
     private $interpreter;
@@ -23,16 +24,19 @@ class DefaultRuntime extends AbstractRuntime
     private $cachedCount = 0;
 
     /**
-     * @param Parser               $parser      Parser used to parse expressions
-     * @param TreeVisitorInterface $interpreter Tree visitor used to interpret the AST
+     * @param array $config Configuration options for the runtime.
+     *                      - parser: Parser to use (optional)
+     *                      - interpreter: Interprets the AST (optional)
      */
-    public function __construct(
-        Parser $parser,
-        TreeVisitorInterface $interpreter
-    ) {
-        $this->parser = $parser;
-        $this->interpreter = $interpreter;
+    public function __construct(array $config = [])
+    {
         $this->visitorOptions = ['runtime' => $this];
+        $this->parser = isset($config['parser'])
+            ? $config['parser']
+            : new Parser();
+        $this->interpreter = isset($config['interpreter'])
+            ? $config['interpreter']
+            : new TreeInterpreter($this);
     }
 
     public function search($expression, $data)

@@ -1,17 +1,19 @@
 <?php
-
 namespace JmesPath\Tests\Runtime;
 
 use JmesPath\Parser;
-use JmesPath\Runtime\DefaultRuntime;
+use JmesPath\Runtime\AstRuntime;
 use JmesPath\Tree\TreeInterpreter;
 use JmesPath\Lexer;
 
-class DefaultRuntimeTest extends \PHPUnit_Framework_TestCase
+class AstRuntimeTest extends \PHPUnit_Framework_TestCase
 {
     public function testClearsCache()
     {
-        $r = new DefaultRuntime(new Parser(new Lexer()), new TreeInterpreter());
+        $r = new AstRuntime([
+            'parser'      => new Parser(new Lexer()),
+            'interpreter' => new TreeInterpreter()
+        ]);
         $r->search('foo', array());
         $this->assertNotEmpty($this->readAttribute($r, 'cache'));
         $r->clearCache();

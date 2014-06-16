@@ -4,12 +4,16 @@
 require 'vendor/autoload.php';
 
 use JmesPath\Runtime\RuntimeInterface;
+use JmesPath\Runtime\CompilerRuntime;
+use JmesPath\Runtime\AstRuntime;
 
-$runtimeArgs = $extra = array();
+$runtime = null;
+$runtimeArgs = $extra = [];
+
 for ($i = 1, $t = count($argv); $i < $t; $i++) {
     $arg = $argv[$i];
     if ($arg == '--compile') {
-        $runtimeArgs['compile'] = true;
+        $runtime = new CompilerRuntime();
         $_SERVER['jp_compile'] = true;
     } elseif ($arg == '--cache') {
         $_SERVER['jp_cache'] = true;
@@ -18,11 +22,14 @@ for ($i = 1, $t = count($argv); $i < $t; $i++) {
     }
 }
 
+$runtime = $runtime ?: new AstRuntime();
+
 if (!isset($_SERVER['jp_cache'])) {
     $_SERVER['jp_cache'] = false;
 }
 
 $dir = __DIR__ . '/../tests/compliance/perf';
+
 if (count($extra)) {
     if (count($extra) > 1 || strpos($extra[0], '--') === 0) {
         die("perf.php [--compile] [--cache] [script_directory]\n\n");
@@ -32,7 +39,6 @@ if (count($extra)) {
 }
 
 is_dir($dir) or die('Dir not found: ' . $dir);
-$runtime = \JmesPath\createRuntime($runtimeArgs);
 
 // Warm up the runner
 $runtime->search('abcdefg', array());

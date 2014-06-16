@@ -17,7 +17,7 @@ class AbstractRuntimeTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage Call to undefined function: foo
+     * @expectedExceptionMessage Call to undefined function foo
      */
     public function testThrowsWhenNoFunctionMatchesName()
     {

@@ -6,7 +6,9 @@ use JmesPath\Parser;
 
 /**
  * JMESPath runtime environment that compiles JMESPath expressions to PHP
- * source code
+ * source code.
+ *
+ * This runtime can be utilize to speedup frequently executed JMESPath queries.
  */
 class CompilerRuntime extends AbstractRuntime
 {
@@ -17,21 +19,28 @@ class CompilerRuntime extends AbstractRuntime
     private $cacheDir;
 
     /**
-     * @param Parser $parser   Parser used to parse expressions
-     * @param string $cacheDir Directory used to store compiled PHP code
+     * @param array $config Array of configuration options.
+     *                      - parser: Parses expressions
+     *                      - dir: Directory used to store compiled PHP files.
      * @throws \RuntimeException if the cache directory cannot be created
      */
-    public function __construct(Parser $parser, $cacheDir)
+    public function __construct(array $config = [])
     {
-        $this->parser = $parser;
         $this->compiler = new TreeCompiler();
+        $this->parser = isset($config['parser'])
+            ? $config['options']
+            : new Parser();
 
-        if (!is_dir($cacheDir) && !mkdir($cacheDir, 0755, true)) {
-            throw new \RuntimeException('Unable to create cache directory: '
-                . $cacheDir);
+        if (!isset($config['dir'])) {
+            $config['dir'] = sys_get_temp_dir();
         }
 
-        $this->cacheDir = realpath($cacheDir);
+        if (!is_dir($config['dir']) && !mkdir($$config['dir'], 0755, true)) {
+            throw new \RuntimeException('Unable to create cache directory: '
+                . $config['dir']);
+        }
+
+        $this->cacheDir = realpath($config['dir']);
     }
 
     public function search($expression, $data)
