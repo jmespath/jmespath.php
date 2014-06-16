@@ -7,34 +7,43 @@ namespace JmesPath;
 class Lexer
 {
     private $re, $offsetToToken, $input, $pos, $handlers;
+
+    /** @var array Simple tokens that do not need to be in the regex */
+    private $simpleTokens = [
+        ' '  => 'skip',
+        "\n" => 'skip',
+        "\t" => 'skip',
+        "\r" => 'skip',
+        '.'  => 'dot',
+        '*'  => 'star',
+        ','  => 'comma',
+        ':'  => 'colon',
+        '@'  => 'current',
+        '&'  => 'expref',
+        ']'  => 'rbracket',
+        '('  => 'lparen',
+        ')'  => 'rparen',
+        '{'  => 'lbrace',
+        '}'  => 'rbrace',
+    ];
+
+    /** @var array Map of regular expressions to their token match value */
     private $tokenMap = [
-        '[ \t]' => 'skip',
-        '-?\d+' => 'number',
-        '[a-zA-Z_][a-zA-Z_0-9]*' => 'identifier',
-        '\.' => 'dot',
+        '-?\d+'                      => 'number',
+        '[a-zA-Z_][a-zA-Z_0-9]*'     => 'identifier',
         '"(?:\\\\\\\\|\\\\"|[^"])*"' => 'quoted_identifier',
         '`(?:\\\\\\\\|\\\\`|[^`])*`' => 'literal',
-        '\*' => 'star',
-        '\[\]' => 'flatten',
-        '\|\|' => 'or',
-        '\|' => 'pipe',
-        '\[\?' => 'filter',
-        '\(' => 'lparen',
-        '\)' => 'rparen',
-        '\{' => 'lbrace',
-        '\}' => 'rbrace',
-        '\[' => 'lbracket',
-        '\]' => 'rbracket',
-        ',' => 'comma',
-        '&' => 'expref',
-        '@' => 'current',
-        ':' => 'colon',
-        '!=' => 'comparator',
-        '==' => 'comparator',
-        '<=' => 'comparator',
-        '>=' => 'comparator',
-        '<' => 'comparator',
-        '>' => 'comparator',
+        '\[\]'                       => 'flatten',
+        '\|\|'                       => 'or',
+        '\|'                         => 'pipe',
+        '\[\?'                       => 'filter',
+        '\['                         => 'lbracket',
+        '!='                         => 'comparator',
+        '=='                         => 'comparator',
+        '<='                         => 'comparator',
+        '>='                         => 'comparator',
+        '<'                          => 'comparator',
+        '>'                          => 'comparator',
     ];
 
     /**
@@ -82,24 +91,21 @@ class Lexer
 
         while (isset($input[$this->pos])) {
 
-            if (!preg_match($this->re, $input, $matches, null, $this->pos)) {
+            if (isset($this->simpleTokens[$input[$this->pos]])) {
+                $type = $this->simpleTokens[$input[$this->pos]];
+                if ($type == 'skip') {
+                    $this->pos += 1;
+                    continue;
+                }
+                $value = $input[$this->pos];
+            } elseif (preg_match($this->re, $input, $matches, null, $this->pos)) {
+                $type = $this->offsetToToken[count($matches) - 2];
+                $value = $matches[0];
+            } else {
                 $this->throwSyntax();
             }
 
-            // find the first non-empty element (but skipping $matches[0])
-            for ($i = 1; '' === $matches[$i]; ++$i);
-            $type = $this->offsetToToken[$i - 1];
-
-            if ($type === 'skip') {
-                $this->pos += strlen($matches[0]);
-                continue;
-            }
-
-            $token = [
-                'type'  => $type,
-                'value' => $matches[0],
-                'pos'   => $this->pos
-            ];
+            $token = ['type' => $type, 'value' => $value, 'pos' => $this->pos];
 
             // Check if a custom token handler is needed to process the lexeme
             if (isset($this->handlers['token_' . $token['type']])) {
@@ -107,7 +113,7 @@ class Lexer
             }
 
             $tokens[] = $token;
-            $this->pos += strlen($matches[0]);
+            $this->pos += strlen($value);
         }
 
         // Always end the token stream with an EOF token
