@@ -5,7 +5,6 @@ use JmesPath\Tree\TreeCompiler;
 
 /**
  * @covers JmesPath\Tree\TreeCompiler
- * @covers JmesPath\Tree\AbstractTreeVisitor
  */
 class TreeCompilerTest extends \PHPUnit_Framework_TestCase
 {
