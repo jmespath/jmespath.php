@@ -12,8 +12,11 @@ class SyntaxErrorException extends \InvalidArgumentException
      * @param array  $token                  Current token
      * @param string $expression             Expression input
      */
-    public function __construct($expectedTypesOrMessage, array $token, $expression)
-    {
+    public function __construct(
+        $expectedTypesOrMessage,
+        array $token,
+        $expression
+    ) {
         $message = "Syntax error at character {$token['pos']}\n"
             . $expression . "\n" . str_repeat(' ', $token['pos']) . "^\n";
 

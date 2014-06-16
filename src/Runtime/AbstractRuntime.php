@@ -78,13 +78,10 @@ abstract class AbstractRuntime implements RuntimeInterface
         $tokens = $lexer->tokenize($expression);
         $lexTime = (microtime(true) - $t) * 1000;
 
-        $tokens->next();
-        do {
-            $t = $tokens->token;
+        foreach ($tokens as $t) {
             fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'],
                 json_encode($t['value']));
-            $tokens->next();
-        } while ($tokens->token['type'] != 'eof');
+        }
         fwrite($out, "\n");
 
         return array($tokens, $lexTime);

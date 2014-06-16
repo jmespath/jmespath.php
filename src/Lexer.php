@@ -77,11 +77,14 @@ class Lexer
     }
 
     /**
-     * Tokenize the JMESPath expression into a token stream
+     * Tokenize the JMESPath expression into an array of tokens.
+     *
+     * Each token array contains a type, value, and pos key along with any
+     * other keys that might be relevant to the particular token.
      *
      * @param string $input JMESPath input
      *
-     * @return TokenStream
+     * @return array
      * @throws SyntaxErrorException
      */
     public function tokenize($input)
@@ -126,7 +129,7 @@ class Lexer
         // Always end the token stream with an EOF token
         $tokens[] = ['type' => 'eof', 'pos' => $len, 'value' => null];
 
-        return new TokenStream($tokens, $input);
+        return $tokens;
     }
 
     private function throwSyntax($message = 'Unexpected character', $pos = null)

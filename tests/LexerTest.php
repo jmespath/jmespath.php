@@ -1,10 +1,8 @@
 <?php
-
 namespace JmesPath\Tests;
 
 use JmesPath\Lexer;
 use JmesPath\SyntaxErrorException;
-use JmesPath\TokenStream;
 
 /**
  * @covers JmesPath\Lexer
@@ -119,14 +117,15 @@ EOT;
     public function testTokenizesInput($input, $type)
     {
         $l = new Lexer();
-        $tokens = $this->tokenArray($l->tokenize($input));
+        $tokens = $l->tokenize($input);
         $this->assertEquals($tokens[0]['type'], $type);
     }
 
     public function testTokenizesJsonLiterals()
     {
         $l = new Lexer();
-        $tokens = $this->tokenArray($l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`, `0`, `0.45`, `-0.5`'));
+        $tokens = $l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`,'
+            . '`0`, `0.45`, `-0.5`');
         $this->assertNull($tokens[0]['value']);
         $this->assertFalse($tokens[2]['value']);
         $this->assertTrue($tokens[4]['value']);
@@ -140,24 +139,11 @@ EOT;
     public function testTokenizesJsonNumbers()
     {
         $l = new Lexer();
-        $tokens = $this->tokenArray($l->tokenize('`10`, `1.2`, `-10.20e-10`, `1.2E+2`, `2014-12`'));
+        $tokens = $l->tokenize('`10`, `1.2`, `-10.20e-10`, `1.2E+2`, `2014-12`');
         $this->assertEquals(10, $tokens[0]['value']);
         $this->assertEquals(1.2, $tokens[2]['value']);
         $this->assertEquals(-1.02E-9, $tokens[4]['value']);
         $this->assertEquals(120, $tokens[6]['value']);
         $this->assertEquals('2014-12', $tokens[8]['value']);
-    }
-
-    private function tokenArray(TokenStream $tokens)
-    {
-        $result = array();
-        $tokens->next();
-
-        do {
-            $result[] = $tokens->token;
-            $tokens->next();
-        } while ($tokens->token['type'] != 'eof');
-
-        return $result;
     }
 }
