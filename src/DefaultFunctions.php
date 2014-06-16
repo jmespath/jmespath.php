@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath;
 
 use JmesPath\Tree\ExprNode;

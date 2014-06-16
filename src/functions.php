@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath;
 
 use JmesPath\Tree\TreeInterpreter;
@@ -57,7 +56,8 @@ function createRuntime(array $options = array())
         if ($options['compile'] === true) {
             $options['compile'] = sys_get_temp_dir();
         } elseif (!is_string($options['compile'])) {
-            throw new \InvalidArgumentException('"compile" must be a string or Boolean');
+            throw new \InvalidArgumentException('"compile" must be a string '
+                . ' or Boolean');
         }
 
         return new CompilerRuntime($parser, $options['compile']);
@@ -65,6 +65,8 @@ function createRuntime(array $options = array())
 
     return new DefaultRuntime(
         $parser,
-        isset($options['interpreter']) ? $options['interpreter'] : new TreeInterpreter()
+        isset($options['interpreter'])
+            ? $options['interpreter']
+            : new TreeInterpreter()
     );
 }

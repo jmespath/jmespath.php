@@ -1,7 +1,9 @@
 <?php
-
 namespace JmesPath\Tree;
 
+/**
+ * Placeholder for expression nodes
+ */
 class ExprNode
 {
     /** @var array */

@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Runtime;
 
 use JmesPath\Parser;

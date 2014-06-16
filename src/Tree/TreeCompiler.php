@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Tree;
 
 use JmesPath\Lexer;

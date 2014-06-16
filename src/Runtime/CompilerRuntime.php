@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Runtime;
 
 use JmesPath\Tree\TreeCompiler;
@@ -28,7 +27,8 @@ class CompilerRuntime extends AbstractRuntime
         $this->compiler = new TreeCompiler();
 
         if (!is_dir($cacheDir) && !mkdir($cacheDir, 0755, true)) {
-            throw new \RuntimeException("Unable to create cache directory: {$cacheDir}");
+            throw new \RuntimeException('Unable to create cache directory: '
+                . $cacheDir);
         }
 
         $this->cacheDir = realpath($cacheDir);

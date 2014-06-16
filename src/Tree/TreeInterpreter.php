@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Tree;
 
 use JmesPath\Lexer;
@@ -88,7 +87,7 @@ class TreeInterpreter implements TreeVisitorInterface
                     }
                 }
 
-                $collected = array();
+                $collected = [];
                 foreach ($left as $val) {
                     if (null !== ($result = $this->dispatch($node['children'][1], $val))) {
                         $collected[] = $result;
@@ -102,7 +101,7 @@ class TreeInterpreter implements TreeVisitorInterface
                 // values of the evaluation if the result is an array. After
                 // merging, the result is passed to the evaluation of the right
                 // child.
-                static $skipElement = array();
+                static $skipElement = [];
                 $value = $this->dispatch($node['children'][0], $value);
 
                 if (!is_array($value)) {
@@ -116,7 +115,7 @@ class TreeInterpreter implements TreeVisitorInterface
                     }
                 }
 
-                $merged = array();
+                $merged = [];
                 foreach ($value as $values) {
                     // Only merge up arrays lists and not hashes
                     if (is_array($values) && isset($values[0])) {
@@ -163,7 +162,7 @@ class TreeInterpreter implements TreeVisitorInterface
                     return null;
                 }
 
-                $collected = array();
+                $collected = [];
                 foreach ($node['children'] as $node) {
                     $collected[] = $this->dispatch($node, $value);
                 }
@@ -178,7 +177,7 @@ class TreeInterpreter implements TreeVisitorInterface
                     return null;
                 }
 
-                $collected = array();
+                $collected = [];
                 foreach ($node['children'] as $node) {
                     $collected[$node['key']] = $this->dispatch(
                         $node['children'][0],
@@ -226,12 +225,12 @@ class TreeInterpreter implements TreeVisitorInterface
 
             case 'slice':
                 // Returns an array slice of the current value
-                return $this->runtime->callFunction('slice', array(
+                return $this->runtime->callFunction('slice', [
                     $value,
                     $node['args'][0],
                     $node['args'][1],
                     $node['args'][2],
-                ));
+                ]);
 
             case 'expression':
                 // Handles expression tokens by executing child 0

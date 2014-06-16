@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Tree;
 
 /**
@@ -16,5 +15,5 @@ interface TreeVisitorInterface
      *
      * @return mixed
      */
-    public function visit(array $node, $data, array $args = array());
+    public function visit(array $node, $data, array $args = []);
 }

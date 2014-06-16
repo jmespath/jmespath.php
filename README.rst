@@ -17,7 +17,7 @@ data structures. It requires PHP 5.4+ and can be installed through
     $expression = 'foo.*.baz';
 
     $data = [
-        'foo': [
+        'foo' => [
             'bar' => ['baz' => 1],
             'bam' => ['baz' => 2],
             'boo' => ['baz' => 3]
