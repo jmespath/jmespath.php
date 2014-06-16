@@ -2,10 +2,17 @@
 namespace JmesPath;
 
 use JmesPath\Runtime\AstRuntime;
-use JmesPath\Runtime\RuntimeInterface;
+use JmesPath\Runtime\CompilerRuntime;
+
+const COMPILE_DIR = 'JP_PHP_COMPILE';
 
 /**
  * Returns data from the input array that matches a given JMESPath expression.
+ *
+ * If the JP_PHP_COMPILE environment variable is specified, then the
+ * CompilerRuntime will be utilized. If set to "on", JMESPath expressions will
+ * be cached to the system's temp directory. Set the environment variable to
+ * a string to cache expressions to a specific directory.
  *
  * @param string $expression JMESPath expression to evaluate
  * @param mixed  $data       JSON-like data to search
@@ -14,16 +21,30 @@ use JmesPath\Runtime\RuntimeInterface;
  */
 function search($expression, $data)
 {
-    if (!_CachedRuntime::$runtime) {
-        _CachedRuntime::$runtime = new AstRuntime();
+    static $runtime;
+    if (!$runtime) {
+        $runtime = envRuntime();
     }
 
-    return _CachedRuntime::$runtime->search($expression, $data);
+    return $runtime->search($expression, $data);
 }
 
-/** @internal */
-final class _CachedRuntime
+/**
+ * Creates a JMESPath runtime based on environment variables.
+ *
+ * @return AstRuntime|CompilerRuntime
+ */
+function envRuntime()
 {
-    /** @var RuntimeInterface The Runtime used in \JmesPath::search. */
-    public static $runtime;
+    $compileDir = isset($_SERVER[COMPILE_DIR])
+        ? $_SERVER[COMPILE_DIR]
+        : (isset($_ENV[COMPILE_DIR]) ? $_ENV[COMPILE_DIR] : null);
+
+    if (!$compileDir) {
+        return new AstRuntime();
+    }
+
+    return $compileDir === 'on'
+        ? new CompilerRuntime()
+        : new CompilerRuntime(['dir' => $compileDir]);
 }

@@ -1,20 +1,15 @@
 #!/usr/bin/env php
 <?php
-
 require 'vendor/autoload.php';
-
-use JmesPath\Runtime\CompilerRuntime;
-use JmesPath\Runtime\AstRuntime;
 
 $description = <<<EOT
 Runs a JMESPath expression on the provided input or a test case.
 
 Provide the JSON input and expression:
-    echo '{}' | jp.php expression [--twice 1]
+    echo '{}' | jp.php expression
 
 Or provide the path to a compliance script, a suite, and test case number:
     jp.php --script path_to_script --suite test_suite_number --case test_case_number [expression]
-
 
 EOT;
 
@@ -35,24 +30,8 @@ for ($i = 1, $total = count($argv); $i < $total; $i++) {
     }
 }
 
-$runtime = null;
 $expression = $currentKey;
-
-if (isset($args['compile']) && ($args['compile'] == '1' ||
-                                $args['compile'] == 'true' ||
-                                $args['compile'] == 'false')
-) {
-    $runtime = new CompilerRuntime(['dir' => __DIR__ . '/../compiled']);
-}
-
-if (!$runtime) {
-    $runtime = new AstRuntime();
-}
-
-if (isset($args['compile']) && $args['compile'] == 'false') {
-    $runtime->clearCache();
-    exit(0);
-}
+$runtime = \JmesPath\envRuntime();
 
 if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
 
@@ -84,10 +63,6 @@ if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
     $data = json_decode(stream_get_contents(STDIN), true);
 } else {
     die($description);
-}
-
-if (isset($args['twice']) && $args['twice'] == '1') {
-    $runtime->search($expression, $data);
 }
 
 $runtime->debug($expression, $data);

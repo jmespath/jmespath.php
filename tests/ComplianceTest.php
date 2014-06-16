@@ -36,7 +36,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         try {
             if ($compiled) {
-                $compiledStr = ' --compiled 1';
+                $compiledStr = \JmesPath\COMPILE_DIR . '=on ';
                 $evalResult = self::$defaultRuntime->debug($expression, $data, $debug);
             } else {
                 $evalResult = self::$compilerRuntime->debug($expression, $data, $debug);
@@ -48,7 +48,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         rewind($debug);
         $file = __DIR__ . '/compliance/' . $file . '.json';
-        $failure = "\nphp bin/jp.php --file {$file} --suite {$suite} --case {$case}{$compiledStr}\n\n"
+        $failure = "\n{$compiledStr}php bin/jp.php --file {$file} --suite {$suite} --case {$case}\n\n"
             . stream_get_contents($debug) . "\n\n"
             . "Expected: " . $this->prettyJson($result) . "\n\n";
 

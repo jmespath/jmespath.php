@@ -1,41 +1,19 @@
 #!/usr/bin/env php
 <?php
-
 require 'vendor/autoload.php';
 
 use JmesPath\Runtime\RuntimeInterface;
-use JmesPath\Runtime\CompilerRuntime;
-use JmesPath\Runtime\AstRuntime;
 
-$runtime = null;
-$runtimeArgs = $extra = [];
+$runtime = \JmesPath\envRuntime();
 
-for ($i = 1, $t = count($argv); $i < $t; $i++) {
-    $arg = $argv[$i];
-    if ($arg == '--compile') {
-        $runtime = new CompilerRuntime();
-        $_SERVER['jp_compile'] = true;
-    } elseif ($arg == '--cache') {
-        $_SERVER['jp_cache'] = true;
-    } else {
-        $extra[] = $arg;
-    }
+if (!isset($_SERVER['CACHE'])) {
+    $_SERVER['CACHE'] = false;
 }
 
-$runtime = $runtime ?: new AstRuntime();
-
-if (!isset($_SERVER['jp_cache'])) {
-    $_SERVER['jp_cache'] = false;
-}
-
-$dir = __DIR__ . '/../tests/compliance/perf';
-
-if (count($extra)) {
-    if (count($extra) > 1 || strpos($extra[0], '--') === 0) {
-        die("perf.php [--compile] [--cache] [script_directory]\n\n");
-    } else {
-        $dir = $extra[0];
-    }
+if (isset($argv[1])) {
+    $dir = $argv[1];
+} else {
+    $dir = __DIR__ . '/../tests/compliance/perf';
 }
 
 is_dir($dir) or die('Dir not found: ' . $dir);
@@ -80,7 +58,7 @@ function runCase(
     $best = 99999;
 
     for ($i = 0; $i < 1000; $i++) {
-        if (!$_SERVER['jp_cache']) {
+        if (!$_SERVER['CACHE']) {
             $runtime->clearCache();
         }
         try {

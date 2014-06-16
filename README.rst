@@ -111,28 +111,12 @@ Use the CompilerRuntime if you know that you will be executing JMESPath
 expressions more than once or if you can pre-compile JMESPath expressions
 before executing them (for example, server-side applications).
 
-Customizing the runtime
-~~~~~~~~~~~~~~~~~~~~~~~
+Environment Variable
+^^^^^^^^^^^^^^^^^^^^
 
-You can create runtimes using the ``JmesPath\createRuntime`` factory method.
-This method accepts an associative array of parameters, including ``parser``
-which can be used to change the Parser used by a runtime, ``interpreter``
-which can be changed to use a custom external tree visitor used to interpret
-expressions, and ``compile`` which can be used to determine if JMESPath
-expressions will be compiled. Set ``compile`` to a directory to store compiled
-PHP source code in a specific directory, or to ``true`` to compile JMESPath
-expressions to your system's temporary directory.
-
-The following example shows how to register a CompilerRuntime with
-``JmesPath\search()``:
-
-.. code-block:: php
-
-    $runtime = JmesPath\createRuntime(array(
-        'compile' => '/path/to/compile_directory'
-    ));
-
-    JmesPath\registerRuntime($runtime);
+You can utilize the CompilerRuntime in ``JmesPath\search()`` by setting the
+``JP_PHP_COMPILE`` environment variable to "on" to or to a directory
+on disk used to store cached expressions.
 
 Testing
 =======
