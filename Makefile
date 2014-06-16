@@ -1,8 +1,5 @@
 all: clean coverage
 
-list:
-	@sh -c "$(MAKE) -p .dummy | awk -F':' '/^[a-zA-Z0-9][^\$$#\/\\t=]*:([^=]|$$)/ {split(\$$1,A,/ /);for(i in A)print A[i]}' | grep -v '__\$$' | sort"
-
 test:
 	vendor/bin/phpunit
 
@@ -20,4 +17,3 @@ perf:
 	php bin/perf.php
 
 .PHONY: test coverage perf
-.dummy:

@@ -28,14 +28,14 @@ class CompilerRuntime extends AbstractRuntime
     {
         $this->compiler = new TreeCompiler();
         $this->parser = isset($config['parser'])
-            ? $config['options']
+            ? $config['parser']
             : new Parser();
 
         if (!isset($config['dir'])) {
             $config['dir'] = sys_get_temp_dir();
         }
 
-        if (!is_dir($config['dir']) && !mkdir($$config['dir'], 0755, true)) {
+        if (!is_dir($config['dir']) && !mkdir($config['dir'], 0755, true)) {
             throw new \RuntimeException('Unable to create cache directory: '
                 . $config['dir']);
         }
