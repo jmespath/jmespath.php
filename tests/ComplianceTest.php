@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Tests;
 
 use JmesPath\Runtime\AstRuntime;

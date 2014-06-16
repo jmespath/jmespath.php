@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Tests\Runtime;
 
 class AbstractRuntimeTest extends \PHPUnit_Framework_TestCase

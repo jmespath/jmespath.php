@@ -1,5 +1,4 @@
 <?php
-
 namespace JmesPath\Tests;
 
 class functionsTest extends \PHPUnit_Framework_TestCase
