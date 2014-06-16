@@ -14,3 +14,4 @@ script: make test
 after_script:
   - make perf
   - JP_PHP_COMPILE=on make perf
+  - JP_PHP_COMPILE=on CACHE=on make perf
