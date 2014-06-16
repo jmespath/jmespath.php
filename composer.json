@@ -24,7 +24,7 @@
     "psr-4": {
       "JmesPath\\": "src/"
     },
-    "files": ["src/functions.php"]
+    "files": ["src/jmespath.php"]
   },
 
   "bin": ["bin/jp.php"],

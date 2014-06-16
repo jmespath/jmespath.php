@@ -60,7 +60,7 @@ PHP Usage
 =========
 
 After installing through Composer, jmespath.php will autoload a
-``functions.php`` file that contains a ``JmesPath\search`` function. This
+``jmespath.php`` file that contains a ``JmesPath\search`` function. This
 function can be used in most cases when using the library.
 
 .. code-block:: php
@@ -70,7 +70,7 @@ function can be used in most cases when using the library.
 .. note::
 
     If you do not install through Composer, then you will need to manually
-    require the functions.php script.
+    require the jmespath.php script.
 
 Runtimes
 --------
