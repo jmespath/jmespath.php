@@ -6,44 +6,37 @@ namespace JmesPath;
  */
 class Lexer
 {
-    private $re, $offsetToToken, $input, $pos, $handlers;
-
-    /** @var array Simple tokens that do not need to be in the regex */
-    private $simpleTokens = [
-        ' '  => 'skip',
-        "\n" => 'skip',
-        "\t" => 'skip',
-        "\r" => 'skip',
-        '.'  => 'dot',
-        '*'  => 'star',
-        ','  => 'comma',
-        ':'  => 'colon',
-        '@'  => 'current',
-        '&'  => 'expref',
-        ']'  => 'rbracket',
-        '('  => 'lparen',
-        ')'  => 'rparen',
-        '{'  => 'lbrace',
-        '}'  => 'rbrace',
-    ];
+    private $re, $offsetToToken, $input, $handlers;
 
     /** @var array Map of regular expressions to their token match value */
     private $tokenMap = [
         '-?\d+'                      => 'number',
+        '\.'                         => 'dot',
         '[a-zA-Z_][a-zA-Z_0-9]*'     => 'identifier',
         '"(?:\\\\\\\\|\\\\"|[^"])*"' => 'quoted_identifier',
         '`(?:\\\\\\\\|\\\\`|[^`])*`' => 'literal',
+        '\*'                         => 'star',
         '\[\]'                       => 'flatten',
         '\|\|'                       => 'or',
         '\|'                         => 'pipe',
         '\[\?'                       => 'filter',
         '\['                         => 'lbracket',
+        '\]'                         => 'rbracket',
+        ','                          => 'comma',
+        ':'                          => 'colon',
+        '@'                          => 'current',
+        '&'                          => 'expref',
+        '\('                         => 'lparen',
+        '\)'                         => 'rparen',
+        '\{'                         => 'lbrace',
+        '\}'                         => 'rbrace',
         '!='                         => 'comparator',
         '=='                         => 'comparator',
         '<='                         => 'comparator',
         '>='                         => 'comparator',
         '<'                          => 'comparator',
         '>'                          => 'comparator',
+        '[ \t]'                      => 'skip',
     ];
 
     /**
@@ -67,7 +60,7 @@ class Lexer
     {
         $this->re = '((' .
             implode(')|(', array_keys($this->tokenMap))
-            . '))AS';
+            . '))';
         $this->offsetToToken = array_values($this->tokenMap);
         $this->handlers = array_fill_keys(get_class_methods($this), true);
     }
@@ -85,63 +78,62 @@ class Lexer
      */
     public function tokenize($input)
     {
+        $offset = 0;
         $this->input = $input;
-        $this->pos = 0;
         $tokens = [];
 
-        while (isset($input[$this->pos])) {
+        if (!preg_match_all(
+            $this->re,
+            $input,
+            $matches,
+            PREG_OFFSET_CAPTURE | PREG_SET_ORDER
+        )) {
+            $this->throwSyntax('Invalid expression', $offset);
+        }
 
-            if (isset($this->simpleTokens[$input[$this->pos]])) {
-                $type = $this->simpleTokens[$input[$this->pos]];
-                if ($type == 'skip') {
-                    $this->pos += 1;
-                    continue;
+        foreach ($matches as $match) {
+            $type = $this->offsetToToken[count($match) - 2];
+            if ($type != 'skip') {
+                $token = [
+                    'type'  => $type,
+                    'value' => $match[0][0],
+                    'pos'   => $match[0][1]
+                ];
+                // Check if a custom token handler is needed to process the lexeme
+                if (isset($this->handlers['token_' . $token['type']])) {
+                    $token = $this->{'token_' . $token['type']}($token, $offset);
                 }
-                $value = $input[$this->pos];
-            } elseif (preg_match($this->re, $input, $matches, null, $this->pos)) {
-                $type = $this->offsetToToken[count($matches) - 2];
-                $value = $matches[0];
-            } else {
-                $this->throwSyntax();
+                $tokens[] = $token;
             }
-
-            $token = ['type' => $type, 'value' => $value, 'pos' => $this->pos];
-
-            // Check if a custom token handler is needed to process the lexeme
-            if (isset($this->handlers['token_' . $token['type']])) {
-                $token = $this->{'token_' . $token['type']}($token);
-            }
-
-            $tokens[] = $token;
-            $this->pos += strlen($value);
+            $offset += strlen($match[0][0]);
         }
 
         // Always end the token stream with an EOF token
-        $tokens[] = ['type' => 'eof', 'pos' => $this->pos, 'value' => null];
+        $tokens[] = ['type' => 'eof', 'pos' => $offset, 'value' => null];
 
         return $tokens;
     }
 
-    private function throwSyntax($message = 'Unexpected character')
+    private function throwSyntax($message = 'Unexpected character', $offset)
     {
         throw new SyntaxErrorException(
             $message,
             [
-                'value' => substr($this->input, $this->pos, 1),
-                'pos'   => $this->pos
+                'value' => substr($this->input, $offset, 1),
+                'pos'   => $offset
             ],
             $this->input
         );
     }
 
-    private function token_number(array $token)
+    private function token_number(array $token, $offset)
     {
         $token['value'] = (int) $token['value'];
 
         return $token;
     }
 
-    private function token_literal(array $token)
+    private function token_literal(array $token, $offset)
     {
         // Maps common JavaScript primitives with a native PHP primitive
         static $primitives = ['true' => 0, 'false' => 1, 'null' => 2];
@@ -156,31 +148,31 @@ class Lexer
             // Fast lookups for common JSON primitives
             $token['value'] = $primitiveMap[$primitives[$token['value']]];
         } elseif (strlen($token['value']) == 0) {
-            $this->throwSyntax('Empty JSON literal');
+            $this->throwSyntax('Empty JSON literal', $offset);
         } elseif (isset($decodeCharacters[$token['value'][0]])) {
             // Always decode the JSON directly if it starts with these chars
-            $token['value'] = $this->decodeJson($token['value']);
+            $token['value'] = $this->decodeJson($token['value'], $offset);
         } elseif (preg_match(
             '/^\-?[0-9]*(\.[0-9]+)?([e|E][+|\-][0-9]+)?$/',
             $token['value'])
         ) {
             // If it starts with a "-" or numbers, then attempt to JSON decode
-            $token['value'] = $this->decodeJson($token['value']);
+            $token['value'] = $this->decodeJson($token['value'], $offset);
         } else {
-            $token['value'] = $this->decodeJson('"' . $token['value'] . '"');
+            $token['value'] = $this->decodeJson('"' . $token['value'] . '"', $offset);
         }
 
         return $token;
     }
 
-    private function token_quoted_identifier(array $token)
+    private function token_quoted_identifier(array $token, $offset)
     {
-        $token['value'] = $this->decodeJson($token['value']);
+        $token['value'] = $this->decodeJson($token['value'], $offset);
 
         return $token;
     }
 
-    private function decodeJson($json)
+    private function decodeJson($json, $offset)
     {
         static $jsonErrors = [
             JSON_ERROR_DEPTH => 'JSON_ERROR_DEPTH',
@@ -196,7 +188,7 @@ class Lexer
                 ? $jsonErrors[$error]
                 : 'Unknown error';
             $this->throwSyntax("Error decoding JSON: ({$error}) {$message}, "
-                . "given \"{$json}\"");
+                . "given \"{$json}\"", $offset);
         }
 
         return $value;
