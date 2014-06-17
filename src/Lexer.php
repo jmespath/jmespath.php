@@ -6,22 +6,22 @@ namespace JmesPath;
  */
 class Lexer
 {
-    private $re, $offsetToToken, $input, $handlers;
+    private $regex, $offsetToToken, $input, $handlers;
 
     /** @var array Map of regular expressions to their token match value */
     private $tokenMap = [
-        '-?\d+'                      => 'number',
-        '\.'                         => 'dot',
         '[a-zA-Z_][a-zA-Z_0-9]*'     => 'identifier',
-        '"(?:\\\\\\\\|\\\\"|[^"])*"' => 'quoted_identifier',
-        '`(?:\\\\\\\\|\\\\`|[^`])*`' => 'literal',
+        '\.'                         => 'dot',
         '\*'                         => 'star',
         '\[\]'                       => 'flatten',
+        '-?\d+'                      => 'number',
         '\|\|'                       => 'or',
         '\|'                         => 'pipe',
         '\[\?'                       => 'filter',
         '\['                         => 'lbracket',
         '\]'                         => 'rbracket',
+        '"(?:\\\\\\\\|\\\\"|[^"])*"' => 'quoted_identifier',
+        '`(?:\\\\\\\\|\\\\`|[^`])*`' => 'literal',
         ','                          => 'comma',
         ':'                          => 'colon',
         '@'                          => 'current',
@@ -39,26 +39,9 @@ class Lexer
         '[ \t]'                      => 'skip',
     ];
 
-    /**
-     * Ensures that a binary relational operator is valid, and if not, throws
-     * a RuntimeException.
-     *
-     * @param string $value Relational operator to validate
-     * @throws \RuntimeException
-     */
-    public static function validateBinaryOperator($value)
-    {
-        static $valid = ['==' => true, '!=' => true, '>'  => true, '>=' => true,
-                         '<'  => true, '<=' => true];
-
-        if (!isset($valid[$value])) {
-            throw new \RuntimeException("Invalid relational operator: $value");
-        }
-    }
-
     public function __construct()
     {
-        $this->re = '((' .
+        $this->regex = '((' .
             implode(')|(', array_keys($this->tokenMap))
             . '))';
         $this->offsetToToken = array_values($this->tokenMap);
@@ -83,57 +66,48 @@ class Lexer
         $tokens = [];
 
         if (!preg_match_all(
-            $this->re,
+            $this->regex,
             $input,
             $matches,
-            PREG_OFFSET_CAPTURE | PREG_SET_ORDER
+            PREG_SET_ORDER
         )) {
             $this->throwSyntax('Invalid expression', $offset);
         }
 
         foreach ($matches as $match) {
             $type = $this->offsetToToken[count($match) - 2];
-            if ($type != 'skip') {
+            if ($type !== 'skip') {
                 $token = [
                     'type'  => $type,
-                    'value' => $match[0][0],
-                    'pos'   => $match[0][1]
+                    'value' => $match[0],
+                    'pos'   => $offset
                 ];
-                // Check if a custom token handler is needed to process the lexeme
+                // Check if a custom token handler is needed to process
                 if (isset($this->handlers['token_' . $token['type']])) {
-                    $token = $this->{'token_' . $token['type']}($token, $offset);
+                    $this->{'token_' . $token['type']}($token, $offset);
                 }
                 $tokens[] = $token;
             }
-            $offset += strlen($match[0][0]);
+            $offset += strlen($match[0]);
         }
 
         // Always end the token stream with an EOF token
         $tokens[] = ['type' => 'eof', 'pos' => $offset, 'value' => null];
 
+        // Ensure that the expression did not contain invalid characters
+        if (strlen($input) != $offset) {
+            $this->invalidExpression($input, $tokens);
+        }
+
         return $tokens;
     }
 
-    private function throwSyntax($message = 'Unexpected character', $offset)
-    {
-        throw new SyntaxErrorException(
-            $message,
-            [
-                'value' => substr($this->input, $offset, 1),
-                'pos'   => $offset
-            ],
-            $this->input
-        );
-    }
-
-    private function token_number(array $token, $offset)
+    private function token_number(array &$token, $offset)
     {
         $token['value'] = (int) $token['value'];
-
-        return $token;
     }
 
-    private function token_literal(array $token, $offset)
+    private function token_literal(array &$token, $offset)
     {
         // Maps common JavaScript primitives with a native PHP primitive
         static $primitives = ['true' => 0, 'false' => 1, 'null' => 2];
@@ -161,15 +135,11 @@ class Lexer
         } else {
             $token['value'] = $this->decodeJson('"' . $token['value'] . '"', $offset);
         }
-
-        return $token;
     }
 
-    private function token_quoted_identifier(array $token, $offset)
+    private function token_quoted_identifier(array &$token, $offset)
     {
         $token['value'] = $this->decodeJson($token['value'], $offset);
-
-        return $token;
     }
 
     private function decodeJson($json, $offset)
@@ -192,5 +162,29 @@ class Lexer
         }
 
         return $value;
+    }
+
+    private function throwSyntax($message, $offset)
+    {
+        throw new SyntaxErrorException(
+            $message,
+            [
+                'value' => substr($this->input, $offset, 1),
+                'pos'   => $offset
+            ],
+            $this->input
+        );
+    }
+
+    private function invalidExpression($input)
+    {
+        $offset = 0;
+        $regex = $this->regex . 'A';
+
+        while (preg_match($regex, $input, $matches, 0, $offset)) {
+            $offset += strlen($matches[0]);
+        }
+
+        $this->throwSyntax('Unexpected character', $offset);
     }
 }

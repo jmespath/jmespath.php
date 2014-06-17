@@ -41,7 +41,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessage Empty expression
+     * @expectedExceptionMessage Invalid expression
      */
     public function testHandlesEmptyExpressions()
     {

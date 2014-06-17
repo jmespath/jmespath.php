@@ -85,11 +85,6 @@ class Parser
         $this->tokens = $this->lexer->tokenize($expression);
         $this->tpos = -1;
         $this->next();
-
-        if (!$this->expression) {
-            $this->throwSyntax('Empty expression');
-        }
-
         $result = $this->expr();
 
         if ($this->token['type'] != 'eof') {

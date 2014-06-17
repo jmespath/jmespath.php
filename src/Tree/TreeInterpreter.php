@@ -199,7 +199,6 @@ class TreeInterpreter implements TreeVisitorInterface
                     case '>=': return is_int($left) && is_int($right) && $left >= $right;
                     case '<': return is_int($left) && is_int($right) && $left < $right;
                     case '<=': return is_int($left) && is_int($right) && $left <= $right;
-                    default: return Lexer::validateBinaryOperator($node['relation']);
                 }
 
             case 'condition':

@@ -451,7 +451,6 @@ class TreeCompiler implements TreeVisitorInterface
             ->dispatch($node['children'][1])
             ->write("\${$tmpB} = \$value;");
 
-        Lexer::validateBinaryOperator($node['relation']);
         if ($node['relation'] == '==' || $node['relation'] == '!=') {
             $this->write("\$result = \${$tmpA} {$node['relation']}= \${$tmpB};");
         } else {

@@ -9,25 +9,6 @@ use JmesPath\Tree\TreeInterpreter;
  */
 class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
 {
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Invalid relational operator
-     */
-    public function testEnsuresComparatorIsValid()
-    {
-        $t = new TreeInterpreter();
-        $t->visit(array(
-            'type' => 'comparator',
-            'relation' => 'foo',
-            'children' => array(
-                array('type' => 'literal', 'value' => 1),
-                array('type' => 'literal', 'value' => 1)
-            )
-        ), array(), array(
-            'runtime' => new AstRuntime()
-        ));
-    }
-
     public function testReturnsNullWhenMergingNonArray()
     {
         $t = new TreeInterpreter();
