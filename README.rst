@@ -6,9 +6,11 @@ JMESPath (pronounced "jaymz path") allows you to declaratively specify how to
 extract elements from a JSON document.
 
 *jmespath.php* allows you to use JMESPath in PHP applications with PHP
-data structures. It requires PHP 5.4+ and can be installed through
-`Composer <http://getcomposer.org/doc/00-intro.md>`_ using
-``mtdowling/jmespath.php``.
+data structures.
+
+It requires PHP 5.4 or greater and can be installed through
+`Composer <http://getcomposer.org/doc/00-intro.md>`_ using the
+``mtdowling/jmespath.php`` package.
 
 .. code-block:: php
 
@@ -31,25 +33,6 @@ data structures. It requires PHP 5.4+ and can be installed through
 - `JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
 - `JMESPath Python library <https://github.com/boto/jmespath>`_
 
-Installing
-==========
-
-jmespath.php requires PHP 5.4 or greater. While it may be possible to install
-jmespath.php in various various ways, the only supported method of
-installing JMESPath is through Composer.
-
-Update your project's composer.json (in the root directory of your project):
-
-   .. code-block:: js
-
-      {
-          "require": {
-              "mtdowling/jmespath.php": "<2"
-          }
-      }
-
-Then install your dependencies using ``./composer.phar install``.
-
 PHP Usage
 =========
 
@@ -60,7 +43,7 @@ some point in the future automatically utilize a C extension if available.
 
 .. code-block:: php
 
-    $result = JmesPath\Env::search($expression, $data);
+    $result = \JmesPath\Env::search($expression, $data);
 
 Runtimes
 --------
