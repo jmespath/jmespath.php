@@ -24,8 +24,7 @@ data structures. It requires PHP 5.4+ and can be installed through
         ]
     ];
 
-    JmesPath\Env::search($expression, $data);
-
+    \JmesPath\Env::search($expression, $data);
     // Returns: [1, 2, 3]
 
 - `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
@@ -35,16 +34,11 @@ data structures. It requires PHP 5.4+ and can be installed through
 Installing
 ==========
 
-jmespath.php requires PHP 5.4 or greater.
+jmespath.php requires PHP 5.4 or greater. While it may be possible to install
+jmespath.php in various various ways, the only supported method of
+installing JMESPath is through Composer.
 
-1. Download and install Composer: https://getcomposer.org/doc/00-intro.md#installation-nix
-
-   .. code-block:: bash
-
-      curl -sS https://getcomposer.org/installer | php
-      ./composer.phar install
-
-2. Update your project's composer.json (in the root directory of your project):
+Update your project's composer.json (in the root directory of your project):
 
    .. code-block:: js
 
@@ -54,7 +48,7 @@ jmespath.php requires PHP 5.4 or greater.
           }
       }
 
-3. Install dependencies using ``./composer.phar install``
+Then install your dependencies using ``./composer.phar install``.
 
 PHP Usage
 =========
@@ -67,11 +61,6 @@ some point in the future automatically utilize a C extension if available.
 .. code-block:: php
 
     $result = JmesPath\Env::search($expression, $data);
-
-.. note::
-
-    If you do not install through Composer, then you will need to manually
-    require the jmespath.php script.
 
 Runtimes
 --------
