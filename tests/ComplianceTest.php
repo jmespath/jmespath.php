@@ -35,7 +35,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         try {
             if ($compiled) {
-                $compiledStr = \JmesPath\COMPILE_DIR . '=on ';
+                $compiledStr = \JmesPath\Env::COMPILE_DIR . '=on ';
                 $evalResult = self::$defaultRuntime->debug($expression, $data, $debug);
             } else {
                 $evalResult = self::$compilerRuntime->debug($expression, $data, $debug);

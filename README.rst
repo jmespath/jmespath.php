@@ -24,7 +24,7 @@ data structures. It requires PHP 5.4+ and can be installed through
         ]
     ];
 
-    JmesPath\search($expression, $data);
+    JmesPath\Env::search($expression, $data);
 
     // Returns: [1, 2, 3]
 
@@ -59,13 +59,14 @@ jmespath.php requires PHP 5.4 or greater.
 PHP Usage
 =========
 
-After installing through Composer, jmespath.php will autoload a
-``jmespath.php`` file that contains a ``JmesPath\search`` function. This
-function can be used in most cases when using the library.
+The ``JmesPath\Env::search`` function can be used in most cases when using the
+library. This function utilizes a JMESPath runtime based on your environment.
+The runtime utilized can be configured using environment variables and may at
+some point in the future automatically utilize a C extension if available.
 
 .. code-block:: php
 
-    $result = JmesPath\search($expression, $data);
+    $result = JmesPath\Env::search($expression, $data);
 
 .. note::
 
@@ -78,10 +79,10 @@ Runtimes
 jmespath.php utilizes *runtimes*. There are currently two runtimes:
 DefaultRuntime and CompilerRuntime.
 
-DefaultRuntime is utilized by ``JmesPath\search()`` by default. Depending on
+DefaultRuntime is utilized by ``JmesPath\Env::search()`` by default. Depending on
 your application, it may be useful to customize the runtime used by
-``JmesPath\search()``. You can change the runtime utilized by
-``JmesPath\search()`` by calling ``JmesPath\registerRuntime()``, passing in an
+``JmesPath\Env::search()``. You can change the runtime utilized by
+``JmesPath\Env::search()`` by calling ``JmesPath\registerRuntime()``, passing in an
 instance of ``JmesPath\Runtime\RuntimeInterface``.
 
 DefaultRuntime
@@ -114,8 +115,8 @@ before executing them (for example, server-side applications).
 Environment Variable
 ^^^^^^^^^^^^^^^^^^^^
 
-You can utilize the CompilerRuntime in ``JmesPath\search()`` by setting the
-``JP_PHP_COMPILE`` environment variable to "on" to or to a directory
+You can utilize the CompilerRuntime in ``JmesPath\Env::search()`` by setting
+the ``JP_PHP_COMPILE`` environment variable to "on" to or to a directory
 on disk used to store cached expressions.
 
 Testing

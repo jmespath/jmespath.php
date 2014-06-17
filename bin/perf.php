@@ -4,7 +4,7 @@ require 'vendor/autoload.php';
 
 use JmesPath\Runtime\RuntimeInterface;
 
-$runtime = \JmesPath\envRuntime();
+$runtime = \JmesPath\Env::createRuntime();
 
 if (!isset($_SERVER['CACHE'])) {
     $_SERVER['CACHE'] = false;
