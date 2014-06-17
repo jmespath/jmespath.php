@@ -235,42 +235,60 @@ abstract class AbstractRuntime implements RuntimeInterface
     {
         $this->validate($args, [['array']], 1, 1);
 
-        if (empty($args[0])) {
-            return array();
-        }
-
-        usort($args[0], function ($a, $b) {
-            $at = $this->gettype($a);
-            $bt = $this->gettype($b);
+        return self::schwartzianTransform($args[0], function ($a, $b) {
+            $at = $this->gettype($a[0]);
+            $bt = $this->gettype($b[0]);
             if ($at != $bt || ($at != 'number' && $at != 'string')) {
                 $this->typeError('sort', 0, 'must be an array of string or numbers');
             }
-            return strnatcmp($a, $b);
+            // Sort by value or key if the values are the same
+            return strnatcmp($a[0], $b[0]) ?: ($a[1] < $b[1] ? -1 : 1);
         });
-
-        return array_values($args[0]);
     }
 
     private function fn_sort_by(array $args)
     {
         $this->validate($args, [['array'], ['expression']], 2, 2);
-
         $i = $args[1]->interpreter;
         $expr = $args[1]->node;
-        usort($args[0], function ($a, $b) use ($i, $expr) {
-            $va = $i->visit($expr, $a);
-            $vb = $i->visit($expr, $b);
-            $ta = $this->gettype($va);
-            $tb = $this->gettype($vb);
-            if ($ta != $tb || ($ta != 'number' && $ta != 'string')) {
-                $this->typeError(
-                    'sort_by', 1, 'must be strings or numbers of the same type'
-                );
-            }
-            return strnatcmp($va, $vb);
-        });
 
-        return $args[0];
+        return self::schwartzianTransform(
+            $args[0],
+            function ($a, $b) use ($i, $expr) {
+                $va = $i->visit($expr, $a[0]);
+                $vb = $i->visit($expr, $b[0]);
+                $ta = $this->gettype($va);
+                $tb = $this->gettype($vb);
+                if ($ta != $tb || ($ta != 'number' && $ta != 'string')) {
+                    $this->typeError(
+                        'sort_by', 1, 'must be strings or numbers of the same type'
+                    );
+                }
+                // Sort by value or key if the values are the same
+                return strnatcmp($va, $vb) ?: ($a[1] < $b[1] ? -1 : 1);
+            }
+        );
+    }
+
+    /**
+     * JMESPath requires a stable sorting algorithm, so here we'll implement
+     * a simple Schwartzian transform (decorate, transform, undecorate)
+     *
+     * @link http://en.wikipedia.org/wiki/Schwartzian_transform
+     */
+    private function schwartzianTransform(array $values, callable $sortFunction)
+    {
+        // Decorate each item
+        $items = [];
+        foreach (array_values($values) as $key => $item) {
+            $items[] = [$item, $key];
+        }
+
+        uasort($items, $sortFunction);
+
+        return array_values(array_map(function ($v) {
+            return $v[0];
+        }, $items));
     }
 
     private function fn_min_by(array $args)
