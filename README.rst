@@ -45,19 +45,19 @@ Runtimes
 --------
 
 jmespath.php utilizes *runtimes*. There are currently two runtimes:
-DefaultRuntime and CompilerRuntime.
+AstRuntime and CompilerRuntime.
 
-DefaultRuntime is utilized by ``JmesPath\Env::search()`` by default. Depending on
+AstRuntime is utilized by ``JmesPath\Env::search()`` by default. Depending on
 your application, it may be useful to customize the runtime used by
 ``JmesPath\Env::search()``. You can change the runtime utilized by
 ``JmesPath\Env::search()`` by calling ``JmesPath\registerRuntime()``, passing in an
 instance of ``JmesPath\Runtime\RuntimeInterface``.
 
-DefaultRuntime
-~~~~~~~~~~~~~~
+AstRuntime
+~~~~~~~~~~
 
-The DefaultRuntime will parse an expression, cache the resulting AST in memory,
-and interpret the AST using an external tree visitor. DefaultRuntime provides a
+The AstRuntime will parse an expression, cache the resulting AST in memory,
+and interpret the AST using an external tree visitor. AstRuntime provides a
 good general approach for interpreting JMESPath expressions that have a low to
 moderate level of reuse.
 
@@ -70,7 +70,7 @@ expressions. The CompilerRuntime will walk a JMESPath AST and emit PHP source
 code, resulting in anywhere from 7x to 60x speed improvements.
 
 Compiling JMESPath expressions to source code is a slower process than just
-walking and interpreting a JMESPath AST (via the DefaultRuntime). However,
+walking and interpreting a JMESPath AST (via the AstRuntime). However,
 running the compiled JMESPath code results in much better performance than
 walking an AST. This essentially means that there is a warm-up period when
 using the ``CompilerRuntime``, but after the warm-up period, it will provide
@@ -80,8 +80,8 @@ Use the CompilerRuntime if you know that you will be executing JMESPath
 expressions more than once or if you can pre-compile JMESPath expressions
 before executing them (for example, server-side applications).
 
-Environment Variable
-^^^^^^^^^^^^^^^^^^^^
+Environment Variables
+^^^^^^^^^^^^^^^^^^^^^
 
 You can utilize the CompilerRuntime in ``JmesPath\Env::search()`` by setting
 the ``JP_PHP_COMPILE`` environment variable to "on" to or to a directory
