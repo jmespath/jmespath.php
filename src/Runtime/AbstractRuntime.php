@@ -235,14 +235,13 @@ abstract class AbstractRuntime implements RuntimeInterface
     {
         $this->validate($args, [['array']], 1, 1);
 
-        return self::schwartzianTransform($args[0], function ($a, $b) {
-            $at = $this->gettype($a[0]);
-            $bt = $this->gettype($b[0]);
+        return self::stableSort($args[0], function ($a, $b) {
+            $at = $this->gettype($a);
+            $bt = $this->gettype($b);
             if ($at != $bt || ($at != 'number' && $at != 'string')) {
                 $this->typeError('sort', 0, 'must be an array of string or numbers');
             }
-            // Sort by value or key if the values are the same
-            return strnatcmp($a[0], $b[0]) ?: ($a[1] < $b[1] ? -1 : 1);
+            return strnatcmp($a, $b);
         });
     }
 
@@ -252,11 +251,11 @@ abstract class AbstractRuntime implements RuntimeInterface
         $i = $args[1]->interpreter;
         $expr = $args[1]->node;
 
-        return self::schwartzianTransform(
+        return self::stableSort(
             $args[0],
             function ($a, $b) use ($i, $expr) {
-                $va = $i->visit($expr, $a[0]);
-                $vb = $i->visit($expr, $b[0]);
+                $va = $i->visit($expr, $a);
+                $vb = $i->visit($expr, $b);
                 $ta = $this->gettype($va);
                 $tb = $this->gettype($vb);
                 if ($ta != $tb || ($ta != 'number' && $ta != 'string')) {
@@ -264,31 +263,32 @@ abstract class AbstractRuntime implements RuntimeInterface
                         'sort_by', 1, 'must be strings or numbers of the same type'
                     );
                 }
-                // Sort by value or key if the values are the same
-                return strnatcmp($va, $vb) ?: ($a[1] < $b[1] ? -1 : 1);
+                return strnatcmp($va, $vb);
             }
         );
     }
 
     /**
      * JMESPath requires a stable sorting algorithm, so here we'll implement
-     * a simple Schwartzian transform (decorate, transform, undecorate)
+     * a simple Schwartzian transform that uses array index positions as tie
+     * breakers.
      *
+     * @param array    $data   List or map of data to sort
+     * @param callable $sortFn Callable used to sort values
+     *
+     * @return array Returns the sorted array
      * @link http://en.wikipedia.org/wiki/Schwartzian_transform
      */
-    private function schwartzianTransform(array $values, callable $sortFunction)
+    private function stableSort(array $data, callable $sortFn)
     {
-        // Decorate each item
-        $items = [];
-        foreach (array_values($values) as $key => $item) {
-            $items[] = [$item, $key];
-        }
-
-        uasort($items, $sortFunction);
-
-        return array_values(array_map(function ($v) {
-            return $v[0];
-        }, $items));
+        // Decorate each item by creating an array of [value, index]
+        array_walk($data, function (&$v, $k) { $v = [$v, $k]; });
+        // Sort by the sort function and use the index as a tie-breaker
+        uasort($data, function ($a, $b) use ($sortFn) {
+            return $sortFn($a[0], $b[0]) ?: ($a[1] < $b[1] ? -1 : 1);
+        });
+        // Undecorate each item and return the resulting sorted array
+        return array_map(function ($v) { return $v[0]; }, array_values($data));
     }
 
     private function fn_min_by(array $args)
