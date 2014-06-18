@@ -22,7 +22,7 @@ using the ``mtdowling/jmespath.php`` package.
         ]
     ];
 
-    \JmesPath\Env::search($expression, $data);
+    \JmesPath::search($expression, $data);
     // Returns: [1, 2, 3]
 
 - `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
@@ -32,14 +32,14 @@ using the ``mtdowling/jmespath.php`` package.
 PHP Usage
 =========
 
-The ``JmesPath\Env::search`` function can be used in most cases when using the
+The ``JmesPath::search`` function can be used in most cases when using the
 library. This function utilizes a JMESPath runtime based on your environment.
 The runtime utilized can be configured using environment variables and may at
 some point in the future automatically utilize a C extension if available.
 
 .. code-block:: php
 
-    $result = \JmesPath\Env::search($expression, $data);
+    $result = \JmesPath::search($expression, $data);
 
 Runtimes
 --------
@@ -47,10 +47,10 @@ Runtimes
 jmespath.php utilizes *runtimes*. There are currently two runtimes:
 DefaultRuntime and CompilerRuntime.
 
-DefaultRuntime is utilized by ``JmesPath\Env::search()`` by default. Depending on
+DefaultRuntime is utilized by ``JmesPath::search()`` by default. Depending on
 your application, it may be useful to customize the runtime used by
-``JmesPath\Env::search()``. You can change the runtime utilized by
-``JmesPath\Env::search()`` by calling ``JmesPath\registerRuntime()``, passing in an
+``JmesPath::search()``. You can change the runtime utilized by
+``JmesPath::search()`` by calling ``JmesPath\registerRuntime()``, passing in an
 instance of ``JmesPath\Runtime\RuntimeInterface``.
 
 DefaultRuntime
@@ -83,7 +83,7 @@ before executing them (for example, server-side applications).
 Environment Variable
 ^^^^^^^^^^^^^^^^^^^^
 
-You can utilize the CompilerRuntime in ``JmesPath\Env::search()`` by setting
+You can utilize the CompilerRuntime in ``JmesPath::search()`` by setting
 the ``JP_PHP_COMPILE`` environment variable to "on" to or to a directory
 on disk used to store cached expressions.
 

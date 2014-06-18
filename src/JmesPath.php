@@ -1,5 +1,4 @@
 <?php
-namespace JmesPath;
 
 use JmesPath\Runtime\AstRuntime;
 use JmesPath\Runtime\CompilerRuntime;
@@ -13,7 +12,7 @@ use JmesPath\Runtime\CompilerRuntime;
  * be cached to the system's temp directory. Set the environment variable to
  * a string to cache expressions to a specific directory.
  */
-final class Env
+final class JmesPath
 {
     const COMPILE_DIR = 'JP_PHP_COMPILE';
 

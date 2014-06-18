@@ -31,7 +31,7 @@ for ($i = 1, $total = count($argv); $i < $total; $i++) {
 }
 
 $expression = $currentKey;
-$runtime = \JmesPath\Env::createRuntime();
+$runtime = \JmesPath::createRuntime();
 
 if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
 
