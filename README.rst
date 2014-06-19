@@ -84,7 +84,7 @@ Environment Variables
 ^^^^^^^^^^^^^^^^^^^^^
 
 You can utilize the CompilerRuntime in ``JmesPath\Env::search()`` by setting
-the ``JP_PHP_COMPILE`` environment variable to "on" to or to a directory
+the ``JP_PHP_COMPILE`` environment variable to "on" or to a directory
 on disk used to store cached expressions.
 
 Testing
