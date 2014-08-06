@@ -1,7 +1,6 @@
 <?php
 namespace JmesPath\Tree;
 
-use JmesPath\Lexer;
 use JmesPath\Runtime\AstRuntime;
 use JmesPath\Runtime\RuntimeInterface;
 
@@ -41,9 +40,17 @@ class TreeInterpreter implements TreeVisitorInterface
             case 'field':
                 // Returns the key value of a hash or null if is not a hash or
                 // if the key does not exist.
-                return is_array($value) && isset($value[$node['key']])
-                    ? $value[$node['key']]
-                    : null;
+                if (is_array($value)) {
+                    return isset($value[$node['key']])
+                        ? $value[$node['key']]
+                        : null;
+                } elseif ($value instanceof \stdClass) {
+                    return isset($value->{$node['key']})
+                        ? $value->{$node['key']}
+                        : null;
+                } else {
+                    return null;
+                }
 
             case 'subexpression':
                 // Evaluates the left child and passes the result to the
@@ -56,7 +63,7 @@ class TreeInterpreter implements TreeVisitorInterface
             case 'index':
                 // Returns an array index value or null if is not an array or
                 // if the key does not exist.
-                if (!is_array($value)) {
+                if (!self::isArray($value)) {
                     return null;
                 }
 
@@ -73,18 +80,22 @@ class TreeInterpreter implements TreeVisitorInterface
                 // the non-null results into the return value.
                 $left = $this->dispatch($node['children'][0], $value);
 
-                if (!is_array($left)) {
-                    return null;
-                }
-
                 // Validate the expected type of the projection
-                if (isset($node['from']) && $left) {
-                    $keys = array_keys($left);
-                    if ($node['from'] == 'object' && $keys[0] === 0) {
-                        return null;
-                    } elseif ($node['from'] == 'array' && $keys[0] !== 0) {
-                        return null;
-                    }
+                switch ($node['from']) {
+                    case 'object':
+                        if (!self::isObject($left)) {
+                            return null;
+                        }
+                        break;
+                    case 'array':
+                        if (!self::isArray($left)) {
+                            return null;
+                        }
+                        break;
+                    default:
+                        if (!is_array($left) || !($left instanceof \stdClass)) {
+                            return null;
+                        }
                 }
 
                 $collected = [];
@@ -104,15 +115,8 @@ class TreeInterpreter implements TreeVisitorInterface
                 static $skipElement = [];
                 $value = $this->dispatch($node['children'][0], $value);
 
-                if (!is_array($value)) {
+                if (!self::isArray($value)) {
                     return null;
-                }
-
-                // Ensure that it is not an object (hash)
-                if ($value && ($keys = array_keys($value))) {
-                    if ($keys[0] !== 0) {
-                        return null;
-                    }
                 }
 
                 $merged = [];
@@ -238,5 +242,25 @@ class TreeInterpreter implements TreeVisitorInterface
             default:
                 throw new \RuntimeException("Unknown node type: {$node['type']}");
         }
+    }
+
+    public static function isObject($value)
+    {
+        if (is_array($value)) {
+            return !$value || array_keys($value)[0] !== 0;
+        }
+
+        return $value instanceof \stdClass;
+    }
+
+    public static function isArray($value)
+    {
+        if (!is_array($value) ||
+            ($value && array_keys($value)[0] !== 0)
+        ) {
+            return false;
+        }
+
+        return true;
     }
 }
