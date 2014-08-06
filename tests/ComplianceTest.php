@@ -27,7 +27,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider complianceProvider
      */
-    public function testPassesCompliance($data, $expression, $result, $error, $file, $suite, $case, $compiled)
+    public function testPassesCompliance($data, $expression, $result, $error, $file, $suite, $case, $compiled, $asAssoc)
     {
         $failed = $evalResult = $failureMsg = false;
         $debug = fopen('php://temp', 'r+');
@@ -50,6 +50,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         $failure = "\n{$compiledStr}php bin/jp.php --file {$file} --suite {$suite} --case {$case}\n\n"
             . stream_get_contents($debug) . "\n\n"
             . "Expected: " . $this->prettyJson($result) . "\n\n";
+        $failure .= 'Associative? ' . var_export($asAssoc, true) . "\n\n";
 
         if (!$error && $failed) {
             $this->fail("Should not have failed\n{$failure}=> {$failed} {$failureMsg}");
@@ -57,6 +58,8 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
             $this->fail("Should have failed\n{$failure}");
         }
 
+        $result = $this->convertAssoc($result);
+        $evalResult = $this->convertAssoc($evalResult);
         $this->assertEquals($result, $evalResult, $failure);
     }
 
@@ -70,27 +73,47 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         foreach ($files as $name) {
             $contents = file_get_contents(__DIR__ . "/compliance/{$name}.json");
-            $json = json_decode($contents, true);
-            foreach ($json as $suiteNumber => $suite) {
-                foreach ($suite['cases'] as $caseNumber => $case) {
-                    $caseData = array(
-                        $suite['given'],
-                        $case['expression'],
-                        isset($case['result']) ? $case['result'] : null,
-                        isset($case['error']) ? $case['error'] : false,
-                        $name,
-                        $suiteNumber,
-                        $caseNumber,
-                        false
-                    );
-                    $cases[] = $caseData;
-                    $caseData[7] = true;
-                    $cases[] = $caseData;
+            foreach ([true, false] as $asAssoc) {
+                $json = json_decode($contents, true);
+                $jsonObj = json_decode($contents);
+                foreach ($json as $suiteNumber => $suite) {
+                    $given = $asAssoc ? $suite['given'] : $jsonObj[$suiteNumber]->given;
+                    foreach ($suite['cases'] as $caseNumber => $case) {
+                        $caseData = [
+                            $given,
+                            $case['expression'],
+                            isset($case['result']) ? $case['result'] : null,
+                            isset($case['error']) ? $case['error'] : false,
+                            $name,
+                            $suiteNumber,
+                            $caseNumber,
+                            false,
+                            $asAssoc
+                        ];
+                        $cases[] = $caseData;
+                        $caseData[7] = true;
+                        $cases[] = $caseData;
+                    }
                 }
             }
         }
 
         return $cases;
+    }
+
+    private function convertAssoc($data)
+    {
+        if ($data instanceof \stdClass) {
+            $data = (array) $data;
+        }
+
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->convertAssoc($value);
+            }
+        }
+
+        return $data;
     }
 
     private function prettyJson($json)

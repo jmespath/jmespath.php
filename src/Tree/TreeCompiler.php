@@ -1,8 +1,6 @@
 <?php
 namespace JmesPath\Tree;
 
-use JmesPath\Lexer;
-
 /**
  * Tree visitor used to compile JMESPath expressions into native PHP code.
  */
@@ -29,8 +27,7 @@ class TreeCompiler implements TreeVisitorInterface
         if (isset($args['expression'])) {
             $this->write("// {$args['expression']}");
         }
-        $this->write("function {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value)")
-             ->write('{')
+        $this->write("function {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value) {")
                 ->indent()
                 ->write('$current = $value;')
                 ->dispatch($node)
@@ -66,11 +63,13 @@ class TreeCompiler implements TreeVisitorInterface
     private function write($str)
     {
         if (!isset($this->cachedIndents[$this->indentation])) {
-            $this->cachedIndents[$this->indentation] = str_repeat(' ', $this->indentation * 4);
+            $this->cachedIndents[$this->indentation] = str_repeat(
+                ' ',
+                $this->indentation * 4
+            );
         }
 
-        $this->source .= $this->cachedIndents[$this->indentation];
-        $this->source .= $str . "\n";
+        $this->source .= $this->cachedIndents[$this->indentation] . $str . "\n";
 
         return $this;
     }
@@ -116,56 +115,11 @@ class TreeCompiler implements TreeVisitorInterface
     }
 
     /**
-     * Creates array access code for a given node
-     *
-     * @param array $node AST node
-     * @return string|bool Returns the array access code
-     * @throws \RuntimeException if the node is not a field or index node
-     */
-    private function createArrayAccess($node)
-    {
-        if ($node['type'] == 'field') {
-            return '[' . var_export($node['key'], true) . ']';
-        } elseif ($node['type'] == 'index') {
-            return $node['index'] >= 0 ? "[{$node['index']}]" : false;
-        } elseif ($node['type'] == 'subexpression') {
-            if ($left = $this->createArrayAccess($node['children'][0])) {
-                if ($right = $this->createArrayAccess($node['children'][1])) {
-                    return $left . $right;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Visits a non-terminal subexpression. Subexpressions wrapping nested
      * array accessors will be combined into a single if/then block.
      */
     private function visit_subexpression(array $node)
     {
-        if (($node['children'][0]['type'] == 'field' ||
-            $node['children'][0]['type'] == 'index') &&
-            $node['children'][1]['type'] == 'subexpression'
-        ) {
-            // Create an optimized isset() check using a combination of
-            // subexpression accessors when it is possible. It is not possible
-            // to perform this optimization if any of the subexpressions are
-            // something other than field or indexes or an index with a
-            // negative index.
-            if ($key = $this->createArrayAccess($node)) {
-                $check = '$value' . $key;
-                $checkArr = substr($check, 0, strrpos($check, '['));
-                $this->write("\$value = (isset($check) && is_array($checkArr))")
-                    ->indent()
-                    ->write("? $check")
-                    ->write(': null;')
-                    ->outdent();
-                return $this;
-            }
-        }
-
         return $this
             ->dispatch($node['children'][0])
             ->write('if ($value !== null) {')
@@ -180,8 +134,22 @@ class TreeCompiler implements TreeVisitorInterface
      */
     private function visit_field(array $node)
     {
-        $check = '$value[' . var_export($node['key'], true) . ']';
-        $this->write("\$value = is_array(\$value) && isset($check) ? $check : null;");
+        $arrCheck = '$value[' . var_export($node['key'], true) . ']';
+        $objCheck = '$value->{' . var_export($node['key'], true) . '}';
+
+        $this->write("if (is_array(\$value)) {")
+                ->indent()
+                ->write("\$value = isset($arrCheck) ? $arrCheck : null;")
+                ->outdent()
+            ->write("} elseif (\$value instanceof \\stdClass) {")
+                ->indent()
+                ->write("\$value = isset($objCheck) ? $objCheck : null;")
+                ->outdent()
+            ->write("} else {")
+                ->indent()
+                ->write("\$value = null;")
+                ->outdent()
+            ->write("}");
 
         return $this;
     }
@@ -194,20 +162,22 @@ class TreeCompiler implements TreeVisitorInterface
         if ($node['index'] >= 0) {
             $check = '$value[' . $node['index'] . ']';
             $this->write("\$value = is_array(\$value) && isset($check) ? $check : null;");
-        } else {
-            // Account for negative indices
-            $tmpCount = uniqid('count_');
-            $this->write('if (is_array($value)) {')
+            return $this;
+        }
+
+        // Account for negative indices
+        $tmpCount = uniqid('count_');
+        $this
+            ->write('if (is_array($value)) {')
                 ->indent()
                 ->write("\${$tmpCount} = count(\$value) + {$node['index']};")
                 ->write("\$value = isset(\$value[\${$tmpCount}]) ? \$value[\${$tmpCount}] : null;")
                 ->outdent()
-                ->write('} else {')
+            ->write('} else {')
                 ->indent()
                 ->write('$value = null;')
                 ->outdent()
-                ->write('}');
-        }
+            ->write('}');
 
         return $this;
     }
@@ -236,11 +206,12 @@ class TreeCompiler implements TreeVisitorInterface
         $listVal = uniqid('list_');
         $value = uniqid('prev_');
 
-        $this->write('if ($value !== null) {')
-            ->indent()
-            ->write("\${$listVal} = array();")
-            ->write("\${$tmpCurrent} = \$current;")
-            ->write("\${$value} = \$value;");
+        $this
+            ->write('if ($value !== null) {')
+                ->indent()
+                ->write("\${$listVal} = array();")
+                ->write("\${$tmpCurrent} = \$current;")
+                ->write("\${$value} = \$value;");
 
         $first = true;
         foreach ($node['children'] as $child) {
@@ -289,7 +260,7 @@ class TreeCompiler implements TreeVisitorInterface
     {
         return $this
             ->write("\$value = \$runtime->callFunction('slice', array(")
-            ->indent()
+                ->indent()
                 ->write(sprintf(
                     '$value, %s, %s, %s',
                     var_export($node['args'][0], true),
@@ -322,46 +293,27 @@ class TreeCompiler implements TreeVisitorInterface
 
         $this
             ->write('// Visiting merge node')
-            ->write('if (is_array($value)) {')
-            ->indent()
-                ->write('$invalid = false;')
-                ->write('if ($value) {')
-                    ->indent()
-                        ->write('$keys = array_keys($value);')
-                        ->write('if ($keys[0] !== 0) {')
-                        ->indent()
-                            ->write('$invalid = true;')
-                        ->outdent()
-                        ->write('}')
-                    ->outdent()
-                ->write('}')
-                ->write('if ($invalid) {')
+            ->write('if (!\JmesPath\Tree\TreeInterpreter::isArray($value)) {')
                 ->indent()
-                    ->write('$value = null;')
-                ->outdent()
-                ->write('} else {')
-                    ->indent()
-                    ->write("\${$tmpMerged} = array();")
-                    ->write("foreach (\$value as \${$tmpVal}) {")
-                    ->indent()
-                        ->write("if (is_array(\${$tmpVal}) && isset(\${$tmpVal}[0])) {")
-                        ->indent()
-                            ->write("\${$tmpMerged} = array_merge(\${$tmpMerged}, \${$tmpVal});")
-                        ->outdent()
-                        ->write("} elseif (\${$tmpVal} !== array()) {")
-                        ->indent()
-                            ->write("\${$tmpMerged}[] = \${$tmpVal};")
-                        ->outdent()
-                        ->write('}')
-                    ->outdent()
-                    ->write('}')
-                    ->write("\$value = \${$tmpMerged};")
-                    ->outdent()
-                ->write('}')
+                ->write('$value = null;')
                 ->outdent()
             ->write('} else {')
                 ->indent()
-                ->write('$value = null;')
+                ->write("\${$tmpMerged} = [];")
+                ->write("foreach (\$value as \${$tmpVal}) {")
+                    ->indent()
+                    ->write("if (is_array(\${$tmpVal}) && isset(\${$tmpVal}[0])) {")
+                        ->indent()
+                        ->write("\${$tmpMerged} = array_merge(\${$tmpMerged}, \${$tmpVal});")
+                        ->outdent()
+                    ->write("} elseif (\${$tmpVal} !== array()) {")
+                        ->indent()
+                        ->write("\${$tmpMerged}[] = \${$tmpVal};")
+                        ->outdent()
+                    ->write('}')
+                    ->outdent()
+                ->write('}')
+                ->write("\$value = \${$tmpMerged};")
                 ->outdent()
             ->write('}');
 
@@ -370,32 +322,25 @@ class TreeCompiler implements TreeVisitorInterface
 
     private function visit_projection(array $node)
     {
+        $this->write('// Visiting projection node')
+            ->dispatch($node['children'][0])
+            ->write('');
+
+        if (!isset($node['from'])) {
+            $this->write('if (!is_array($value) || !($value instanceof \stdClass)) $value = null;');
+        } elseif ($node['from'] == 'object') {
+            $this->write('if (!\JmesPath\Tree\TreeInterpreter::isObject($value)) $value = null;');
+        } elseif ($node['from'] == 'array') {
+            $this->write('if (!\JmesPath\Tree\TreeInterpreter::isArray($value)) $value = null;');
+        }
+
         $tmpVal = uniqid('v');
         $tmpCollected = uniqid('collected_');
 
-        $this->write('// Visiting projection node')
-            ->dispatch($node['children'][0])
-            ->write('')
-            ->write('if (!is_array($value)) {')
-                ->indent()
-                ->write('$value = null;')
-                ->outdent()
-            ->write('} elseif ($value) {')
-                ->indent();
-
-        if (isset($node['from'])) {
-            $this->write('$keys = array_keys($value);');
-            if ($node['from'] == 'array') {
-                $this->write('if ($keys[0] === 0) {');
-                $this->indent();
-            } elseif ($node['from'] == 'object') {
-                $this->write('if ($keys[0] !== 0) {');
-                $this->indent();
-            }
-        }
-
-        $this->write("\${$tmpCollected} = array();")
-            ->write('foreach ($value as $key => $' . $tmpVal . ') {')
+        $this->write('if ($value !== null) {')
+            ->indent()
+            ->write("\${$tmpCollected} = [];")
+            ->write('foreach ((array) $value as $' . $tmpVal . ') {')
                 ->indent()
                 ->write("\$value = \${$tmpVal};")
                 ->dispatch($node['children'][1])
@@ -406,20 +351,11 @@ class TreeCompiler implements TreeVisitorInterface
                 ->write('}')
                 ->outdent()
             ->write('}')
-            ->write("\$value = \${$tmpCollected};");
-
-        if (isset($node['from'])) {
-            $this->outdent()
-                ->write('} else {')
-                    ->indent()
-                    ->write('$value = null;')
-                    ->outdent()
-                ->write('}');
-        }
-
-        return $this
+            ->write("\$value = \${$tmpCollected};")
             ->outdent()
-            ->write('}');
+        ->write('}');
+
+        return $this;
     }
 
     private function visit_condition(array $node)
@@ -451,8 +387,10 @@ class TreeCompiler implements TreeVisitorInterface
             ->dispatch($node['children'][1])
             ->write("\${$tmpB} = \$value;");
 
-        if ($node['relation'] == '==' || $node['relation'] == '!=') {
-            $this->write("\$result = \${$tmpA} {$node['relation']}= \${$tmpB};");
+        if ($node['relation'] == '==') {
+            $this->write("\$result = \\JmesPath\\Tree\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
+        } elseif ($node['relation'] == '!=') {
+            $this->write("\$result = !\\JmesPath\\Tree\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
         } else {
             $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} {$node['relation']} \${$tmpB};");
         }

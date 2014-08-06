@@ -40,6 +40,7 @@ class TreeCompilerTest extends \PHPUnit_Framework_TestCase
         ));
 
         $this->assertContains('<?php', $source);
-        $this->assertContains('is_array($value) && isset($value[\'foo\'])', $source);
+        $this->assertContains('$value = isset($value->{\'foo\'}) ? $value->{\'foo\'} : null;', $source);
+        $this->assertContains('$value = isset($value[\'foo\']) ? $value[\'foo\'] : null;', $source);
     }
 }

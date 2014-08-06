@@ -4,6 +4,7 @@ namespace JmesPath\Runtime;
 use JmesPath\Parser;
 use JmesPath\Lexer;
 use JmesPath\Tree\ExprNode;
+use JmesPath\Tree\TreeInterpreter;
 
 abstract class AbstractRuntime implements RuntimeInterface
 {
@@ -165,20 +166,22 @@ abstract class AbstractRuntime implements RuntimeInterface
     {
         $this->validateArity(1, 1, $args);
 
-        if (empty($args[0]) && is_array($args[0])) {
-            return array();
-        } elseif (!$this->validate($args, array(array('object')), 1, 1)) {
+        if (!TreeInterpreter::isObject($args[0])) {
             $this->typeError('keys', 0, 'must be an object');
-        } else {
-            return array_keys($args[0]);
         }
+
+        return array_keys((array) $args[0]);
     }
 
     private function fn_length(array $args)
     {
         $this->validate($args, array(array('string', 'array', 'object')));
 
-        return is_array($args[0]) ? count($args[0]) : strlen($args[0]);
+        if (is_string($args[0])) {
+            return strlen($args[0]);
+        } else {
+            return count((array) $args[0]);
+        }
     }
 
     private function fn_max(array $args)
@@ -361,7 +364,7 @@ abstract class AbstractRuntime implements RuntimeInterface
     {
         $this->validate($args, array(array('array', 'object')), 1, 1);
 
-        return array_values($args[0]);
+        return array_values((array) $args[0]);
     }
 
     private function fn_slice(array $args)
@@ -454,7 +457,8 @@ abstract class AbstractRuntime implements RuntimeInterface
             'string'  => 'string',
             'NULL'    => 'null',
             'double'  => 'number',
-            'integer' => 'number'
+            'integer' => 'number',
+            'object'  => 'object'
         );
 
         if ($arg instanceof ExprNode) {

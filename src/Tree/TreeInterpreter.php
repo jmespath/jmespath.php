@@ -81,26 +81,22 @@ class TreeInterpreter implements TreeVisitorInterface
                 $left = $this->dispatch($node['children'][0], $value);
 
                 // Validate the expected type of the projection
-                switch ($node['from']) {
-                    case 'object':
-                        if (!self::isObject($left)) {
-                            return null;
-                        }
-                        break;
-                    case 'array':
-                        if (!self::isArray($left)) {
-                            return null;
-                        }
-                        break;
-                    default:
-                        if (!is_array($left) || !($left instanceof \stdClass)) {
-                            return null;
-                        }
+                if ($node['from'] == 'object') {
+                    if (!self::isObject($left)) {
+                        return null;
+                    }
+                } elseif ($node['from'] == 'array') {
+                    if (!self::isArray($left)) {
+                        return null;
+                    }
+                } elseif (!is_array($left) || !($left instanceof \stdClass)) {
+                    return null;
                 }
 
                 $collected = [];
-                foreach ($left as $val) {
-                    if (null !== ($result = $this->dispatch($node['children'][1], $val))) {
+                foreach ((array) $left as $val) {
+                    $result = $this->dispatch($node['children'][1], $val);
+                    if ($result !== null) {
                         $collected[] = $result;
                     }
                 }
@@ -197,8 +193,8 @@ class TreeInterpreter implements TreeVisitorInterface
                 $left = $this->dispatch($node['children'][0], $value);
                 $right = $this->dispatch($node['children'][1], $value);
                 switch ($node['relation']) {
-                    case '==': return $left === $right;
-                    case '!=': return $left !== $right;
+                    case '==': return self::valueCmp($left, $right);
+                    case '!=': return !self::valueCmp($left, $right);
                     case '>': return is_int($left) && is_int($right) && $left > $right;
                     case '>=': return is_int($left) && is_int($right) && $left >= $right;
                     case '<': return is_int($left) && is_int($right) && $left < $right;
@@ -262,5 +258,26 @@ class TreeInterpreter implements TreeVisitorInterface
         }
 
         return true;
+    }
+
+    /**
+     * JSON aware value comparison function.
+     *
+     * @param $a
+     * @param $b
+     *
+     * @return bool
+     */
+    public static function valueCmp($a, $b)
+    {
+        if ($a === $b) {
+            return true;
+        } elseif ($a instanceof \stdClass) {
+            return self::valueCmp((array) $a, $b);
+        } elseif ($b instanceof \stdClass) {
+            return self::valueCmp($a, (array) $b);
+        } else {
+            return false;
+        }
     }
 }
