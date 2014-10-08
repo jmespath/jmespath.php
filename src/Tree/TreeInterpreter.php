@@ -40,7 +40,7 @@ class TreeInterpreter implements TreeVisitorInterface
             case 'field':
                 // Returns the key value of a hash or null if is not a hash or
                 // if the key does not exist.
-                if (is_array($value)) {
+                if (is_array($value) || $value instanceof \ArrayAccess) {
                     return isset($value[$node['key']])
                         ? $value[$node['key']]
                         : null;
@@ -242,22 +242,26 @@ class TreeInterpreter implements TreeVisitorInterface
 
     public static function isObject($value)
     {
-        if (is_array($value)) {
-            return !$value || array_keys($value)[0] !== 0;
+        if (!is_array($value)) {
+            // Handle array-like values. Must be empty or offset 0 does not exist
+            return $value instanceof \Countable && $value instanceof \ArrayAccess
+                ? count($value) == 0 || !$value->offsetExists(0)
+                : $value instanceof \stdClass;
         }
 
-        return $value instanceof \stdClass;
+        return !$value || array_keys($value)[0] !== 0;
     }
 
     public static function isArray($value)
     {
-        if (!is_array($value) ||
-            ($value && array_keys($value)[0] !== 0)
-        ) {
-            return false;
+        if (!is_array($value)) {
+            // Handle array-like values. Must be empty or offset 0 exists.
+            return $value instanceof \Countable && $value instanceof \ArrayAccess
+                ? count($value) == 0 || $value->offsetExists(0)
+                : false;
         }
 
-        return true;
+        return !$value || array_keys($value)[0] === 0;
     }
 
     /**

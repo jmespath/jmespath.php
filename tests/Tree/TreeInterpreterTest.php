@@ -22,4 +22,50 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
             'runtime' => new AstRuntime()
         )));
     }
+
+    public function testWorksWithArrayObjectAsObject()
+    {
+        $runtime = new AstRuntime();
+        $this->assertEquals('baz', $runtime->search('foo.bar', new \ArrayObject([
+            'foo' => new \ArrayObject(['bar' => 'baz'])
+        ])));
+    }
+
+    public function testWorksWithArrayObjectAsArray()
+    {
+        $runtime = new AstRuntime();
+        $this->assertEquals('baz', $runtime->search('foo[0].bar', new \ArrayObject([
+            'foo' => new \ArrayObject([new \ArrayObject(['bar' => 'baz'])])
+        ])));
+    }
+
+    public function testWorksWithArrayProjections()
+    {
+        $runtime = new AstRuntime();
+        $this->assertEquals(
+            ['baz'],
+            $runtime->search('foo[*].bar', new \ArrayObject([
+                'foo' => new \ArrayObject([
+                    new \ArrayObject([
+                        'bar' => 'baz'
+                    ])
+                ])
+            ]))
+        );
+    }
+
+    public function testWorksWithObjectProjections()
+    {
+        $runtime = new AstRuntime();
+        $this->assertEquals(
+            ['baz'],
+            $runtime->search('foo.*.bar', new \ArrayObject([
+                'foo' => new \ArrayObject([
+                    'abc' => new \ArrayObject([
+                        'bar' => 'baz'
+                    ])
+                ])
+            ]))
+        );
+    }
 }

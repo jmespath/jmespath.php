@@ -137,7 +137,7 @@ class TreeCompiler implements TreeVisitorInterface
         $arrCheck = '$value[' . var_export($node['key'], true) . ']';
         $objCheck = '$value->{' . var_export($node['key'], true) . '}';
 
-        $this->write("if (is_array(\$value)) {")
+        $this->write("if (is_array(\$value) || \$value instanceof \\ArrayAccess) {")
                 ->indent()
                 ->write("\$value = isset($arrCheck) ? $arrCheck : null;")
                 ->outdent()
@@ -161,14 +161,14 @@ class TreeCompiler implements TreeVisitorInterface
     {
         if ($node['index'] >= 0) {
             $check = '$value[' . $node['index'] . ']';
-            $this->write("\$value = is_array(\$value) && isset($check) ? $check : null;");
+            $this->write("\$value = (is_array(\$value) || \$value instanceof \\ArrayAccess) && isset($check) ? $check : null;");
             return $this;
         }
 
         // Account for negative indices
         $tmpCount = uniqid('count_');
         $this
-            ->write('if (is_array($value)) {')
+            ->write('if (is_array($value) || ($value instanceof \ArrayAccess && $value instanceof \Countable)) {')
                 ->indent()
                 ->write("\${$tmpCount} = count(\$value) + {$node['index']};")
                 ->write("\$value = isset(\$value[\${$tmpCount}]) ? \$value[\${$tmpCount}] : null;")
