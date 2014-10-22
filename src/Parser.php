@@ -190,6 +190,7 @@ class Parser
     {
         $this->next();
         $type = $this->token['type'];
+
         if ($type == 'number' || $type == 'colon') {
             return $this->parseArrayIndexExpression();
         }
@@ -208,14 +209,15 @@ class Parser
         static $nextTypes = ['number' => true, 'colon' => true, 'star' => true];
         $this->next($nextTypes);
         $type = $this->token['type'];
+
         if ($type == 'number' || $type == 'colon') {
             return [
                 'type' => 'subexpression',
                 'children' => [$left, $this->parseArrayIndexExpression()]
             ];
-        } else {
-            return $this->parseWildcardArray($left);
         }
+
+        return $this->parseWildcardArray($left);
     }
 
     private function led_flatten(array $left)
@@ -400,14 +402,17 @@ class Parser
 
         $pos = 0;
         $parts = [null, null, null];
+        $expected = $matchNext;
 
         do {
             if ($this->token['type'] == 'colon') {
                 $pos++;
-            } else {
+                $expected = $matchNext;
+            } elseif ($this->token['type'] == 'number') {
                 $parts[$pos] = $this->token['value'];
+                $expected = ['colon' => true, 'rbracket' => true];
             }
-            $this->next($matchNext);
+            $this->next($expected);
         } while ($this->token['type'] != 'rbracket');
 
         // Consume the closing bracket

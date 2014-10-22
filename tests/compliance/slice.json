@@ -84,6 +84,10 @@
       "error": "syntax"
     },
     {
+      "expression": "[8:2 0 1]",
+      "error": "syntax"
+    },
+    {
       "expression": "str[::-1]",
       "result": "em ot netsil lla evoba dna ,321 cba"
     },
