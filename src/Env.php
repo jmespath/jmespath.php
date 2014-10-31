@@ -47,12 +47,13 @@ final class Env
     {
         $compileDir = getenv('COMPILE_DIR');
 
-        if (!$compileDir) {
-            return new AstRuntime();
+        switch ($compileDir) {
+            case false:
+                return new AstRuntime();
+            case 'on':
+                return new CompilerRuntime();
+            default:
+                return new CompilerRuntime(['dir' => $compileDir]);
         }
-
-        return $compileDir === 'on'
-            ? new CompilerRuntime()
-            : new CompilerRuntime(['dir' => $compileDir]);
     }
 }
