@@ -4,17 +4,6 @@ namespace JmesPath\Tests\Runtime;
 class AbstractRuntimeTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Function must be callable
-     */
-    public function testEnsuresFunctionsAreCallable()
-    {
-        $r = $this->getMockBuilder('JmesPath\Runtime\AbstractRuntime')
-            ->getMockForAbstractClass();
-        $r->registerFunction('foo', 'bar');
-    }
-
-    /**
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Call to undefined function foo
      */

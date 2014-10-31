@@ -44,7 +44,7 @@ interface RuntimeInterface
      * @throws \InvalidArgumentException if the function is not callable or is
      *                                   a built-in function.
      */
-    public function registerFunction($name, $fn);
+    public function registerFunction($name, callable $fn);
 
     /**
      * Invokes a named function.

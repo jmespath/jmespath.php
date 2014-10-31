@@ -24,17 +24,19 @@ class TreeCompiler implements TreeVisitorInterface
         $this->source = '';
         $this->indentation = 0;
         $this->write("<?php\n");
+
         if (isset($args['expression'])) {
             $this->write("// {$args['expression']}");
         }
+
         $this->write("function {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value) {")
-                ->indent()
+            ->indent()
                 ->write('$current = $value;')
                 ->dispatch($node)
                 ->write('')
                 ->write('return $value;')
-                ->outdent()
-            ->write('}');
+            ->outdent()
+        ->write('}');
 
         return $this->source;
     }
@@ -281,7 +283,7 @@ class TreeCompiler implements TreeVisitorInterface
         $child = var_export($node['children'][0], true);
 
         return $this->write("\$value = new \\JmesPath\\Tree\\ExprNode("
-            . "new \\JmesPath\\Tree\\TreeInterpreter(), $child);");
+            . "new \\JmesPath\\Tree\\TreeInterpreter(new \\JmesPath\\Runtime\\AstRuntime()), $child);");
     }
 
     private function visit_flatten(array $node)

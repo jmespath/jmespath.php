@@ -11,7 +11,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
 {
     public function testReturnsNullWhenMergingNonArray()
     {
-        $t = new TreeInterpreter();
+        $t = new TreeInterpreter(new AstRuntime());
         $this->assertNull($t->visit(array(
             'type' => 'flatten',
             'children' => array(

@@ -20,16 +20,13 @@ class CompilerRuntime extends AbstractRuntime
 
     /**
      * @param array $config Array of configuration options.
-     *                      - parser: Parses expressions
      *                      - dir: Directory used to store compiled PHP files.
      * @throws \RuntimeException if the cache directory cannot be created
      */
     public function __construct(array $config = [])
     {
         $this->compiler = new TreeCompiler();
-        $this->parser = isset($config['parser'])
-            ? $config['parser']
-            : new Parser();
+        $this->parser = new Parser();
 
         if (!isset($config['dir'])) {
             $config['dir'] = sys_get_temp_dir();
@@ -74,8 +71,7 @@ class CompilerRuntime extends AbstractRuntime
 
     public function clearCache()
     {
-        $files = glob("{$this->cacheDir}/jmespath_*.php");
-        foreach ($files as $file) {
+        foreach (glob("{$this->cacheDir}/jmespath_*.php") as $file) {
             unlink($file);
         }
     }
@@ -83,9 +79,8 @@ class CompilerRuntime extends AbstractRuntime
     public function debug($expression, $data, $out = STDOUT)
     {
         fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
-        list($tokens, $lexTime) = $this->printDebugTokens($out, $expression);
-        list($ast, $parseTime) = $this->printDebugAst($out, $expression);
-
+        list($_, $lexTime) = $this->printDebugTokens($out, $expression);
+        list($_, $parseTime) = $this->printDebugAst($out, $expression);
         $hash = md5($expression);
         $functionName = "jmespath_{$hash}";
         $filename = "{$this->cacheDir}/{$functionName}.php";
@@ -95,8 +90,8 @@ class CompilerRuntime extends AbstractRuntime
         $interpretTime = (microtime(true) - $t) * 1000;
 
         fprintf($out, "\nSource\n======\n\n%s", file_get_contents($filename));
-        fprintf($out, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
-        fprintf($out, "\nResult\n======\n\n%s\n\n", $this->prettyJson($result));
+        fprintf($out, "\nData\n====\n\n%s\n\n", json_encode($data, JSON_PRETTY_PRINT));
+        fprintf($out, "\nResult\n======\n\n%s\n\n", json_encode($result, JSON_PRETTY_PRINT));
         fwrite($out, "Time\n====\n\n");
         fprintf($out, "Lexer time:     %f ms\n", $lexTime);
         fprintf($out, "Parse time:     %f ms\n", $parseTime);

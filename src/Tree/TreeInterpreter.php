@@ -1,7 +1,6 @@
 <?php
 namespace JmesPath\Tree;
 
-use JmesPath\Runtime\AstRuntime;
 use JmesPath\Runtime\RuntimeInterface;
 
 /**
@@ -12,19 +11,13 @@ class TreeInterpreter implements TreeVisitorInterface
     /** @var RuntimeInterface Runtime used to manage function calls */
     private $runtime;
 
-    public function __construct(RuntimeInterface $runtime = null)
+    public function __construct(RuntimeInterface $runtime)
     {
         $this->runtime = $runtime;
     }
 
     public function visit(array $node, $data, array $args = null)
     {
-        if (!$this->runtime) {
-            $this->runtime = isset($args['runtime'])
-                ? $args['runtime']
-                : new AstRuntime();
-        }
-
         return $this->dispatch($node, $data);
     }
 

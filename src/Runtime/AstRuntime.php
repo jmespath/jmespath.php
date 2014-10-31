@@ -13,30 +13,13 @@ class AstRuntime extends AbstractRuntime
 {
     /** @var TreeVisitorInterface */
     private $interpreter;
-
-    /** @var array */
-    private $visitorOptions;
-
-    /** @var array Internal AST cache */
     private $cache = [];
-
-    /** @var int Number of cached entries */
     private $cachedCount = 0;
 
-    /**
-     * @param array $config Configuration options for the runtime.
-     *                      - parser: Parser to use (optional)
-     *                      - interpreter: Interprets the AST (optional)
-     */
-    public function __construct(array $config = [])
+    public function __construct()
     {
-        $this->visitorOptions = ['runtime' => $this];
-        $this->parser = isset($config['parser'])
-            ? $config['parser']
-            : new Parser();
-        $this->interpreter = isset($config['interpreter'])
-            ? $config['interpreter']
-            : new TreeInterpreter($this);
+        $this->parser = new Parser();
+        $this->interpreter = new TreeInterpreter($this);
     }
 
     public function search($expression, $data)
@@ -49,11 +32,7 @@ class AstRuntime extends AbstractRuntime
             $this->cache[$expression] = $this->parser->parse($expression);
         }
 
-        return $this->interpreter->visit(
-            $this->cache[$expression],
-            $data,
-            $this->visitorOptions
-        );
+        return $this->interpreter->visit($this->cache[$expression], $data);
     }
 
     public function debug($expression, $data, $out = STDOUT)
@@ -61,13 +40,13 @@ class AstRuntime extends AbstractRuntime
         fprintf($out, "Expression\n==========\n\n%s\n\n", $expression);
         list($_, $lexTime) = $this->printDebugTokens($out, $expression);
         list($ast, $parseTime) = $this->printDebugAst($out, $expression);
-        fprintf($out, "\nData\n====\n\n%s\n\n", $this->prettyJson($data));
+        fprintf($out, "\nData\n====\n\n%s\n\n", json_encode($data, JSON_PRETTY_PRINT));
 
         $t = microtime(true);
-        $result = $this->interpreter->visit($ast, $data, $this->visitorOptions);
+        $result = $this->interpreter->visit($ast, $data);
         $interpretTime = (microtime(true) - $t) * 1000;
 
-        fprintf($out, "\nResult\n======\n\n%s\n\n", $this->prettyJson($result));
+        fprintf($out, "\nResult\n======\n\n%s\n\n", json_encode($result, JSON_PRETTY_PRINT));
         fwrite($out, "Time\n====\n\n");
         fprintf($out, "Lexer time:     %f ms\n", $lexTime);
         fprintf($out, "Parse time:     %f ms\n", $parseTime);

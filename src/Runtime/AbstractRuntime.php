@@ -4,7 +4,6 @@ namespace JmesPath\Runtime;
 use JmesPath\Parser;
 use JmesPath\Lexer;
 use JmesPath\Tree\ExprNode;
-use JmesPath\Tree\TreeInterpreter;
 
 abstract class AbstractRuntime implements RuntimeInterface
 {
@@ -14,12 +13,8 @@ abstract class AbstractRuntime implements RuntimeInterface
     /** @var array Map of custom function names to callables */
     private $fnMap = [];
 
-    public function registerFunction($name, $fn)
+    public function registerFunction($name, callable $fn)
     {
-        if (!is_callable($fn)) {
-            throw new \InvalidArgumentException('Function must be callable');
-        }
-
         $this->fnMap[$name] = $fn;
     }
 
@@ -35,20 +30,6 @@ abstract class AbstractRuntime implements RuntimeInterface
         return $this->fnMap[$name]($args);
     }
 
-    /**
-     * Returns a pretty-printed JSON document when using PHP 5.4+
-     *
-     * @param mixed    $json JSON data to format
-     *
-     * @return string
-     */
-    protected function prettyJson($json)
-    {
-        return defined('JSON_PRETTY_PRINT')
-            ? json_encode($json, JSON_PRETTY_PRINT)
-            : json_encode($json);
-    }
-
     protected function printDebugTokens($out, $expression)
     {
         $lexer = new Lexer();
@@ -58,9 +39,13 @@ abstract class AbstractRuntime implements RuntimeInterface
         $lexTime = (microtime(true) - $t) * 1000;
 
         foreach ($tokens as $t) {
-            fprintf($out, "%3d  %-13s  %s\n", $t['pos'], $t['type'],
-                json_encode($t['value']));
+            fprintf(
+                $out,
+                "%3d  %-13s  %s\n", $t['pos'], $t['type'],
+                json_encode($t['value'])
+            );
         }
+
         fwrite($out, "\n");
 
         return [$tokens, $lexTime];
@@ -71,23 +56,22 @@ abstract class AbstractRuntime implements RuntimeInterface
         $t = microtime(true);
         $ast = $this->parser->parse($expression);
         $parseTime = (microtime(true) - $t) * 1000;
-
         fwrite($out, "AST\n========\n\n");
-        fwrite($out, $this->prettyJson($ast) . "\n");
+        fwrite($out, json_encode($ast, JSON_PRETTY_PRINT) . "\n");
 
         return [$ast, $parseTime];
     }
 
     private function fn_abs(array $args)
     {
-        $this->validate($args, array(array('number')));
+        $this->validate($args, [['number']]);
 
         return abs($args[0]);
     }
 
     private function fn_avg(array $args)
     {
-        $this->validate($args, array(array('array')));
+        $this->validate($args, [['array']]);
 
         $sum = $total = 0;
         foreach ($args[0] as $v) {
@@ -104,16 +88,13 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_ceil(array $args)
     {
-        $this->validate($args, array(array('number')));
-
+        $this->validate($args, [['number']]);
         return ceil($args[0]);
     }
 
     private function fn_contains(array $args)
     {
-        $this->validate($args, array(
-            0 => array('string', 'array')
-        ), 2, 2);
+        $this->validate($args, [['string', 'array'], ['any']]);
 
         if (is_array($args[0])) {
             return in_array($args[1], $args[0]);
@@ -126,14 +107,17 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_floor(array $args)
     {
-        $this->validate($args, array(array('number')));
-
+        $this->validate($args, [['number']]);
         return floor($args[0]);
     }
 
     private function fn_not_null(array $args)
     {
-        $this->validate($args, array(), 1, -1);
+        if (!$args) {
+            throw new \RuntimeException(
+                "not_null() expects 1 or more arguments, 0 were provided"
+            );
+        }
 
         foreach ($args as $arg) {
             if ($arg !== null) {
@@ -146,10 +130,7 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_join(array $args)
     {
-        $this->validate($args, array(
-            0     => array('string'),
-            '...' => array('array')
-        ), 2, -1);
+        $this->validate($args, [['string'], ['array']]);
 
         $result = '';
         foreach ($args[1] as $ele) {
@@ -164,29 +145,22 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_keys(array $args)
     {
-        $this->validateArity(1, 1, $args);
-
-        if (!TreeInterpreter::isObject($args[0])) {
-            $this->typeError('keys', 0, 'must be an object');
-        }
-
+        $this->validate($args, [['object']]);
         return array_keys((array) $args[0]);
     }
 
     private function fn_length(array $args)
     {
-        $this->validate($args, array(array('string', 'array', 'object')));
+        $this->validate($args, [['string', 'array', 'object']]);
 
-        if (is_string($args[0])) {
-            return strlen($args[0]);
-        } else {
-            return count((array) $args[0]);
-        }
+        return is_string($args[0])
+            ? strlen($args[0])
+            : count((array) $args[0]);
     }
 
     private function fn_max(array $args)
     {
-        $this->validate($args, array(array('array')), 1, 1);
+        $this->validate($args, [['array']]);
 
         $currentMax = null;
         foreach ($args[0] as $element) {
@@ -203,7 +177,7 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_min(array $args)
     {
-        $this->validate($args, array(array('array')), 1, 1);
+        $this->validate($args, [['array']]);
 
         $currentMin = null;
         foreach ($args[0] as $element) {
@@ -220,7 +194,7 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_sum(array $args)
     {
-        $this->validate($args, array(array('array')), 1, 1);
+        $this->validate($args, [['array']]);
 
         $sum = 0;
         foreach ($args[0] as $element) {
@@ -236,7 +210,7 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_sort(array $args)
     {
-        $this->validate($args, [['array']], 1, 1);
+        $this->validate($args, [['array']]);
 
         return self::stableSort($args[0], function ($a, $b) {
             $at = $this->gettype($a);
@@ -250,7 +224,7 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_sort_by(array $args)
     {
-        $this->validate($args, [['array'], ['expression']], 2, 2);
+        $this->validate($args, [['array'], ['expression']]);
         $i = $args[1]->interpreter;
         $expr = $args[1]->node;
 
@@ -306,7 +280,7 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function numberCmpBy(array $args, $cmp)
     {
-        $this->validate($args, [['array'], ['expression']], 2, 2);
+        $this->validate($args, [['array'], ['expression']]);
         $i = $args[1]->interpreter;
         $expr = $args[1]->node;
 
@@ -331,19 +305,19 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_type(array $args)
     {
-        $this->validateArity(1, 1, $args);
+        $this->validateArity(count($args), 1);
         return $this->gettype($args[0]);
     }
 
     private function fn_to_string(array $args)
     {
-        $this->validateArity(1, 1, $args);
+        $this->validateArity(count($args), 1);
         return is_string($args[0]) ? $args[0] : json_encode($args[0]);
     }
 
     private function fn_to_number(array $args)
     {
-        $this->validateArity(1, 1, $args);
+        $this->validateArity(count($args), 1);
 
         if (!is_numeric($args[0])) {
             return null;
@@ -362,20 +336,19 @@ abstract class AbstractRuntime implements RuntimeInterface
 
     private function fn_values(array $args)
     {
-        $this->validate($args, array(array('array', 'object')), 1, 1);
-
+        $this->validate($args, [['array', 'object']]);
         return array_values((array) $args[0]);
     }
 
     private function fn_slice(array $args)
     {
         try {
-            $this->validate($args, array(
-                0 => array('array', 'string'),
-                1 => array('number', 'null'),
-                2 => array('number', 'null'),
-                3 => array('number', 'null')
-            ), 4, 4);
+            $this->validate($args, [
+                ['array', 'string'],
+                ['number', 'null'],
+                ['number', 'null'],
+                ['number', 'null']
+            ]);
         } catch (\Exception $e) {
             return null;
         }
@@ -417,7 +390,7 @@ abstract class AbstractRuntime implements RuntimeInterface
             $stop = $this->adjustEndpoint($length, $stop, $step);
         }
 
-        return array($start, $stop, $step);
+        return [$start, $stop, $step];
     }
 
     private function sliceIndices($subject, $start, $stop, $step)
@@ -430,7 +403,7 @@ abstract class AbstractRuntime implements RuntimeInterface
             $step
         );
 
-        $result = array();
+        $result = [];
         if ($step > 0) {
             for ($i = $start; $i < $stop; $i += $step) {
                 $result[] = $subject[$i];
@@ -452,90 +425,76 @@ abstract class AbstractRuntime implements RuntimeInterface
      */
     private function gettype($arg)
     {
-        static $map = array(
+        static $map = [
             'boolean' => 'boolean',
             'string'  => 'string',
             'NULL'    => 'null',
             'double'  => 'number',
             'integer' => 'number',
             'object'  => 'object'
-        );
+        ];
 
         if ($arg instanceof ExprNode) {
             return 'expression';
         }
 
         $type = gettype($arg);
+
         if (isset($map[$type])) {
             return $map[gettype($arg)];
-        }
-
-        if (!($keys = array_keys($arg))) {
-            return 'array';
-        } elseif ($keys[0] === 0) {
-            return 'array';
         } else {
-            return 'object';
+            $keys = array_keys($arg);
+            if (!$keys) {
+                return 'array';
+            } elseif ($keys[0] === 0) {
+                return 'array';
+            } else {
+                return 'object';
+            }
         }
     }
 
-    /**
-     * Validates the arity of a function against the given arguments
-     */
-    private function validateArity($min, $max, array $args)
+    private function typeError($fn, $i, $msg)
     {
-        $err = null;
-        $ct = count($args);
-        if ($ct < $min || ($ct > $max && $max != -1)) {
-            if ($min == $max) {
-                $err = "%s() expects {$min} arguments, {$ct} were provided";
-            } elseif ($max == -1) {
-                $err = "%s() expects from {$min} to {$max} arguments, {$ct} were provided";
-            } else {
-                $err = "%s() expects at least {$min} arguments, {$ct} were provided";
-            }
-        }
+        throw new \RuntimeException(sprintf('Argument %d of %s %s', $i, $fn, $msg));
+    }
 
-        if ($err) {
+    private function validateArity($given, $expected)
+    {
+        if ($given != $expected) {
+            $err = "%s() expects {$expected} arguments, {$given} were provided";
             $callers = debug_backtrace();
             $fn = $callers[2]['function'];
             throw new \RuntimeException(sprintf($err, $fn));
         }
     }
 
-    private function typeError($fn, $index, $failure)
+    private function validate($args, $types = [])
     {
-        throw new \RuntimeException(sprintf(
-            'Argument %d of %s %s',
-            $index,
-            $fn,
-            $failure
-        ));
-    }
-
-    private function validate(
-        $args,
-        $types,
-        $minArity = 1,
-        $maxArity = 1
-    ) {
-        $this->validateArity($minArity, $maxArity, $args);
-        $default = isset($types['...']) ? $types['...'] : null;
+        $this->validateArity(count($args), count($types));
 
         foreach ($args as $index => $value) {
-            $tl = isset($types[$index]) ? $types[$index] : $default;
-            if (!$tl) {
+
+            if (!isset($types[$index])) {
                 continue;
             }
-            if (!in_array($this->gettype($value), $tl)) {
-                $callers = debug_backtrace();
-                $this->typeError(
-                    $callers[1]['function'],
-                    $index,
-                    'must be one of the following types: ' . implode(', ', $tl)
-                    . ', ' . $this->gettype($value) . ' given'
-                );
+
+            if (in_array($this->gettype($value), $types[$index])
+                // 'any' is a special match for any type.
+                || $types[$index] === ['any']
+                // Allow empty arrays to satisfy objects or arrays.
+                || in_array('object', $types[$index]) && $value === []
+            ) {
+                continue;
             }
+
+            $this->typeError(
+                debug_backtrace()[1]['function'],
+                $index,
+                'must be one of the following types: '
+                . implode(', ', $types[$index])
+                . ', ' . $this->gettype($value) . ' given'
+            );
         }
 
         return true;
