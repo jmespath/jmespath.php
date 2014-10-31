@@ -68,25 +68,20 @@ class Lexer
                 switch ($token['type']) {
                     case 'quoted_identifier':
                         $token['value'] = $this->decodeJson(
-                            $token['value'],
-                            $offset,
-                            $input
+                            $token['value'], $offset, $input
                         );
                         break;
                     case 'number':
                         $token['value'] = (int) $token['value'];
                         break;
                     case 'literal':
-                        $token['value'] = $this->takeLiteral(
-                            $token['value'],
-                            $offset,
-                            $input
+                        $token['value'] = $this->literal(
+                            $token['value'], $offset, $input
                         );
                         break;
                 }
                 $tokens[] = $token;
             }
-
             $offset += strlen($match[0]);
         }
 
@@ -99,14 +94,10 @@ class Lexer
         return $tokens;
     }
 
-    private function takeLiteral($value, $offset, $input)
+    private function literal($value, $offset, $input)
     {
         static $valid = '/(true|false|null)|(^[\["{])|(^\-?[0-9]*(\.[0-9]+)?([e|E][+|\-][0-9]+)?$)/';
         $value = str_replace('\\`', '`', ltrim(substr($value, 1, -1)));
-
-        if ($value === '') {
-            throw $this->throwSyntax('Empty JSON literal', $offset, $input);
-        }
 
         return preg_match($valid, $value)
             ? $this->decodeJson($value, $offset, $input)

@@ -25,22 +25,6 @@ EOT;
         }
     }
 
-    public function testValidatesLiteralValuesAreSet()
-    {
-        $l = new Lexer();
-        try {
-            $l->tokenize('``');
-            $this->fail('Did not throw');
-        } catch (SyntaxErrorException $e) {
-            $expected = <<<EOT
-Syntax error at character 0
-``
-^
-EOT;
-            $this->assertContains($expected, $e->getMessage());
-        }
-    }
-
     public function testValidatesLiteralValuesAreClosed()
     {
         $l = new Lexer();
