@@ -68,7 +68,7 @@ EOT;
 Syntax error at character 0
 `{abc{}`
 ^
-Error decoding JSON: (4) JSON_ERROR_SYNTAX, given "{abc{}"
+Error decoding JSON: (4) JSON_ERROR_SYNTAX, given {abc{}
 EOT;
             $this->assertContains($expected, $e->getMessage());
         }

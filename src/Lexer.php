@@ -6,7 +6,7 @@ namespace JmesPath;
  */
 class Lexer
 {
-    private $regex, $offsetToToken, $input, $handlers;
+    private $regex, $offsetToToken;
 
     /** @var array Map of regular expressions to their token match value */
     private $tokenMap = [
@@ -42,10 +42,8 @@ class Lexer
     public function __construct()
     {
         $this->regex = '((' .
-            implode(')|(', array_keys($this->tokenMap))
-            . '))';
+            implode(')|(', array_keys($this->tokenMap)) . '))';
         $this->offsetToToken = array_values($this->tokenMap);
-        $this->handlers = array_fill_keys(get_class_methods($this), true);
     }
 
     /**
@@ -62,32 +60,44 @@ class Lexer
     public function tokenize($input)
     {
         $offset = 0;
-        $this->input = $input;
         $tokens = [];
 
-        if (!preg_match_all(
-            $this->regex,
-            $input,
-            $matches,
-            PREG_SET_ORDER
-        )) {
-            $this->throwSyntax('Invalid expression', $offset);
+        if (!preg_match_all($this->regex, $input, $matches, PREG_SET_ORDER)) {
+            $this->throwSyntax('Invalid expression', $offset, $input);
         }
 
         foreach ($matches as $match) {
             $type = $this->offsetToToken[count($match) - 2];
+
             if ($type !== 'skip') {
                 $token = [
                     'type'  => $type,
                     'value' => $match[0],
                     'pos'   => $offset
                 ];
-                // Check if a custom token handler is needed to process
-                if (isset($this->handlers['token_' . $token['type']])) {
-                    $this->{'token_' . $token['type']}($token, $offset);
+
+                switch ($token['type']) {
+                    case 'quoted_identifier':
+                        $token['value'] = $this->decodeJson(
+                            $token['value'],
+                            $offset,
+                            $input
+                        );
+                        break;
+                    case 'number':
+                        $token['value'] = (int) $token['value'];
+                        break;
+                    case 'literal':
+                        $token['value'] = $this->takeLiteral(
+                            $token['value'],
+                            $offset,
+                            $input
+                        );
+                        break;
                 }
                 $tokens[] = $token;
             }
+
             $offset += strlen($match[0]);
         }
 
@@ -96,18 +106,13 @@ class Lexer
 
         // Ensure that the expression did not contain invalid characters
         if (strlen($input) != $offset) {
-            $this->invalidExpression($input, $tokens);
+            $this->invalidExpression($input);
         }
 
         return $tokens;
     }
 
-    private function token_number(array &$token, $offset)
-    {
-        $token['value'] = (int) $token['value'];
-    }
-
-    private function token_literal(array &$token, $offset)
+    private function takeLiteral($value, $offset, $input)
     {
         // Maps common JavaScript primitives with a native PHP primitive
         static $primitives = ['true' => 0, 'false' => 1, 'null' => 2];
@@ -115,64 +120,57 @@ class Lexer
         // If a literal starts with these characters, it is JSON decoded
         static $decodeCharacters = ['"' => 1, '[' => 1, '{' => 1];
 
-        $token['value'] = substr($token['value'], 1, -1);
-        $token['value'] = str_replace('\\`', '`', ltrim($token['value']));
+        $value = str_replace('\\`', '`', ltrim(substr($value, 1, -1)));
 
-        if (isset($primitives[$token['value']])) {
+        if (isset($primitives[$value])) {
             // Fast lookups for common JSON primitives
-            $token['value'] = $primitiveMap[$primitives[$token['value']]];
-        } elseif (strlen($token['value']) == 0) {
-            $this->throwSyntax('Empty JSON literal', $offset);
-        } elseif (isset($decodeCharacters[$token['value'][0]])) {
+            return $primitiveMap[$primitives[$value]];
+        } elseif (strlen($value) == 0) {
+            $this->throwSyntax('Empty JSON literal', $offset, $input);
+        } elseif (isset($decodeCharacters[$value[0]])) {
             // Always decode the JSON directly if it starts with these chars
-            $token['value'] = $this->decodeJson($token['value'], $offset);
+            return $this->decodeJson($value, $offset, $input);
         } elseif (preg_match(
             '/^\-?[0-9]*(\.[0-9]+)?([e|E][+|\-][0-9]+)?$/',
-            $token['value'])
-        ) {
+            $value
+        )) {
             // If it starts with a "-" or numbers, then attempt to JSON decode
-            $token['value'] = $this->decodeJson($token['value'], $offset);
-        } else {
-            $token['value'] = $this->decodeJson('"' . $token['value'] . '"', $offset);
+            return $this->decodeJson($value, $offset, $input);
         }
+
+        return $this->decodeJson('"' . $value . '"', $offset, $input);
     }
 
-    private function token_quoted_identifier(array &$token, $offset)
+    private function decodeJson($json, $offset, $input)
     {
-        $token['value'] = $this->decodeJson($token['value'], $offset);
-    }
-
-    private function decodeJson($json, $offset)
-    {
-        static $jsonErrors = [
-            JSON_ERROR_DEPTH => 'JSON_ERROR_DEPTH',
+        static $errs = [
+            JSON_ERROR_DEPTH          => 'JSON_ERROR_DEPTH',
             JSON_ERROR_STATE_MISMATCH => 'JSON_ERROR_STATE_MISMATCH',
-            JSON_ERROR_CTRL_CHAR => 'JSON_ERROR_CTRL_CHAR',
-            JSON_ERROR_SYNTAX => 'JSON_ERROR_SYNTAX',
-            JSON_ERROR_UTF8 => 'JSON_ERROR_UTF8'
+            JSON_ERROR_CTRL_CHAR      => 'JSON_ERROR_CTRL_CHAR',
+            JSON_ERROR_SYNTAX         => 'JSON_ERROR_SYNTAX',
+            JSON_ERROR_UTF8           => 'JSON_ERROR_UTF8'
         ];
 
         $value = json_decode($json, true);
+
         if ($error = json_last_error()) {
-            $message = isset($jsonErrors[$error])
-                ? $jsonErrors[$error]
-                : 'Unknown error';
-            $this->throwSyntax("Error decoding JSON: ({$error}) {$message}, "
-                . "given \"{$json}\"", $offset);
+            $message = isset($errs[$error]) ? $errs[$error] : 'Unknown error';
+            $this->throwSyntax(
+                "Error decoding JSON: ({$error}) {$message}, given {$json}",
+                $offset,
+                $input
+            );
         }
 
         return $value;
     }
 
-    private function throwSyntax($message, $offset)
+    private function throwSyntax($message, $offset, $input)
     {
         throw new SyntaxErrorException(
             $message,
-            [
-                'value' => substr($this->input, $offset, 1),
-                'pos'   => $offset
-            ],
-            $this->input
+            ['value' => substr($input, $offset, 1), 'pos' => $offset],
+            $input
         );
     }
 
@@ -185,6 +183,6 @@ class Lexer
             $offset += strlen($matches[0]);
         }
 
-        $this->throwSyntax('Unexpected character', $offset);
+        $this->throwSyntax('Unexpected character', $offset, $input);
     }
 }
