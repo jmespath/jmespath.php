@@ -1,8 +1,8 @@
 <?php
 namespace JmesPath\Tests;
 
-use JmesPath\Runtime\AstRuntime;
-use JmesPath\Runtime\CompilerRuntime;
+use JmesPath\AstRuntime;
+use JmesPath\CompilerRuntime;
 use JmesPath\SyntaxErrorException;
 
 class ComplianceTest extends \PHPUnit_Framework_TestCase
@@ -12,16 +12,16 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
     public static function setUpBeforeClass()
     {
+        $dir = __DIR__ . '/../../compiled';
         self::$defaultRuntime = new AstRuntime();
-        self::$compilerRuntime = new CompilerRuntime([
-            'dir' => __DIR__ . '/../../compiled'
-        ]);
-        self::$compilerRuntime->clearCache();
+        self::$compilerRuntime = new CompilerRuntime($dir);
+        array_map('unlink', glob($dir . '/jmespath_*.php'));
     }
 
     public static function tearDownAfterClass()
     {
-        self::$compilerRuntime->clearCache();
+        $dir = __DIR__ . '/../../compiled';
+        array_map('unlink', glob($dir . '/jmespath_*.php'));
     }
 
     /**
@@ -36,9 +36,11 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         try {
             if ($compiled) {
                 $compiledStr = \JmesPath\Env::COMPILE_DIR . '=on ';
-                $evalResult = self::$defaultRuntime->debug($expression, $data, $debug);
+                $fn = self::$defaultRuntime;
+                $evalResult = $fn($expression, $data, $debug);
             } else {
-                $evalResult = self::$compilerRuntime->debug($expression, $data, $debug);
+                $fn = self::$compilerRuntime;
+                $evalResult = $fn($expression, $data, $debug);
             }
         } catch (\Exception $e) {
             $failed = $e instanceof SyntaxErrorException ? 'syntax' : 'runtime';

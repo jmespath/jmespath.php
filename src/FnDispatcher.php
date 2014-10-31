@@ -1,65 +1,38 @@
 <?php
-namespace JmesPath\Runtime;
+namespace JmesPath;
 
-use JmesPath\Parser;
-use JmesPath\Lexer;
-use JmesPath\Tree\ExprNode;
-
-abstract class AbstractRuntime implements RuntimeInterface
+/**
+ * Dispatches to named JMESPath functions using a single function that has the
+ * following signature:
+ *
+ *     mixed $result = fn(string $function_name, array $args)
+ */
+class FnDispatcher
 {
-    /** @var Parser */
-    protected $parser;
-
-    /** @var array Map of custom function names to callables */
-    private $fnMap = [];
-
-    public function registerFunction($name, callable $fn)
+    /**
+     * Gets a cached instance of the default function implementations.
+     *
+     * @return FnDispatcher
+     */
+    public static function getInstance()
     {
-        $this->fnMap[$name] = $fn;
-    }
-
-    public function callFunction($name, $args)
-    {
-        if (!isset($this->fnMap[$name])) {
-            if (!is_callable([$this, 'fn_' . $name])) {
-                throw new \RuntimeException("Call to undefined function $name");
-            }
-            $this->fnMap[$name] = [$this, 'fn_' . $name];
+        static $instance = null;
+        if (!$instance) {
+            $instance = new self();
         }
 
-        return $this->fnMap[$name]($args);
+        return $instance;
     }
 
-    protected function printDebugTokens($out, $expression)
+    /**
+     * @param string $fn   Function name.
+     * @param array  $args Function arguments.
+     *
+     * @return mixed
+     */
+    public function __invoke($fn, array $args)
     {
-        $lexer = new Lexer();
-        fwrite($out, "Tokens\n======\n\n");
-        $t = microtime(true);
-        $tokens = $lexer->tokenize($expression);
-        $lexTime = (microtime(true) - $t) * 1000;
-
-        foreach ($tokens as $t) {
-            fprintf(
-                $out,
-                "%3d  %-13s  %s\n", $t['pos'], $t['type'],
-                json_encode($t['value'])
-            );
-        }
-
-        fwrite($out, "\n");
-
-        return [$tokens, $lexTime];
-    }
-
-    protected function printDebugAst($out, $expression)
-    {
-        $t = microtime(true);
-        $ast = $this->parser->parse($expression);
-        $parseTime = (microtime(true) - $t) * 1000;
-        fwrite($out, "AST\n========\n\n");
-        fwrite($out, json_encode($ast, JSON_PRETTY_PRINT) . "\n");
-
-        return [$ast, $parseTime];
+        return $this->{'fn_' . $fn}($args);
     }
 
     private function fn_abs(array $args)
@@ -73,17 +46,19 @@ abstract class AbstractRuntime implements RuntimeInterface
     {
         $this->validate($args, [['array']]);
 
-        $sum = $total = 0;
+        if (!$args[0]) {
+            return null;
+        }
+
+        $sum = 0;
         foreach ($args[0] as $v) {
-            $type = $this->gettype($v);
-            if ($type != 'number') {
+            if ($this->gettype($v) != 'number') {
                 $this->typeError('avg', 0, 'an array of numbers');
             }
-            $total++;
             $sum += $v;
         }
 
-        return $total ? $sum / $total : null;
+        return $sum / count($args[0]);
     }
 
     private function fn_ceil(array $args)
@@ -119,13 +94,9 @@ abstract class AbstractRuntime implements RuntimeInterface
             );
         }
 
-        foreach ($args as $arg) {
-            if ($arg !== null) {
-                return $arg;
-            }
-        }
-
-        return null;
+        return array_reduce($args, function ($carry, $item) {
+            return $carry !== null ? $carry : $item;
+        });
     }
 
     private function fn_join(array $args)
@@ -225,14 +196,13 @@ abstract class AbstractRuntime implements RuntimeInterface
     private function fn_sort_by(array $args)
     {
         $this->validate($args, [['array'], ['expression']]);
-        $i = $args[1]->interpreter;
-        $expr = $args[1]->node;
+        $expr = $args[1];
 
         return self::stableSort(
             $args[0],
-            function ($a, $b) use ($i, $expr) {
-                $va = $i->visit($expr, $a);
-                $vb = $i->visit($expr, $b);
+            function ($a, $b) use ($expr) {
+                $va = $expr($a);
+                $vb = $expr($b);
                 $ta = $this->gettype($va);
                 $tb = $this->gettype($vb);
                 if ($ta != $tb || ($ta != 'number' && $ta != 'string')) {
@@ -281,20 +251,18 @@ abstract class AbstractRuntime implements RuntimeInterface
     private function numberCmpBy(array $args, $cmp)
     {
         $this->validate($args, [['array'], ['expression']]);
-        $i = $args[1]->interpreter;
-        $expr = $args[1]->node;
-
+        $expr = $args[1];
         $cur = $curValue = null;
+
         foreach ($args[0] as $value) {
-            $result = $i->visit($expr, $value);
+            $result = $expr($value);
             if ($this->gettype($result) != 'number') {
                 throw new \InvalidArgumentException('Expected a number result');
             }
             if ($cur === null || (
-                    ($cmp == '<' && $result < $cur) ||
-                    ($cmp == '>' && $result > $cur)
-                )
-            ) {
+                ($cmp == '<' && $result < $cur) ||
+                ($cmp == '>' && $result > $cur)
+            )) {
                 $cur = $result;
                 $curValue = $value;
             }
@@ -434,24 +402,16 @@ abstract class AbstractRuntime implements RuntimeInterface
             'object'  => 'object'
         ];
 
-        if ($arg instanceof ExprNode) {
+        if (is_callable($arg)) {
             return 'expression';
         }
 
         $type = gettype($arg);
-
         if (isset($map[$type])) {
-            return $map[gettype($arg)];
-        } else {
-            $keys = array_keys($arg);
-            if (!$keys) {
-                return 'array';
-            } elseif ($keys[0] === 0) {
-                return 'array';
-            } else {
-                return 'object';
-            }
+            return $map[$type];
         }
+
+        return !$arg || array_keys($arg)[0] === 0 ? 'array' : 'object';
     }
 
     private function typeError($fn, $i, $msg)
@@ -498,5 +458,12 @@ abstract class AbstractRuntime implements RuntimeInterface
         }
 
         return true;
+    }
+
+    /** @internal */
+    public function __call($name, $args)
+    {
+        $name = str_replace('fn_', '', $name);
+        throw new \RuntimeException("Call to undefined function {$name}");
     }
 }

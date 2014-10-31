@@ -22,7 +22,7 @@ using the ``mtdowling/jmespath.php`` package.
         ]
     ];
 
-    \JmesPath\Env::search($expression, $data);
+    JmesPath\Env::search($expression, $data);
     // Returns: [1, 2, 3]
 
 - `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
@@ -47,11 +47,7 @@ Runtimes
 jmespath.php utilizes *runtimes*. There are currently two runtimes:
 AstRuntime and CompilerRuntime.
 
-AstRuntime is utilized by ``JmesPath\Env::search()`` by default. Depending on
-your application, it may be useful to customize the runtime used by
-``JmesPath\Env::search()``. You can change the runtime utilized by
-``JmesPath\Env::search()`` by calling ``JmesPath\registerRuntime()``, passing in an
-instance of ``JmesPath\Runtime\RuntimeInterface``.
+AstRuntime is utilized by ``JmesPath\Env::search()`` by default.
 
 AstRuntime
 ~~~~~~~~~~
@@ -61,10 +57,16 @@ and interpret the AST using an external tree visitor. AstRuntime provides a
 good general approach for interpreting JMESPath expressions that have a low to
 moderate level of reuse.
 
+.. code-block:: php
+
+    $runtime = new JmesPath\AstRuntime();
+    $runtime('foo.bar', ['foo' => ['bar' => 'baz']]);
+    // > 'baz'
+
 CompilerRuntime
 ~~~~~~~~~~~~~~~
 
-``JmesPath\Runtime\CompilerRuntime`` provides the most performance for
+``JmesPath\CompilerRuntime`` provides the most performance for
 applications that have a moderate to high level of reuse of JMESPath
 expressions. The CompilerRuntime will walk a JMESPath AST and emit PHP source
 code, resulting in anywhere from 7x to 60x speed improvements.
@@ -79,6 +81,13 @@ much better performance.
 Use the CompilerRuntime if you know that you will be executing JMESPath
 expressions more than once or if you can pre-compile JMESPath expressions
 before executing them (for example, server-side applications).
+
+.. code-block:: php
+
+    // Note: The cache directory argument is optional.
+    $runtime = new JmesPath\CompilerRuntime('/path/to/compile/folder');
+    $runtime('foo.bar', ['foo' => ['bar' => 'baz']]);
+    // > 'baz'
 
 Environment Variables
 ^^^^^^^^^^^^^^^^^^^^^

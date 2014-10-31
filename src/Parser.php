@@ -190,18 +190,13 @@ class Parser
     {
         $this->next();
         $type = $this->token['type'];
-
         if ($type == 'number' || $type == 'colon') {
             return $this->parseArrayIndexExpression();
-        }
-
-        if ($type == 'star' &&
-            $this->lookahead(1)['type'] == 'rbracket'
-        ) {
+        } elseif ($type == 'star' && $this->lookahead()['type'] == 'rbracket') {
             return $this->parseWildcardArray();
+        } else {
+            return $this->parseMultiSelectList();
         }
-
-        return $this->parseMultiSelectList();
     }
 
     private function led_lbracket(array $left)
@@ -464,17 +459,15 @@ class Parser
     }
 
     /**
-     * Lookahead at a specific token
-     *
-     * @param int $number Number of tokens to lookahead
+     * Lookahead at the next token.
      *
      * @return array
      */
-    private function lookahead($number)
+    private function lookahead()
     {
-        return (!isset($this->tokens[$this->tpos + $number]))
+        return (!isset($this->tokens[$this->tpos + 1]))
             ? self::$nullToken
-            : $this->tokens[$this->tpos + $number];
+            : $this->tokens[$this->tpos + 1];
     }
 
     /**

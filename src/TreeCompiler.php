@@ -1,54 +1,41 @@
 <?php
-namespace JmesPath\Tree;
+namespace JmesPath;
 
 /**
  * Tree visitor used to compile JMESPath expressions into native PHP code.
  */
-class TreeCompiler implements TreeVisitorInterface
+class TreeCompiler
 {
-    /** @var int Current level of indentation */
+    /** @var string Current level of indentation */
     private $indentation;
 
     /** @var string Compiled source code */
     private $source;
 
-    /** @var array Hash of indentation level to cached str_padded value */
-    private $cachedIndents;
-
-    public function visit(array $node, $data, array $args = null)
+    /**
+     * @param array  $ast    AST to compile.
+     * @param string $fnName The name of the function to generate.
+     * @param string $expr   Expression being compiled.
+     *
+     * @return string
+     */
+    public function visit(array $ast, $fnName, $expr)
     {
-        if (!isset($args['function_name'])) {
-            throw new \InvalidArgumentException('A function_name arg is required');
-        }
-
-        $this->source = '';
-        $this->indentation = 0;
+        $this->source = $this->indentation = '';
         $this->write("<?php\n");
-
-        if (isset($args['expression'])) {
-            $this->write("// {$args['expression']}");
-        }
-
-        $this->write("function {$args['function_name']}(JmesPath\\Runtime\\RuntimeInterface \$runtime, \$value) {")
+        $this->write("// {$expr}");
+        $this->write("function {$fnName}(\\JmesPath\\TreeInterpreter \$interpreter, \$value) {")
             ->indent()
                 ->write('$current = $value;')
-                ->dispatch($node)
+                ->dispatch($ast)
                 ->write('')
                 ->write('return $value;')
             ->outdent()
         ->write('}');
 
-        return $this->source;
-    }
+        echo $this->source;
 
-    /**
-     * Handles evaluating undefined types without paying the cost of validation
-     */
-    public function __call($method, $args)
-    {
-        throw new \RuntimeException(
-            sprintf('Invalid node encountered: %s', json_encode($args[0]))
-        );
+        return $this->source;
     }
 
     private function dispatch(array $node)
@@ -64,15 +51,7 @@ class TreeCompiler implements TreeVisitorInterface
      */
     private function write($str)
     {
-        if (!isset($this->cachedIndents[$this->indentation])) {
-            $this->cachedIndents[$this->indentation] = str_repeat(
-                ' ',
-                $this->indentation * 4
-            );
-        }
-
-        $this->source .= $this->cachedIndents[$this->indentation] . $str . "\n";
-
+        $this->source .= "{$this->indentation}{$str}\n";
         return $this;
     }
 
@@ -83,8 +62,7 @@ class TreeCompiler implements TreeVisitorInterface
      */
     private function outdent()
     {
-        $this->indentation--;
-
+        $this->indentation = substr($this->indentation, 0, -4);
         return $this;
     }
 
@@ -95,8 +73,7 @@ class TreeCompiler implements TreeVisitorInterface
      */
     private function indent()
     {
-        $this->indentation++;
-
+        $this->indentation .= '    ';
         return $this;
     }
 
@@ -255,13 +232,13 @@ class TreeCompiler implements TreeVisitorInterface
                 ->write("\$value = \${$value};");
         }
 
-        return $this->write("\$value = \$runtime->callFunction('{$node['fn']}', \${$args});");
+        return $this->write("\$value = JmesPath\\FnDispatcher::getInstance()->__invoke('{$node['fn']}', \${$args});");
     }
 
     private function visit_slice(array $node)
     {
         return $this
-            ->write("\$value = \$runtime->callFunction('slice', array(")
+            ->write("\$value = JmesPath\\FnDispatcher::getInstance()->__invoke('slice', array(")
                 ->indent()
                 ->write(sprintf(
                     '$value, %s, %s, %s',
@@ -281,9 +258,11 @@ class TreeCompiler implements TreeVisitorInterface
     private function visit_expression(array $node)
     {
         $child = var_export($node['children'][0], true);
-
-        return $this->write("\$value = new \\JmesPath\\Tree\\ExprNode("
-            . "new \\JmesPath\\Tree\\TreeInterpreter(new \\JmesPath\\Runtime\\AstRuntime()), $child);");
+        return $this->write("\$value = function (\$value) use (\$interpreter) {")
+            ->indent()
+            ->write("return \$interpreter->visit($child, \$value);")
+            ->outdent()
+        ->write('};');
     }
 
     private function visit_flatten(array $node)
@@ -295,7 +274,7 @@ class TreeCompiler implements TreeVisitorInterface
 
         $this
             ->write('// Visiting merge node')
-            ->write('if (!\JmesPath\Tree\TreeInterpreter::isArray($value)) {')
+            ->write('if (!\JmesPath\TreeInterpreter::isArray($value)) {')
                 ->indent()
                 ->write('$value = null;')
                 ->outdent()
@@ -331,9 +310,9 @@ class TreeCompiler implements TreeVisitorInterface
         if (!isset($node['from'])) {
             $this->write('if (!is_array($value) || !($value instanceof \stdClass)) $value = null;');
         } elseif ($node['from'] == 'object') {
-            $this->write('if (!\JmesPath\Tree\TreeInterpreter::isObject($value)) $value = null;');
+            $this->write('if (!\JmesPath\TreeInterpreter::isObject($value)) $value = null;');
         } elseif ($node['from'] == 'array') {
-            $this->write('if (!\JmesPath\Tree\TreeInterpreter::isArray($value)) $value = null;');
+            $this->write('if (!\JmesPath\TreeInterpreter::isArray($value)) $value = null;');
         }
 
         $tmpVal = uniqid('v');
@@ -390,9 +369,9 @@ class TreeCompiler implements TreeVisitorInterface
             ->write("\${$tmpB} = \$value;");
 
         if ($node['relation'] == '==') {
-            $this->write("\$result = \\JmesPath\\Tree\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
+            $this->write("\$result = \\JmesPath\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
         } elseif ($node['relation'] == '!=') {
-            $this->write("\$result = !\\JmesPath\\Tree\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
+            $this->write("\$result = !\\JmesPath\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
         } else {
             $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} {$node['relation']} \${$tmpB};");
         }
@@ -400,5 +379,13 @@ class TreeCompiler implements TreeVisitorInterface
         return $this
             ->write("\$value = \$result === true ? \${$tmpValue} : null;")
             ->write("\$current = \${$tmpCurrent};");
+    }
+
+    /** @internal */
+    public function __call($method, $args)
+    {
+        throw new \RuntimeException(
+            sprintf('Invalid node encountered: %s', json_encode($args[0]))
+        );
     }
 }
