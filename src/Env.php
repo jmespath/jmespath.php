@@ -45,9 +45,7 @@ final class Env
      */
     public static function createRuntime()
     {
-        $compileDir = isset($_SERVER[self::COMPILE_DIR])
-            ? $_SERVER[self::COMPILE_DIR]
-            : (isset($_ENV[self::COMPILE_DIR]) ? $_ENV[self::COMPILE_DIR] : null);
+        $compileDir = getenv('COMPILE_DIR');
 
         if (!$compileDir) {
             return new AstRuntime();
