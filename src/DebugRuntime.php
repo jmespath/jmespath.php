@@ -40,7 +40,7 @@ class DebugRuntime
         );
     }
 
-    public function debugCompiled($expression, $data)
+    private function debugCompiled($expression, $data)
     {
         $result = $this->debugCallback(
             function () use ($expression, $data) {
@@ -55,7 +55,7 @@ class DebugRuntime
         return $result;
     }
 
-    public function dumpTokens($expression)
+    private function dumpTokens($expression)
     {
         $lexer = new Lexer();
         fwrite($this->out, "Tokens\n======\n\n");
@@ -72,7 +72,7 @@ class DebugRuntime
         fwrite($this->out, "\n");
     }
 
-    public function dumpAst($expression)
+    private function dumpAst($expression)
     {
         $parser = new Parser();
         $ast = $parser->parse($expression);
@@ -80,7 +80,7 @@ class DebugRuntime
         fwrite($this->out, json_encode($ast, JSON_PRETTY_PRINT) . "\n");
     }
 
-    public function dumpCompiledCode($expression)
+    private function dumpCompiledCode($expression)
     {
         fwrite($this->out, "Code\n========\n\n");
         $dir = sys_get_temp_dir();
