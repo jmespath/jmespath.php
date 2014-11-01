@@ -2,8 +2,7 @@
 namespace JmesPath;
 
 /**
- * Default JMESPath runtime environment that uses an external tree visitor to
- * interpret an AST.
+ * Uses an external tree visitor to interpret an AST.
  */
 class AstRuntime
 {

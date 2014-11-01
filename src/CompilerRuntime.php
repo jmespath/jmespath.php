@@ -2,8 +2,7 @@
 namespace JmesPath;
 
 /**
- * JMESPath runtime environment that compiles JMESPath expressions to PHP
- * source code.
+ * Compiles JMESPath expressions to PHP source code and executes it.
  *
  * JMESPath filenames are stored in the cache directory using the following
  * logic to determine the filename:

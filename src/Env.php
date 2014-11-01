@@ -18,7 +18,7 @@ final class Env
     private static $runtime;
 
     /**
-     * Returns data from the input array that matches a given JMESPath expression.
+     * Returns data from the input array that matches a JMESPath expression.
      *
      * @param string $expression JMESPath expression to evaluate
      * @param mixed  $data       JSON-like data to search

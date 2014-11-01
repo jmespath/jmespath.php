@@ -96,6 +96,7 @@ class Lexer
 
     private function literal($value, $offset, $input)
     {
+        // Handles true, false, null, numbers, quoted strings, "[", and "{"
         static $valid = '/(true|false|null)|(^[\["{])|(^\-?[0-9]*(\.[0-9]+)?([e|E][+|\-][0-9]+)?$)/';
         $value = str_replace('\\`', '`', ltrim(substr($value, 1, -1)));
 

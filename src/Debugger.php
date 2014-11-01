@@ -60,10 +60,12 @@ class Debugger
 
     public function dumpCompiledCode($out, $expression)
     {
+        fwrite($out, "Code\n========\n\n");
         $dir = sys_get_temp_dir();
         $hash = md5($expression);
         $functionName = "jmespath_{$hash}";
         $filename = "{$dir}/{$functionName}.php";
+        fwrite($out, "File: {$filename}\n\n");
         fprintf($out, file_get_contents($filename));
     }
 

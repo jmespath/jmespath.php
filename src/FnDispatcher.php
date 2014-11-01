@@ -460,7 +460,7 @@ class FnDispatcher
         return true;
     }
 
-    /** @internal */
+    /** @internal Pass function name validation off to runtime */
     public function __call($name, $args)
     {
         $name = str_replace('fn_', '', $name);
