@@ -42,7 +42,7 @@ final class Env
      */
     public static function createRuntime()
     {
-        $compileDir = getenv('COMPILE_DIR');
+        $compileDir = getenv(self::COMPILE_DIR);
         switch ($compileDir) {
             case false: return new AstRuntime();
             case 'on': return new CompilerRuntime();
