@@ -25,6 +25,35 @@ class FnDispatcher
     }
 
     /**
+     * Gets the JMESPath type equivalent of a PHP variable.
+     *
+     * @param mixed $arg PHP variable
+     * @return string Returns the JSON data type
+     */
+    public static function type($arg)
+    {
+        static $map = [
+            'boolean' => 'boolean',
+            'string'  => 'string',
+            'NULL'    => 'null',
+            'double'  => 'number',
+            'integer' => 'number',
+            'object'  => 'object'
+        ];
+
+        if (is_callable($arg)) {
+            return 'expression';
+        }
+
+        $type = gettype($arg);
+        if (isset($map[$type])) {
+            return $map[$type];
+        }
+
+        return !$arg || array_keys($arg)[0] === 0 ? 'array' : 'object';
+    }
+
+    /**
      * @param string $fn   Function name.
      * @param array  $args Function arguments.
      *
@@ -37,52 +66,47 @@ class FnDispatcher
 
     private function fn_abs(array $args)
     {
-        $this->validate($args, [['number']]);
-
+        $this->validate('abs', $args, [['number']]);
         return abs($args[0]);
     }
 
     private function fn_avg(array $args)
     {
-        $this->validate($args, [['array']]);
-
-        if (!$args[0]) {
-            return null;
-        }
-
-        $sum = 0;
-        foreach ($args[0] as $v) {
-            if ($this->gettype($v) != 'number') {
-                $this->typeError('avg', 0, 'an array of numbers');
-            }
-            $sum += $v;
-        }
-
-        return $sum / count($args[0]);
+        $this->validate('avg', $args, [['array']]);
+        $sum = $this->reduce('avg:0', $args[0], ['number'], function ($a, $b) {
+            return $a + $b;
+        });
+        return $args[0] ? ($sum / count($args[0])) : null;
     }
 
     private function fn_ceil(array $args)
     {
-        $this->validate($args, [['number']]);
+        $this->validate('ceil', $args, [['number']]);
         return ceil($args[0]);
     }
 
     private function fn_contains(array $args)
     {
-        $this->validate($args, [['string', 'array'], ['any']]);
-
+        $this->validate('contains', $args, [['string', 'array'], ['any']]);
         if (is_array($args[0])) {
             return in_array($args[1], $args[0]);
         } elseif (is_string($args[1])) {
             return strpos($args[0], $args[1]) !== false;
+        } else {
+            return null;
         }
+    }
 
-        return null;
+    private function fn_ends_with(array $args)
+    {
+        $this->validate('ends_with', $args, [['string'], ['string']]);
+        list($search, $suffix) = $args;
+        return $suffix === '' || substr($search, -strlen($suffix)) === $suffix;
     }
 
     private function fn_floor(array $args)
     {
-        $this->validate($args, [['number']]);
+        $this->validate('floor', $args, [['number']]);
         return floor($args[0]);
     }
 
@@ -101,115 +125,102 @@ class FnDispatcher
 
     private function fn_join(array $args)
     {
-        $this->validate($args, [['string'], ['array']]);
-
-        $result = '';
-        foreach ($args[1] as $ele) {
-            if (!is_string($ele)) {
-                $this->typeError('join', 1, 'must be an array of strings');
-            }
-            $result .= $ele . $args[0];
-        }
-
-        return rtrim($result, $args[0]);
+        $this->validate('join', $args, [['string'], ['array']]);
+        $fn = function ($a, $b, $i) use ($args) {
+            return $i ? ($a . $args[0] . $b) : $b;
+        };
+        return $this->reduce('join:0', $args[1], ['string'], $fn);
     }
 
     private function fn_keys(array $args)
     {
-        $this->validate($args, [['object']]);
+        $this->validate('keys', $args, [['object']]);
         return array_keys((array) $args[0]);
     }
 
     private function fn_length(array $args)
     {
-        $this->validate($args, [['string', 'array', 'object']]);
-
-        return is_string($args[0])
-            ? strlen($args[0])
-            : count((array) $args[0]);
+        $this->validate('length', $args, [['string', 'array', 'object']]);
+        return is_string($args[0]) ? strlen($args[0]) : count((array) $args[0]);
     }
 
     private function fn_max(array $args)
     {
-        $this->validate($args, [['array']]);
+        $this->validate('max', $args, [['array']]);
+        $fn = function ($a, $b) { return $a >= $b ? $a : $b; };
+        return $this->reduce('max:0', $args[0], ['number', 'string'], $fn);
+    }
 
-        $currentMax = null;
-        foreach ($args[0] as $element) {
-            $type = $this->gettype($element);
-            if ($type !== 'number') {
-                $this->typeError('max', 0, 'must be an array of numbers');
-            } elseif ($currentMax === null || $element > $currentMax) {
-                $currentMax = $element;
-            }
-        }
-
-        return $currentMax;
+    private function fn_max_by(array $args)
+    {
+        $this->validate('max_by', $args, [['array'], ['expression']]);
+        $expr = $this->wrapExpression('max_by:1', $args[1], ['number', 'string']);
+        $i = -1;
+        return array_reduce($args[0], function ($carry, $item) use ($expr, &$i) {
+            return ++$i
+                ? ($expr($carry) >= $expr($item) ? $carry : $item)
+                : $item;
+        });
     }
 
     private function fn_min(array $args)
     {
-        $this->validate($args, [['array']]);
+        $this->validate('min', $args, [['array']]);
+        $fn = function ($a, $b, $i) { return $i && $a <= $b ? $a : $b; };
+        return $this->reduce('min:0', $args[0], ['number', 'string'], $fn);
+    }
 
-        $currentMin = null;
-        foreach ($args[0] as $element) {
-            $type = $this->gettype($element);
-            if ($type !== 'number') {
-                $this->typeError('min', 0, 'must be an array of numbers');
-            } elseif ($currentMin === null || $element < $currentMin) {
-                $currentMin = $element;
-            }
+    private function fn_min_by(array $args)
+    {
+        $this->validate('min_by', $args, [['array'], ['expression']]);
+        $expr = $this->wrapExpression('min_by:1', $args[1], ['number', 'string']);
+        $i = -1;
+        $fn = function ($a, $b) use ($expr, &$i) {
+            return ++$i ? ($expr($a) <= $expr($b) ? $a : $b) : $b;
+        };
+        return $this->reduce('min_by:1', $args[0], ['any'], $fn);
+    }
+
+    private function fn_reverse(array $args)
+    {
+        $this->validate('reverse', $args, [['array', 'string']]);
+        if (is_array($args[0])) {
+            return array_reverse($args[0]);
+        } elseif (is_string($args[0])) {
+            return strrev($args[0]);
+        } else {
+            throw new \RuntimeException('Cannot reverse provided argument');
         }
-
-        return $currentMin;
     }
 
     private function fn_sum(array $args)
     {
-        $this->validate($args, [['array']]);
-
-        $sum = 0;
-        foreach ($args[0] as $element) {
-            $type = $this->gettype($element);
-            if ($type != 'number') {
-                $this->typeError('sum', 0, 'must be an array of numbers');
-            }
-            $sum += $element;
-        }
-
-        return $sum;
+        $this->validate('sum', $args, [['array']]);
+        $fn = function ($a, $b) { return $a + $b; };
+        return $this->reduce('sum:0', $args[0], ['number'], $fn);
     }
 
     private function fn_sort(array $args)
     {
-        $this->validate($args, [['array']]);
-
-        return self::stableSort($args[0], function ($a, $b) {
-            $at = $this->gettype($a);
-            $bt = $this->gettype($b);
-            if ($at != $bt || ($at != 'number' && $at != 'string')) {
-                $this->typeError('sort', 0, 'must be an array of string or numbers');
-            }
+        $this->validate('sort', $args, [['array']]);
+        $valid = ['string', 'number'];
+        return self::stableSort($args[0], function ($a, $b) use ($valid) {
+            $this->validateSeq('sort:0', $valid, $a, $b);
             return strnatcmp($a, $b);
         });
     }
 
     private function fn_sort_by(array $args)
     {
-        $this->validate($args, [['array'], ['expression']]);
+        $this->validate('sort_by', $args, [['array'], ['expression']]);
         $expr = $args[1];
-
+        $valid = ['string', 'number'];
         return self::stableSort(
             $args[0],
-            function ($a, $b) use ($expr) {
+            function ($a, $b) use ($expr, $valid) {
                 $va = $expr($a);
                 $vb = $expr($b);
-                $ta = $this->gettype($va);
-                $tb = $this->gettype($vb);
-                if ($ta != $tb || ($ta != 'number' && $ta != 'string')) {
-                    $this->typeError(
-                        'sort_by', 1, 'must be strings or numbers of the same type'
-                    );
-                }
+                $this->validateSeq('sort_by:0', $valid, $va, $vb);
                 return strnatcmp($va, $vb);
             }
         );
@@ -238,80 +249,49 @@ class FnDispatcher
         return array_map(function ($v) { return $v[0]; }, array_values($data));
     }
 
-    private function fn_min_by(array $args)
+    private function fn_starts_with(array $args)
     {
-        return $this->numberCmpBy($args, '<');
-    }
-
-    private function fn_max_by(array $args)
-    {
-        return $this->numberCmpBy($args, '>');
-    }
-
-    private function numberCmpBy(array $args, $cmp)
-    {
-        $this->validate($args, [['array'], ['expression']]);
-        $expr = $args[1];
-        $cur = $curValue = null;
-
-        foreach ($args[0] as $value) {
-            $result = $expr($value);
-            if ($this->gettype($result) != 'number') {
-                throw new \InvalidArgumentException('Expected a number result');
-            }
-            if ($cur === null || (
-                ($cmp == '<' && $result < $cur) ||
-                ($cmp == '>' && $result > $cur)
-            )) {
-                $cur = $result;
-                $curValue = $value;
-            }
-        }
-
-        return $curValue;
+        $this->validate('starts_with', $args, [['string'], ['string']]);
+        list($search, $prefix) = $args;
+        return $prefix === '' || strpos($search, $prefix) === 0;
     }
 
     private function fn_type(array $args)
     {
-        $this->validateArity(count($args), 1);
-        return $this->gettype($args[0]);
+        $this->validateArity('type', count($args), 1);
+        return self::type($args[0]);
     }
 
     private function fn_to_string(array $args)
     {
-        $this->validateArity(count($args), 1);
+        $this->validateArity('to_string', count($args), 1);
         return is_string($args[0]) ? $args[0] : json_encode($args[0]);
     }
 
     private function fn_to_number(array $args)
     {
-        $this->validateArity(count($args), 1);
-
-        if (!is_numeric($args[0])) {
+        $this->validateArity('to_number', count($args), 1);
+        $value = $args[0];
+        $type = self::type($value);
+        if ($type == 'number') {
+            return $value;
+        } elseif ($type == 'string' && is_numeric($value)) {
+            return strpos($value, '.') ? (float) $value : (int) $value;
+        } else {
             return null;
-        }
-
-        switch ($this->gettype($args[0])) {
-            case 'number':
-                return $args[0];
-            case 'string':
-                return strpos($args[0], '.')
-                    ? (float) $args[0] : (int) $args[0];
-            default:
-                return null;
         }
     }
 
     private function fn_values(array $args)
     {
-        $this->validate($args, [['array', 'object']]);
+        $this->validate('values', $args, [['array', 'object']]);
         return array_values((array) $args[0]);
     }
 
     private function fn_slice(array $args)
     {
         try {
-            $this->validate($args, [
+            $this->validate('slice', $args, [
                 ['array', 'string'],
                 ['number', 'null'],
                 ['number', 'null'],
@@ -364,12 +344,8 @@ class FnDispatcher
     private function sliceIndices($subject, $start, $stop, $step)
     {
         $type = gettype($subject);
-        list($start, $stop, $step) = $this->adjustSlice(
-            $type == 'string' ? strlen($subject) : count($subject),
-            $start,
-            $stop,
-            $step
-        );
+        $len = $type == 'string' ? strlen($subject) : count($subject);
+        list($start, $stop, $step) = $this->adjustSlice($len, $start, $stop, $step);
 
         $result = [];
         if ($step > 0) {
@@ -385,79 +361,126 @@ class FnDispatcher
         return $type == 'string' ? implode($result, '') : $result;
     }
 
-    /**
-     * Converts a PHP type to a JSON data type
-     *
-     * @param mixed $arg PHP variable
-     * @return string Returns the JSON data type
-     */
-    private function gettype($arg)
+    private function typeError($from, $msg)
     {
-        static $map = [
-            'boolean' => 'boolean',
-            'string'  => 'string',
-            'NULL'    => 'null',
-            'double'  => 'number',
-            'integer' => 'number',
-            'object'  => 'object'
-        ];
-
-        if (is_callable($arg)) {
-            return 'expression';
+        if (strpos($from, ':')) {
+            list($fn, $pos) = explode(':', $from);
+            throw new \RuntimeException(
+                sprintf('Argument %d of %s %s', $pos, $fn, $msg)
+            );
+        } else {
+            throw new \RuntimeException(
+                sprintf('Type error: %s %s', $from, $msg)
+            );
         }
-
-        $type = gettype($arg);
-        if (isset($map[$type])) {
-            return $map[$type];
-        }
-
-        return !$arg || array_keys($arg)[0] === 0 ? 'array' : 'object';
     }
 
-    private function typeError($fn, $i, $msg)
-    {
-        throw new \RuntimeException(sprintf('Argument %d of %s %s', $i, $fn, $msg));
-    }
-
-    private function validateArity($given, $expected)
+    private function validateArity($from, $given, $expected)
     {
         if ($given != $expected) {
             $err = "%s() expects {$expected} arguments, {$given} were provided";
-            $callers = debug_backtrace();
-            $fn = $callers[2]['function'];
-            throw new \RuntimeException(sprintf($err, $fn));
+            throw new \RuntimeException(sprintf($err, $from));
         }
     }
 
-    private function validate($args, $types = [])
+    private function validate($from, $args, $types = [])
     {
-        $this->validateArity(count($args), count($types));
-
+        $this->validateArity($from, count($args), count($types));
         foreach ($args as $index => $value) {
-
-            if (!isset($types[$index])) {
+            if (!isset($types[$index]) || !$types[$index]) {
                 continue;
             }
+            $this->validateType("{$from}:{$index}", $value, $types[$index]);
+        }
+        return true;
+    }
 
-            if (in_array($this->gettype($value), $types[$index])
-                // 'any' is a special match for any type.
-                || $types[$index] === ['any']
-                // Allow empty arrays to satisfy objects or arrays.
-                || in_array('object', $types[$index]) && $value === []
-            ) {
-                continue;
-            }
+    private function validateType($from, $value, array $types)
+    {
+        if ($types[0] == 'any'
+            || in_array(self::type($value), $types)
+            || ($value === [] && in_array('object', $types))
+        ) {
+            return;
+        }
+        $msg = 'must be one of the following types: ' . implode(', ', $types)
+            . '. ' . self::type($value) . ' found';
+        $this->typeError($from, $msg);
+    }
 
-            $this->typeError(
-                debug_backtrace()[1]['function'],
-                $index,
-                'must be one of the following types: '
-                . implode(', ', $types[$index])
-                . ', ' . $this->gettype($value) . ' given'
-            );
+    /**
+     * Validates value A and B, ensures they both are correctly typed, and of
+     * the same type.
+     *
+     * @param string   $from   String of function:argument_position
+     * @param array    $types  Array of valid value types.
+     * @param mixed    $a      Value A
+     * @param mixed    $b      Value B
+     */
+    private function validateSeq($from, array $types, $a, $b)
+    {
+        $ta = self::type($a);
+        $tb = self::type($b);
+
+        if ($ta != $tb) {
+            $msg = "encountered a type mismatch in sequence: {$ta}, {$tb}";
+            $this->typeError($from, $msg);
         }
 
-        return true;
+        $typeMatch = ($types && $types[0] == 'any')
+            || in_array($ta, $types)
+            || in_array($tb, $types);
+
+        if (!$typeMatch) {
+            $msg = 'encountered a type error in sequence. The argument must be '
+                . 'an array of ' . implode('|', $types) . ' types. '
+                . "Found {$ta}, {$tb}.";
+            $this->typeError($from, $msg);
+        }
+    }
+
+    /**
+     * Reduces and validates an array of values to a single value using a fn.
+     *
+     * @param string   $from   String of function:argument_position
+     * @param array    $values Values to reduce.
+     * @param array    $types  Array of valid value types.
+     * @param callable $reduce Reduce function that accepts ($carry, $item).
+     *
+     * @return mixed
+     */
+    private function reduce($from, array $values, array $types, callable $reduce)
+    {
+        $i = -1;
+        return array_reduce(
+            $values,
+            function ($carry, $item) use ($from, $types, $reduce, &$i) {
+                if (++$i > 0) {
+                    $this->validateSeq($from, $types, $carry, $item);
+                }
+                return $reduce($carry, $item, $i);
+            }
+        );
+    }
+
+    /**
+     * Validates the return values of expressions as they are applied.
+     *
+     * @param string   $from  Function name : position
+     * @param callable $expr  Expression function to validate.
+     * @param array    $types Array of acceptable return type values.
+     *
+     * @return callable Returns a wrapped function
+     */
+    private function wrapExpression($from, callable $expr, array $types)
+    {
+        list($fn, $pos) = explode(':', $from);
+        $from = "The expression return value of argument {$pos} of {$fn}";
+        return function ($value) use ($from, $expr, $types) {
+            $value = $expr($value);
+            $this->validateType($from, $value, $types);
+            return $value;
+        };
     }
 
     /** @internal Pass function name validation off to runtime */
