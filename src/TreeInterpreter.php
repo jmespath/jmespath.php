@@ -255,7 +255,7 @@ class TreeInterpreter
             case 'expression':
                 $apply = $node['children'][0];
                 return function ($value) use ($apply) {
-                    $this->visit($apply, $value);
+                    return $this->visit($apply, $value);
                 };
 
             default:

@@ -33,8 +33,6 @@ class TreeCompiler
             ->outdent()
         ->write('}');
 
-        echo $this->source;
-
         return $this->source;
     }
 
