@@ -38,7 +38,7 @@ final class Env
      * Creates a JMESPath runtime based on environment variables and extensions
      * available on a system.
      *
-     * @return AstRuntime|CompilerRuntime
+     * @return callable
      */
     public static function createRuntime()
     {

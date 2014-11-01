@@ -2,6 +2,9 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
+use JmesPath\Env;
+use JmesPath\DebugRuntime;
+
 $description = <<<EOT
 Runs a JMESPath expression on the provided input or a test case.
 
@@ -58,4 +61,5 @@ if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
     die($description);
 }
 
-(new \JmesPath\Debugger())->debugFromEnv(STDOUT, $expression, $data);
+$runtime = new DebugRuntime(Env::createRuntime());
+$runtime($expression, $data);
