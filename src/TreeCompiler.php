@@ -6,11 +6,9 @@ namespace JmesPath;
  */
 class TreeCompiler
 {
-    /** @var string Current level of indentation */
     private $indentation;
-
-    /** @var string Compiled source code */
     private $source;
+    private $vars;
 
     /**
      * @param array  $ast    AST to compile.
@@ -21,6 +19,7 @@ class TreeCompiler
      */
     public function visit(array $ast, $fnName, $expr)
     {
+        $this->vars = [];
         $this->source = $this->indentation = '';
         $this->write("<?php\n");
         $this->write("// {$expr}");
@@ -39,6 +38,15 @@ class TreeCompiler
     private function dispatch(array $node)
     {
         return $this->{"visit_{$node['type']}"}($node);
+    }
+
+    private function makeVar($type)
+    {
+        if (!isset($this->vars[$type])) {
+            $this->vars[$type] = 0;
+        }
+
+        return $type . ++$this->vars[$type];
     }
 
     /**
@@ -77,15 +85,14 @@ class TreeCompiler
 
     private function visit_or(array $node)
     {
-        $id = uniqid();
+        $a = $this->makeVar('beforeOr');
 
         return $this
-            ->write('$beforeOr_' . $id . ' = $value;')
+            ->write("\$$a = \$value;")
             ->dispatch($node['children'][0])
-            ->write('')
             ->write('if (!$value && $value !== "0" && $value !== 0) {')
                 ->indent()
-                ->write('$value = $beforeOr_' . $id . ';')
+                ->write("\$value = \$$a;")
                 ->dispatch($node['children'][1])
                 ->outdent()
             ->write('}');
@@ -143,12 +150,13 @@ class TreeCompiler
         }
 
         // Account for negative indices
-        $tmpCount = uniqid('count_');
+        $a = $this->makeVar('count');
+
         $this
             ->write('if (is_array($value) || ($value instanceof \ArrayAccess && $value instanceof \Countable)) {')
                 ->indent()
-                ->write("\${$tmpCount} = count(\$value) + {$node['index']};")
-                ->write("\$value = isset(\$value[\${$tmpCount}]) ? \$value[\${$tmpCount}] : null;")
+                ->write("\${$a} = count(\$value) + {$node['index']};")
+                ->write("\$value = isset(\$value[\${$a}]) ? \$value[\${$a}] : null;")
                 ->outdent()
             ->write('} else {')
                 ->indent()
@@ -179,9 +187,9 @@ class TreeCompiler
 
     private function visit_multi_select_hash(array $node)
     {
-        $tmpCurrent = uniqid('cur_');
-        $listVal = uniqid('list_');
-        $value = uniqid('prev_');
+        $tmpCurrent = $this->makeVar('cur');
+        $listVal = $this->makeVar('list');
+        $value = $this->makeVar('prev');
 
         $this
             ->write('if ($value !== null) {')
@@ -215,9 +223,9 @@ class TreeCompiler
 
     private function visit_function(array $node)
     {
-        $value = uniqid('value_');
-        $current = uniqid('current_');
-        $args = uniqid('args_');
+        $value = $this->makeVar('val');
+        $current = $this->makeVar('current');
+        $args = $this->makeVar('args');
 
         $this->write("\${$value} = \$value;")
             ->write("\${$current} = \$current;")
@@ -266,9 +274,8 @@ class TreeCompiler
     private function visit_flatten(array $node)
     {
         $this->dispatch($node['children'][0]);
-
-        $tmpMerged = uniqid('merged_');
-        $tmpVal = uniqid('val_');
+        $tmpMerged = $this->makeVar('merged');
+        $tmpVal = $this->makeVar('val');
 
         $this
             ->write('// Visiting merge node')
@@ -313,8 +320,8 @@ class TreeCompiler
             $this->write('if (!\JmesPath\TreeInterpreter::isArray($value)) $value = null;');
         }
 
-        $tmpVal = uniqid('v');
-        $tmpCollected = uniqid('collected_');
+        $tmpVal = $this->makeVar('val');
+        $tmpCollected = $this->makeVar('collected');
 
         $this->write('if ($value !== null) {')
             ->indent()
@@ -351,10 +358,10 @@ class TreeCompiler
 
     private function visit_comparator(array $node)
     {
-        $tmpValue = uniqid('val_');
-        $tmpCurrent = uniqid('cur_');
-        $tmpA = uniqid('left_');
-        $tmpB = uniqid('right_');
+        $tmpValue = $this->makeVar('val');
+        $tmpCurrent = $this->makeVar('cur');
+        $tmpA = $this->makeVar('left');
+        $tmpB = $this->makeVar('right');
 
         $this
             ->write('// Visiting comparator node')
