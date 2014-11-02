@@ -25,11 +25,13 @@ class TreeCompiler
             ->write('use JmesPath\\TreeInterpreter as Ti;')
             ->write('use JmesPath\\FnDispatcher as Fn;')
             ->write('use JmesPath\\Utils;')
+            ->write('')
             ->write("// {$expr}")
             ->write('function %s(Ti $interpreter, $value) {', [$fnName])
             ->indent()
                 ->write('$current = $value;')
                 ->dispatch($ast)
+                ->write('')
                 ->write('return $value;')
             ->outdent()
         ->write('}');
@@ -311,11 +313,11 @@ class TreeCompiler
             ->write('');
 
         if (!isset($node['from'])) {
-            $this->write('if (!is_array($value) || !($value instanceof \stdClass)) $value = null;');
+            $this->write('if (!is_array($value) || !($value instanceof \stdClass)) { $value = null; }');
         } elseif ($node['from'] == 'object') {
-            $this->write('if (!Utils::isObject($value)) $value = null;');
+            $this->write('if (!Utils::isObject($value)) { $value = null; }');
         } elseif ($node['from'] == 'array') {
-            $this->write('if (!Utils::isArray($value)) $value = null;');
+            $this->write('if (!Utils::isArray($value)) { $value = null; }');
         }
 
         $this->write('if ($value !== null) {')
