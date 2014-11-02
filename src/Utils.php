@@ -34,13 +34,14 @@ class Utils
             } elseif ($arg instanceof \ArrayAccess
                 && $arg instanceof \Countable
             ) {
-                return count($arg) == 0 || $arg->offsetExists(0)
-                    ? 'array'
-                    : 'object';
+                return count($arg) == 0 || $arg->offsetExists(0) ? 'array' : 'object';
+            } elseif (method_exists($arg, '__toString')) {
+                return 'string';
+            } else {
+                throw new \InvalidArgumentException(
+                    'Unable to determine JMESPath type from ' . get_class($arg)
+                );
             }
-            throw new \InvalidArgumentException(
-                'Unable to determine JMESPath type from ' . get_class($arg)
-            );
         }
 
         return !$arg || array_keys($arg)[0] === 0 ? 'array' : 'object';

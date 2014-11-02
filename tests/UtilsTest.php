@@ -20,7 +20,8 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
             [function () {}, 'expression'],
             [new \ArrayObject(), 'array'],
             [new \ArrayObject([1, 2]), 'array'],
-            [new \ArrayObject(['foo' => 'bar']), 'object']
+            [new \ArrayObject(['foo' => 'bar']), 'object'],
+            [new _TestStr(), 'string']
         ];
     }
 
