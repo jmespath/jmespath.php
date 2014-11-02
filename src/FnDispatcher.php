@@ -213,7 +213,17 @@ class FnDispatcher
     private function fn_to_string(array $args)
     {
         $this->validateArity('to_string', count($args), 1);
-        return is_string($args[0]) ? $args[0] : json_encode($args[0]);
+        $v = $args[0];
+        if (is_string($v)) {
+            return $v;
+        } elseif (is_object($v)
+            && !($v instanceof \JsonSerializable)
+            && method_exists($v, '__toString')
+        ) {
+            return (string) $v;
+        }
+
+        return json_encode($v);
     }
 
     private function fn_to_number(array $args)
