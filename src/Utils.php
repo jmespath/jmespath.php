@@ -92,14 +92,14 @@ class Utils
      *
      * @return bool
      */
-    public static function valueCmp($a, $b)
+    public static function equal($a, $b)
     {
         if ($a === $b) {
             return true;
         } elseif ($a instanceof \stdClass) {
-            return self::valueCmp((array) $a, $b);
+            return self::equal((array) $a, $b);
         } elseif ($b instanceof \stdClass) {
-            return self::valueCmp($a, (array) $b);
+            return self::equal($a, (array) $b);
         } else {
             return false;
         }

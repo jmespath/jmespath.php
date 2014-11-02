@@ -382,9 +382,9 @@ class TreeCompiler
             ->write('%s = $value;', [$b]);
 
         if ($node['value'] == '==') {
-            $this->write('$result = Utils::valueCmp(%s, %s);', [$a, $b]);
+            $this->write('$result = Utils::equal(%s, %s);', [$a, $b]);
         } elseif ($node['value'] == '!=') {
-            $this->write('$result = !Utils::valueCmp(%s, %s);', [$a, $b]);
+            $this->write('$result = !Utils::equal(%s, %s);', [$a, $b]);
         } else {
             $this->write(
                 '$result = is_int(%s) && is_int(%s) && %s %s %s;',
