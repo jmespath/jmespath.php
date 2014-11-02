@@ -110,10 +110,6 @@ class TreeCompiler
             ->write('}');
     }
 
-    /**
-     * Visits a non-terminal subexpression. Subexpressions wrapping nested
-     * array accessors will be combined into a single if/then block.
-     */
     private function visit_subexpression(array $node)
     {
         return $this
@@ -125,9 +121,6 @@ class TreeCompiler
             ->write('}');
     }
 
-    /**
-     * Visits a terminal identifier
-     */
     private function visit_field(array $node)
     {
         $arr = '$value[' . var_export($node['value'], true) . ']';
@@ -149,9 +142,6 @@ class TreeCompiler
         return $this;
     }
 
-    /**
-     * Visits a terminal index
-     */
     private function visit_index(array $node)
     {
         if ($node['value'] >= 0) {

@@ -4,11 +4,11 @@ namespace JmesPath;
 /**
  * Compiles JMESPath expressions to PHP source code and executes it.
  *
- * JMESPath filenames are stored in the cache directory using the following
+ * JMESPath file names are stored in the cache directory using the following
  * logic to determine the filename:
  *
  * 1. Start with the string "jmespath_"
- * 2. Append the MD5 checksum of the expresison.
+ * 2. Append the MD5 checksum of the expression.
  * 3. Append ".php"
  */
 class CompilerRuntime
