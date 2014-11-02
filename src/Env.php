@@ -30,6 +30,7 @@ final class Env
         if (!self::$runtime) {
             self::$runtime = self::createRuntime();
         }
+
         $runtime = self::$runtime;
         return $runtime($expression, $data);
     }
@@ -42,8 +43,7 @@ final class Env
      */
     public static function createRuntime()
     {
-        $compileDir = getenv(self::COMPILE_DIR);
-        switch ($compileDir) {
+        switch ($compileDir = getenv(self::COMPILE_DIR)) {
             case false: return new AstRuntime();
             case 'on': return new CompilerRuntime();
             default: return new CompilerRuntime($compileDir);
