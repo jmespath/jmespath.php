@@ -254,15 +254,12 @@ class TreeCompiler
     private function visit_slice(array $node)
     {
         return $this
-            ->write('$value = Fn::getInstance()->__invoke("slice", [')
-                ->indent()
-                ->write('$value, %s, %s, %s', [
-                    var_export($node['value'][0], true),
-                    var_export($node['value'][1], true),
-                    var_export($node['value'][2], true)
-                ])
-                ->outdent()
-            ->write(']);');
+            ->write('$value = !is_string($value) && !Utils::isArray($value)')
+            ->write('    ? null : Utils::slice($value, %s, %s, %s);', [
+                var_export($node['value'][0], true),
+                var_export($node['value'][1], true),
+                var_export($node['value'][2], true)
+            ]);
     }
 
     private function visit_current(array $node)

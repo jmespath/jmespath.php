@@ -96,6 +96,20 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2, $result[3]);
         $this->assertEquals(0, $result[4]);
     }
+
+    public function testSlicesArrays()
+    {
+        $this->assertEquals([3, 2, 1], Utils::slice([1, 2, 3], null, null, -1));
+        $this->assertEquals([1, 3], Utils::slice([1, 2, 3], null, null, 2));
+        $this->assertEquals([2, 3], Utils::slice([1, 2, 3], 1));
+    }
+
+    public function testSlicesStrings()
+    {
+        $this->assertEquals('cba', Utils::slice('abc', null, null, -1));
+        $this->assertEquals('ac', Utils::slice('abc', null, null, 2));
+        $this->assertEquals('bc', Utils::slice('abc', 1));
+    }
 }
 
 class _TestClass implements \ArrayAccess

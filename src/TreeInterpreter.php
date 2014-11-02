@@ -186,12 +186,13 @@ class TreeInterpreter
                 return $dispatcher($node['value'], $args);
 
             case 'slice':
-                return $dispatcher('slice', [
-                    $value,
-                    $node['value'][0],
-                    $node['value'][1],
-                    $node['value'][2],
-                ]);
+                return is_string($value) || Utils::isArray($value)
+                    ? Utils::slice(
+                        $value,
+                        $node['value'][0],
+                        $node['value'][1],
+                        $node['value'][2]
+                    ) : null;
 
             case 'expref':
                 $apply = $node['children'][0];

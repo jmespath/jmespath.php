@@ -128,4 +128,81 @@ class Utils
         // Undecorate each item and return the resulting sorted array
         return array_map(function ($v) { return $v[0]; }, array_values($data));
     }
+
+    /**
+     * Creates a Python-style slice of a string or array.
+     *
+     * @param array|string $value Value to slice
+     * @param int|null     $start Starting position
+     * @param int|null     $stop  Stop position
+     * @param int          $step  Step (1, 2, -1, -2, etc.)
+     *
+     * @return array|string
+     * @throws \InvalidArgumentException
+     */
+    public static function slice($value, $start = null, $stop = null, $step = 1)
+    {
+        if (!is_array($value) && !is_string($value)) {
+            throw new \InvalidArgumentException('Expects string or array');
+        }
+
+        return self::sliceIndices($value, $start, $stop, $step);
+    }
+
+    private static function adjustEndpoint($length, $endpoint, $step)
+    {
+        if ($endpoint < 0) {
+            $endpoint += $length;
+            if ($endpoint < 0) {
+                $endpoint = 0;
+            }
+        } elseif ($endpoint >= $length) {
+            $endpoint = $step < 0 ? $length - 1 : $length;
+        }
+
+        return $endpoint;
+    }
+
+    private static function adjustSlice($length, $start, $stop, $step)
+    {
+        if ($step === null) {
+            $step = 1;
+        } elseif ($step === 0) {
+            throw new \RuntimeException('step cannot be 0');
+        }
+
+        if ($start === null) {
+            $start = $step < 0 ? $length - 1 : 0;
+        } else {
+            $start = self::adjustEndpoint($length, $start, $step);
+        }
+
+        if ($stop === null) {
+            $stop = $step < 0 ? -1 : $length;
+        } else {
+            $stop = self::adjustEndpoint($length, $stop, $step);
+        }
+
+        return [$start, $stop, $step];
+    }
+
+    private static function sliceIndices($subject, $start, $stop, $step)
+    {
+        $type = gettype($subject);
+        $len = $type == 'string' ? strlen($subject) : count($subject);
+        list($start, $stop, $step) = self::adjustSlice($len, $start, $stop, $step);
+
+        $result = [];
+        if ($step > 0) {
+            for ($i = $start; $i < $stop; $i += $step) {
+                $result[] = $subject[$i];
+            }
+        } else {
+            for ($i = $start; $i > $stop; $i += $step) {
+                $result[] = $subject[$i];
+            }
+        }
+
+        return $type == 'string' ? implode($result, '') : $result;
+    }
 }
