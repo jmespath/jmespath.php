@@ -9,23 +9,13 @@ class Parser
 {
     /** @var Lexer */
     private $lexer;
-
-    /** @var array Array of parsed tokens */
     private $tokens;
-
-    /** @var array Current token */
     private $token;
-
-    /** @var int Current token position */
     private $tpos;
-
-    /** @var string Expression being parsed */
     private $expression;
+    private static $nullToken = ['type' => 'eof'];
+    private static $currentNode = ['type' => 'current'];
 
-    /** @var array Null token that is reused over and over */
-    private static $nullToken = ['type' => 'eof', 'value' => ''];
-
-    /** @var array Token binding power */
     private static $bp = [
         'eof'               => 0,
         'quoted_identifier' => 0,
@@ -48,9 +38,6 @@ class Parser
         'lbracket'          => 50,
         'lparen'            => 60,
     ];
-
-    /** @var array Cached current AST node */
-    private static $currentNode = ['type' => 'current'];
 
     /** @var array Acceptable tokens after a dot token */
     private static $afterDot = [
@@ -87,13 +74,11 @@ class Parser
         $this->next();
         $result = $this->expr();
 
-        if ($this->token['type'] != 'eof') {
-            $this->throwSyntax('Encountered an unexpected "'
-                . $this->token['type'] . '" token and did not reach'
-                . ' the end of the token stream');
+        if ($this->token['type'] === 'eof') {
+            return $result;
         }
 
-        return $result;
+        throw $this->syntax('Did not reach the end of the token stream');
     }
 
     /**
@@ -117,20 +102,15 @@ class Parser
     {
         $token = $this->token;
         $this->next();
-        return ['type' => 'field', 'key' => $token['value']];
+        return ['type' => 'field', 'value' => $token['value']];
     }
 
     private function nud_quoted_identifier()
     {
         $token = $this->token;
         $this->next();
-        if ($this->token['type'] == 'lparen') {
-            $this->throwSyntax(
-                'Quoted identifiers are not allowed for function names.'
-            );
-        }
-
-        return ['type' => 'field', 'key' => $token['value']];
+        $this->assertNotToken('lparen');
+        return ['type' => 'field', 'value' => $token['value']];
     }
 
     private function nud_current()
@@ -149,8 +129,7 @@ class Parser
     private function nud_expref()
     {
         $this->next();
-
-        return ['type' => 'expression', 'children' => [$this->expr(2)]];
+        return ['type' => 'expref', 'children' => [$this->expr(2)]];
     }
 
     private function nud_lbrace()
@@ -192,7 +171,7 @@ class Parser
         $type = $this->token['type'];
         if ($type == 'number' || $type == 'colon') {
             return $this->parseArrayIndexExpression();
-        } elseif ($type == 'star' && $this->lookahead()['type'] == 'rbracket') {
+        } elseif ($type == 'star' && $this->lookahead() == 'rbracket') {
             return $this->parseWildcardArray();
         } else {
             return $this->parseMultiSelectList();
@@ -203,16 +182,16 @@ class Parser
     {
         static $nextTypes = ['number' => true, 'colon' => true, 'star' => true];
         $this->next($nextTypes);
-        $type = $this->token['type'];
-
-        if ($type == 'number' || $type == 'colon') {
-            return [
-                'type' => 'subexpression',
-                'children' => [$left, $this->parseArrayIndexExpression()]
-            ];
+        switch ($this->token['type']) {
+            case 'number':
+            case 'colon':
+                return [
+                    'type' => 'subexpression',
+                    'children' => [$left, $this->parseArrayIndexExpression()]
+                ];
+            default:
+                return $this->parseWildcardArray($left);
         }
-
-        return $this->parseWildcardArray($left);
     }
 
     private function led_flatten(array $left)
@@ -264,7 +243,6 @@ class Parser
     private function led_lparen(array $left)
     {
         $args = [];
-        $name = $left['key'];
         $this->next();
 
         while ($this->token['type'] != 'rparen') {
@@ -276,7 +254,11 @@ class Parser
 
         $this->next();
 
-        return ['type' => 'function', 'fn' => $name, 'children' => $args];
+        return [
+            'type'     => 'function',
+            'value'    => $left['value'],
+            'children' => $args
+        ];
     }
 
     private function led_filter(array $left)
@@ -284,7 +266,7 @@ class Parser
         $this->next();
         $expression = $this->expr();
         if ($this->token['type'] != 'rbracket') {
-            $this->throwSyntax('Expected a closing rbracket for the filter');
+            throw $this->syntax('Expected a closing rbracket for the filter');
         }
 
         $this->next();
@@ -294,7 +276,7 @@ class Parser
             'type'       => 'projection',
             'from'       => 'array',
             'children'   => [
-                $left ?:self::$currentNode,
+                $left ?: self::$currentNode,
                 [
                     'type' => 'condition',
                     'children' => [$expression, $rhs]
@@ -310,7 +292,7 @@ class Parser
 
         return [
             'type'     => 'comparator',
-            'relation' => $token['value'],
+            'value'    => $token['value'],
             'children' => [$left, $this->expr()]
         ];
     }
@@ -327,7 +309,7 @@ class Parser
             return $this->expr($bp);
         }
 
-        $this->throwSyntax('Syntax error after projection');
+        throw $this->syntax('Syntax error after projection');
     }
 
     private function parseDot($bp)
@@ -348,8 +330,8 @@ class Parser
         $this->next();
 
         return [
-            'type'     => 'key_value_pair',
-            'key'      => $key,
+            'type'     => 'key_val_pair',
+            'value'    => $key,
             'children' => [$this->expr()]
         ];
     }
@@ -415,19 +397,15 @@ class Parser
 
         if ($pos == 0) {
             // No colons were found so this is a simple index extraction
-            return ['type' => 'index', 'index' => $parts[0]];
+            return ['type' => 'index', 'value' => $parts[0]];
         } elseif ($pos > 2) {
-            $this->throwSyntax('Invalid array slice syntax: too many colons');
+            throw $this->syntax('Invalid array slice syntax: too many colons');
+        } else {
+            // Sliced array from start (e.g., [2:])
+            return ['type' => 'slice', 'value' => $parts];
         }
-
-        // Sliced array from start (e.g., [2:])
-        return ['type' => 'slice', 'args' => $parts];
     }
 
-    /**
-     * Parses a multi-select-list expression:
-     * multi-select-list = "[" ( expression *( "," expression ) ) "]"
-     */
     private function parseMultiSelectList()
     {
         $nodes = [];
@@ -436,47 +414,26 @@ class Parser
             $nodes[] = $this->expr();
             if ($this->token['type'] == 'comma') {
                 $this->next();
-                if ($this->token['type'] == 'rbracket') {
-                    $this->throwSyntax('Expected expression, found rbracket');
-                }
+                $this->assertNotToken('rbracket');
             }
         } while ($this->token['type'] != 'rbracket');
-
         $this->next();
 
         return ['type' => 'multi_select_list', 'children' => $nodes];
     }
 
-    /**
-     * Throws a SyntaxErrorException for the current token
-     *
-     * @param string $msg Error message
-     * @throws SyntaxErrorException
-     */
-    private function throwSyntax($msg)
+    private function syntax($msg)
     {
-        throw new SyntaxErrorException($msg, $this->token, $this->expression);
+        return new SyntaxErrorException($msg, $this->token, $this->expression);
     }
 
-    /**
-     * Lookahead at the next token.
-     *
-     * @return array
-     */
     private function lookahead()
     {
         return (!isset($this->tokens[$this->tpos + 1]))
-            ? self::$nullToken
-            : $this->tokens[$this->tpos + 1];
+            ? 'eof'
+            : $this->tokens[$this->tpos + 1]['type'];
     }
 
-    /**
-     * Move the token stream cursor to the next token
-     *
-     * @param array $match Associative array of acceptable next tokens
-     *
-     * @throws SyntaxErrorException if the next token is not acceptable
-     */
     private function next(array $match = null)
     {
         if (!isset($this->tokens[$this->tpos + 1])) {
@@ -486,11 +443,14 @@ class Parser
         }
 
         if ($match && !isset($match[$this->token['type']])) {
-            throw new SyntaxErrorException(
-                $match,
-                $this->token,
-                $this->expression
-            );
+            throw $this->syntax($match);
+        }
+    }
+
+    private function assertNotToken($type)
+    {
+        if ($this->token['type'] == $type) {
+            throw $this->syntax("Token {$this->tpos} not allowed to be $type");
         }
     }
 
@@ -512,7 +472,7 @@ class Parser
                         return strpos($i, $prefix) === 0;
                     }
                 )));
-            $this->throwSyntax($message);
+            throw $this->syntax($message);
         }
 
         throw new \BadMethodCallException("Call to undefined method $method");

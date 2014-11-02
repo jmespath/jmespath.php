@@ -12,7 +12,7 @@ class TreeCompilerTest extends \PHPUnit_Framework_TestCase
     {
         $t = new TreeCompiler();
         $source = $t->visit(
-            ['type' => 'field', 'key' => 'foo'],
+            ['type' => 'field', 'value' => 'foo'],
             'testing',
             'foo'
         );

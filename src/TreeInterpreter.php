@@ -104,9 +104,9 @@ class TreeInterpreter
 
             case 'field':
                 if (is_array($value) || $value instanceof \ArrayAccess) {
-                    return isset($value[$node['key']]) ? $value[$node['key']] : null;
+                    return isset($value[$node['value']]) ? $value[$node['value']] : null;
                 } elseif ($value instanceof \stdClass) {
-                    return isset($value->{$node['key']}) ? $value->{$node['key']} : null;
+                    return isset($value->{$node['value']}) ? $value->{$node['value']} : null;
                 }
                 return null;
 
@@ -120,9 +120,9 @@ class TreeInterpreter
                 if (!self::isArray($value)) {
                     return null;
                 }
-                $idx = $node['index'] >= 0
-                    ? $node['index']
-                    : $node['index'] + count($value);
+                $idx = $node['value'] >= 0
+                    ? $node['value']
+                    : $node['value'] + count($value);
                 return isset($value[$idx]) ? $value[$idx] : null;
 
             case 'projection':
@@ -213,7 +213,7 @@ class TreeInterpreter
 
                 $collected = [];
                 foreach ($node['children'] as $node) {
-                    $collected[$node['key']] = $this->dispatch(
+                    $collected[$node['value']] = $this->dispatch(
                         $node['children'][0],
                         $value
                     );
@@ -224,12 +224,12 @@ class TreeInterpreter
             case 'comparator':
                 $left = $this->dispatch($node['children'][0], $value);
                 $right = $this->dispatch($node['children'][1], $value);
-                if ($node['relation'] == '==') {
+                if ($node['value'] == '==') {
                     return self::valueCmp($left, $right);
-                } elseif ($node['relation'] == '!=') {
+                } elseif ($node['value'] == '!=') {
                     return !self::valueCmp($left, $right);
                 } else {
-                    return self::relativeCmp($left, $right, $node['relation']);
+                    return self::relativeCmp($left, $right, $node['value']);
                 }
 
             case 'condition':
@@ -242,17 +242,17 @@ class TreeInterpreter
                 foreach ($node['children'] as $arg) {
                     $args[] = $this->dispatch($arg, $value);
                 }
-                return $dispatcher($node['fn'], $args);
+                return $dispatcher($node['value'], $args);
 
             case 'slice':
                 return $dispatcher('slice', [
                     $value,
-                    $node['args'][0],
-                    $node['args'][1],
-                    $node['args'][2],
+                    $node['value'][0],
+                    $node['value'][1],
+                    $node['value'][2],
                 ]);
 
-            case 'expression':
+            case 'expref':
                 $apply = $node['children'][0];
                 return function ($value) use ($apply) {
                     return $this->visit($apply, $value);

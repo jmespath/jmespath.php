@@ -118,8 +118,8 @@ class TreeCompiler
      */
     private function visit_field(array $node)
     {
-        $arrCheck = '$value[' . var_export($node['key'], true) . ']';
-        $objCheck = '$value->{' . var_export($node['key'], true) . '}';
+        $arrCheck = '$value[' . var_export($node['value'], true) . ']';
+        $objCheck = '$value->{' . var_export($node['value'], true) . '}';
 
         $this->write("if (is_array(\$value) || \$value instanceof \\ArrayAccess) {")
                 ->indent()
@@ -143,8 +143,8 @@ class TreeCompiler
      */
     private function visit_index(array $node)
     {
-        if ($node['index'] >= 0) {
-            $check = '$value[' . $node['index'] . ']';
+        if ($node['value'] >= 0) {
+            $check = '$value[' . $node['value'] . ']';
             $this->write("\$value = (is_array(\$value) || \$value instanceof \\ArrayAccess) && isset($check) ? $check : null;");
             return $this;
         }
@@ -155,7 +155,7 @@ class TreeCompiler
         $this
             ->write('if (is_array($value) || ($value instanceof \ArrayAccess && $value instanceof \Countable)) {')
                 ->indent()
-                ->write("\${$a} = count(\$value) + {$node['index']};")
+                ->write("\${$a} = count(\$value) + {$node['value']};")
                 ->write("\$value = isset(\$value[\${$a}]) ? \$value[\${$a}] : null;")
                 ->outdent()
             ->write('} else {')
@@ -206,7 +206,7 @@ class TreeCompiler
             $first = false;
             if ($node['type'] == 'multi_select_hash') {
                 $this->dispatch($child['children'][0]);
-                $key = var_export($child['key'], true);
+                $key = var_export($child['value'], true);
                 $this->write("\${$listVal}[{$key}] = \$value;");
             } else {
                 $this->dispatch($child);
@@ -238,7 +238,7 @@ class TreeCompiler
                 ->write("\$value = \${$value};");
         }
 
-        return $this->write("\$value = JmesPath\\FnDispatcher::getInstance()->__invoke('{$node['fn']}', \${$args});");
+        return $this->write("\$value = JmesPath\\FnDispatcher::getInstance()->__invoke('{$node['value']}', \${$args});");
     }
 
     private function visit_slice(array $node)
@@ -248,9 +248,9 @@ class TreeCompiler
                 ->indent()
                 ->write(sprintf(
                     '$value, %s, %s, %s',
-                    var_export($node['args'][0], true),
-                    var_export($node['args'][1], true),
-                    var_export($node['args'][2], true)
+                    var_export($node['value'][0], true),
+                    var_export($node['value'][1], true),
+                    var_export($node['value'][2], true)
                 ))
                 ->outdent()
             ->write('));');
@@ -261,7 +261,7 @@ class TreeCompiler
         return $this->write('// Visiting current node (no-op)');
     }
 
-    private function visit_expression(array $node)
+    private function visit_expref(array $node)
     {
         $child = var_export($node['children'][0], true);
         return $this->write("\$value = function (\$value) use (\$interpreter) {")
@@ -373,12 +373,12 @@ class TreeCompiler
             ->dispatch($node['children'][1])
             ->write("\${$tmpB} = \$value;");
 
-        if ($node['relation'] == '==') {
+        if ($node['value'] == '==') {
             $this->write("\$result = \\JmesPath\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
-        } elseif ($node['relation'] == '!=') {
+        } elseif ($node['value'] == '!=') {
             $this->write("\$result = !\\JmesPath\\TreeInterpreter::valueCmp(\${$tmpA}, \${$tmpB});");
         } else {
-            $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} {$node['relation']} \${$tmpB};");
+            $this->write("\$result = is_int(\${$tmpA}) && is_int(\${$tmpB}) && \${$tmpA} {$node['value']} \${$tmpB};");
         }
 
         return $this
