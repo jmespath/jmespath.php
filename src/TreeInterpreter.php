@@ -33,65 +33,6 @@ class TreeInterpreter
     }
 
     /**
-     * Determine if the provided value is a JMESPath compatible object.
-     *
-     * @param mixed $value
-     *
-     * @return bool
-     */
-    public static function isObject($value)
-    {
-        if (is_array($value)) {
-            return !$value || array_keys($value)[0] !== 0;
-        }
-
-        // Handle array-like values. Must be empty or offset 0 does not exist
-        return $value instanceof \Countable && $value instanceof \ArrayAccess
-            ? count($value) == 0 || !$value->offsetExists(0)
-            : $value instanceof \stdClass;
-    }
-
-    /**
-     * Determine if the provided value is a JMESPath compatible array.
-     *
-     * @param mixed $value
-     *
-     * @return bool
-     */
-    public static function isArray($value)
-    {
-        if (is_array($value)) {
-            return !$value || array_keys($value)[0] === 0;
-        }
-
-        // Handle array-like values. Must be empty or offset 0 exists.
-        return $value instanceof \Countable && $value instanceof \ArrayAccess
-            ? count($value) == 0 || $value->offsetExists(0)
-            : false;
-    }
-
-    /**
-     * JSON aware value comparison function.
-     *
-     * @param mixed $a First value to compare
-     * @param mixed $b Second value to compare
-     *
-     * @return bool
-     */
-    public static function valueCmp($a, $b)
-    {
-        if ($a === $b) {
-            return true;
-        } elseif ($a instanceof \stdClass) {
-            return self::valueCmp((array) $a, $b);
-        } elseif ($b instanceof \stdClass) {
-            return self::valueCmp($a, (array) $b);
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * Recursively traverses an AST using depth-first, pre-order traversal.
      * The evaluation logic for each node type is embedded into a large switch
      * statement to avoid the cost of "double dispatch".
@@ -117,7 +58,7 @@ class TreeInterpreter
                 );
 
             case 'index':
-                if (!self::isArray($value)) {
+                if (!Utils::isArray($value)) {
                     return null;
                 }
                 $idx = $node['value'] >= 0
@@ -129,12 +70,12 @@ class TreeInterpreter
                 $left = $this->dispatch($node['children'][0], $value);
                 switch ($node['from']) {
                     case 'object':
-                        if (!self::isObject($left)) {
+                        if (!Utils::isObject($left)) {
                             return null;
                         }
                         break;
                     case 'array':
-                        if (!self::isArray($left)) {
+                        if (!Utils::isArray($left)) {
                             return null;
                         }
                         break;
@@ -158,7 +99,7 @@ class TreeInterpreter
                 static $skipElement = [];
                 $value = $this->dispatch($node['children'][0], $value);
 
-                if (!self::isArray($value)) {
+                if (!Utils::isArray($value)) {
                     return null;
                 }
 
@@ -225,9 +166,9 @@ class TreeInterpreter
                 $left = $this->dispatch($node['children'][0], $value);
                 $right = $this->dispatch($node['children'][1], $value);
                 if ($node['value'] == '==') {
-                    return self::valueCmp($left, $right);
+                    return Utils::valueCmp($left, $right);
                 } elseif ($node['value'] == '!=') {
-                    return !self::valueCmp($left, $right);
+                    return !Utils::valueCmp($left, $right);
                 } else {
                     return self::relativeCmp($left, $right, $node['value']);
                 }

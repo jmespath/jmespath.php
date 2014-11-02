@@ -25,35 +25,6 @@ class FnDispatcher
     }
 
     /**
-     * Gets the JMESPath type equivalent of a PHP variable.
-     *
-     * @param mixed $arg PHP variable
-     * @return string Returns the JSON data type
-     */
-    public static function type($arg)
-    {
-        static $map = [
-            'boolean' => 'boolean',
-            'string'  => 'string',
-            'NULL'    => 'null',
-            'double'  => 'number',
-            'integer' => 'number',
-            'object'  => 'object'
-        ];
-
-        if (is_callable($arg)) {
-            return 'expression';
-        }
-
-        $type = gettype($arg);
-        if (isset($map[$type])) {
-            return $map[$type];
-        }
-
-        return !$arg || array_keys($arg)[0] === 0 ? 'array' : 'object';
-    }
-
-    /**
      * @param string $fn   Function name.
      * @param array  $args Function arguments.
      *
@@ -204,7 +175,7 @@ class FnDispatcher
     {
         $this->validate('sort', $args, [['array']]);
         $valid = ['string', 'number'];
-        return self::stableSort($args[0], function ($a, $b) use ($valid) {
+        return Utils::stableSort($args[0], function ($a, $b) use ($valid) {
             $this->validateSeq('sort:0', $valid, $a, $b);
             return strnatcmp($a, $b);
         });
@@ -215,7 +186,7 @@ class FnDispatcher
         $this->validate('sort_by', $args, [['array'], ['expression']]);
         $expr = $args[1];
         $valid = ['string', 'number'];
-        return self::stableSort(
+        return Utils::stableSort(
             $args[0],
             function ($a, $b) use ($expr, $valid) {
                 $va = $expr($a);
@@ -224,29 +195,6 @@ class FnDispatcher
                 return strnatcmp($va, $vb);
             }
         );
-    }
-
-    /**
-     * JMESPath requires a stable sorting algorithm, so here we'll implement
-     * a simple Schwartzian transform that uses array index positions as tie
-     * breakers.
-     *
-     * @param array    $data   List or map of data to sort
-     * @param callable $sortFn Callable used to sort values
-     *
-     * @return array Returns the sorted array
-     * @link http://en.wikipedia.org/wiki/Schwartzian_transform
-     */
-    private function stableSort(array $data, callable $sortFn)
-    {
-        // Decorate each item by creating an array of [value, index]
-        array_walk($data, function (&$v, $k) { $v = [$v, $k]; });
-        // Sort by the sort function and use the index as a tie-breaker
-        uasort($data, function ($a, $b) use ($sortFn) {
-            return $sortFn($a[0], $b[0]) ?: ($a[1] < $b[1] ? -1 : 1);
-        });
-        // Undecorate each item and return the resulting sorted array
-        return array_map(function ($v) { return $v[0]; }, array_values($data));
     }
 
     private function fn_starts_with(array $args)
@@ -259,7 +207,7 @@ class FnDispatcher
     private function fn_type(array $args)
     {
         $this->validateArity('type', count($args), 1);
-        return self::type($args[0]);
+        return Utils::type($args[0]);
     }
 
     private function fn_to_string(array $args)
@@ -272,7 +220,7 @@ class FnDispatcher
     {
         $this->validateArity('to_number', count($args), 1);
         $value = $args[0];
-        $type = self::type($value);
+        $type = Utils::type($value);
         if ($type == 'number') {
             return $value;
         } elseif ($type == 'string' && is_numeric($value)) {
@@ -398,13 +346,13 @@ class FnDispatcher
     private function validateType($from, $value, array $types)
     {
         if ($types[0] == 'any'
-            || in_array(self::type($value), $types)
+            || in_array(Utils::type($value), $types)
             || ($value === [] && in_array('object', $types))
         ) {
             return;
         }
         $msg = 'must be one of the following types: ' . implode(', ', $types)
-            . '. ' . self::type($value) . ' found';
+            . '. ' . Utils::type($value) . ' found';
         $this->typeError($from, $msg);
     }
 
@@ -419,8 +367,8 @@ class FnDispatcher
      */
     private function validateSeq($from, array $types, $a, $b)
     {
-        $ta = self::type($a);
-        $tb = self::type($b);
+        $ta = Utils::type($a);
+        $tb = Utils::type($b);
 
         if ($ta != $tb) {
             $msg = "encountered a type mismatch in sequence: {$ta}, {$tb}";

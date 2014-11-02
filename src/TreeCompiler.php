@@ -24,6 +24,7 @@ class TreeCompiler
         $this->write("<?php\n")
             ->write('use JmesPath\\TreeInterpreter as Ti;')
             ->write('use JmesPath\\FnDispatcher as Fn;')
+            ->write('use JmesPath\\Utils;')
             ->write("// {$expr}")
             ->write('function %s(Ti $interpreter, $value) {', [$fnName])
             ->indent()
@@ -287,7 +288,7 @@ class TreeCompiler
 
         $this
             ->write('// Visiting merge node')
-            ->write('if (!Ti::isArray($value)) {')
+            ->write('if (!Utils::isArray($value)) {')
                 ->indent()
                 ->write('$value = null;')
                 ->outdent()
@@ -325,9 +326,9 @@ class TreeCompiler
         if (!isset($node['from'])) {
             $this->write('if (!is_array($value) || !($value instanceof \stdClass)) $value = null;');
         } elseif ($node['from'] == 'object') {
-            $this->write('if (!Ti::isObject($value)) $value = null;');
+            $this->write('if (!Utils::isObject($value)) $value = null;');
         } elseif ($node['from'] == 'array') {
-            $this->write('if (!Ti::isArray($value)) $value = null;');
+            $this->write('if (!Utils::isArray($value)) $value = null;');
         }
 
         $this->write('if ($value !== null) {')
@@ -381,9 +382,9 @@ class TreeCompiler
             ->write('%s = $value;', [$b]);
 
         if ($node['value'] == '==') {
-            $this->write('$result = Ti::valueCmp(%s, %s);', [$a, $b]);
+            $this->write('$result = Utils::valueCmp(%s, %s);', [$a, $b]);
         } elseif ($node['value'] == '!=') {
-            $this->write('$result = !Ti::valueCmp(%s, %s);', [$a, $b]);
+            $this->write('$result = !Utils::valueCmp(%s, %s);', [$a, $b]);
         } else {
             $this->write(
                 '$result = is_int(%s) && is_int(%s) && %s %s %s;',
