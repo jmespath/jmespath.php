@@ -126,12 +126,12 @@ class FnDispatcher
     {
         $this->validate('max_by', $args, [['array'], ['expression']]);
         $expr = $this->wrapExpression('max_by:1', $args[1], ['number', 'string']);
-        $i = -1;
-        return array_reduce($args[0], function ($carry, $item) use ($expr, &$i) {
-            return ++$i
+        $fn = function ($carry, $item, $index) use ($expr) {
+            return $index
                 ? ($expr($carry) >= $expr($item) ? $carry : $item)
                 : $item;
-        });
+        };
+        return $this->reduce('max_by:1', $args[0], ['any'], $fn);
     }
 
     private function fn_min(array $args)
