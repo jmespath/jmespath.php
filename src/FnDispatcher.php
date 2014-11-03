@@ -277,7 +277,6 @@ class FnDispatcher
             }
             $this->validateType("{$from}:{$index}", $value, $types[$index]);
         }
-        return true;
     }
 
     private function validateType($from, $value, array $types)
