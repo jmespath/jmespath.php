@@ -312,10 +312,7 @@ class FnDispatcher
             $this->typeError($from, $msg);
         }
 
-        $typeMatch = ($types && $types[0] == 'any')
-            || in_array($ta, $types)
-            || in_array($tb, $types);
-
+        $typeMatch = ($types && $types[0] == 'any') || in_array($ta, $types);
         if (!$typeMatch) {
             $msg = 'encountered a type error in sequence. The argument must be '
                 . 'an array of ' . implode('|', $types) . ' types. '
