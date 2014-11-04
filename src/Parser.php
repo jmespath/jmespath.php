@@ -35,7 +35,7 @@ class Parser
         'dot'               => 40,
         'lbrace'            => 50,
         'filter'            => 50,
-        'lbracket'          => 50,
+        'lbracket'          => 55,
         'lparen'            => 60,
     ];
 
