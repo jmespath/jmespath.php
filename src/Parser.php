@@ -129,7 +129,7 @@ class Parser
     private function nud_expref()
     {
         $this->next();
-        return ['type' => 'expref', 'children' => [$this->expr(2)]];
+        return ['type' => 'expref', 'children' => [$this->expr(self::$bp['expref'])]];
     }
 
     private function nud_lbrace()
