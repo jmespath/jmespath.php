@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## 2.0.0 - 2014-01-11
 
 * Moving to a flattened namespace structure.
 * Runtimes are now only PHP callables.
@@ -16,6 +16,7 @@
   appropriate value).
 * Lots of code cleanup and performance improvements.
 * Added a convenient `JmesPath\search()` function.
+* **IMPORTANT**: Relocating the project to https://github.com/jmespath/jmespath.php
 
 ## 1.1.1 - 2014-10-08
 
