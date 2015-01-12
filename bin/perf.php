@@ -1,36 +1,19 @@
 #!/usr/bin/env php
 <?php
-require 'vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-use JmesPath\Runtime\RuntimeInterface;
-
-$runtime = \JmesPath\Env::createRuntime();
-
-if (!isset($_SERVER['CACHE'])) {
-    $_SERVER['CACHE'] = false;
-}
-
-if (isset($argv[1])) {
-    $dir = $argv[1];
-} else {
-    $dir = __DIR__ . '/../tests/compliance/perf';
-}
-
+$dir = isset($argv[1]) ? $argv[1] : __DIR__ . '/../tests/compliance/perf';
 is_dir($dir) or die('Dir not found: ' . $dir);
-
 // Warm up the runner
-$runtime->search('abcdefg', array());
+\JmesPath\Env::search('foo', []);
 
 $total = 0;
 foreach (glob($dir . '/*.json') as $file) {
-    if (!strpos($file, 'syntax')) {
-        $total += runSuite($file, $runtime);
-    }
+    $total += runSuite($file);
 }
+echo "\nTotal time: {$total}\n";
 
-echo "\nTotal time: {$total}ms\n";
-
-function runSuite($file, RuntimeInterface $runtime)
+function runSuite($file)
 {
     $contents = file_get_contents($file);
     $json = json_decode($contents, true);
@@ -40,43 +23,37 @@ function runSuite($file, RuntimeInterface $runtime)
             $total += runCase(
                 str_replace(getcwd(), '.', $file),
                 $suite['given'],
-                $case['expression'],
-                $runtime
+                $case['expression']
             );
         }
     }
-
     return $total;
 }
 
-function runCase(
-    $file,
-    $given,
-    $expression,
-    RuntimeInterface $runtime
-) {
+function runCase($file, $given, $expression)
+{
     $best = 99999;
+    $runtime = \JmesPath\Env::createRuntime();
 
     for ($i = 0; $i < 1000; $i++) {
-        if (!$_SERVER['CACHE']) {
-            $runtime->clearCache();
-        }
-        try {
-            $t = microtime(true);
-            $runtime->search($expression, $given);
-            $tryTime = (microtime(true) - $t) * 1000;
-        } catch (\Exception $e) {
-            // Failure test cases shouldn't be tested
-            return 0;
-        }
+        $t = microtime(true);
+        $runtime($expression, $given);
+        $tryTime = (microtime(true) - $t) * 1000;
         if ($tryTime < $best) {
             $best = $tryTime;
         }
+        if (!getenv('CACHE')) {
+            $runtime = \JmesPath\Env::createRuntime();
+            // Delete compiled scripts if not caching.
+            if ($runtime instanceof \JmesPath\CompilerRuntime) {
+                array_map('unlink', glob(sys_get_temp_dir() . '/jmespath_*.php'));
+            }
+        }
     }
 
-    $template = "time: %fms, description: %s, name: %s\n";
+    $template = "time: %fms, %s: %s\n";
     $expression = str_replace("\n", '\n', $expression);
-    printf($template, $best, $file, $expression);
+    printf($template, $best, basename($file), substr($expression, 0, 50));
 
     return $best;
 }

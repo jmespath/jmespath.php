@@ -1,9 +1,6 @@
 <?php
 namespace JmesPath;
 
-use JmesPath\Runtime\AstRuntime;
-use JmesPath\Runtime\CompilerRuntime;
-
 /**
  * Provides a simple environment based search.
  *
@@ -17,11 +14,8 @@ final class Env
 {
     const COMPILE_DIR = 'JP_PHP_COMPILE';
 
-    /** @var \JmesPath\Runtime\RuntimeInterface */
-    private static $runtime;
-
     /**
-     * Returns data from the input array that matches a given JMESPath expression.
+     * Returns data from the input array that matches a JMESPath expression.
      *
      * @param string $expression JMESPath expression to evaluate
      * @param mixed  $data       JSON-like data to search
@@ -30,30 +24,25 @@ final class Env
      */
     public static function search($expression, $data)
     {
-        if (!self::$runtime) {
-            self::$runtime = self::createRuntime();
+        static $runtime;
+        if (!$runtime) {
+            $runtime = Env::createRuntime();
         }
-
-        return self::$runtime->search($expression, $data);
+        return $runtime($expression, $data);
     }
 
     /**
      * Creates a JMESPath runtime based on environment variables and extensions
      * available on a system.
      *
-     * @return AstRuntime|CompilerRuntime
+     * @return callable
      */
     public static function createRuntime()
     {
-        $compileDir = getenv('COMPILE_DIR');
-
-        switch ($compileDir) {
-            case false:
-                return new AstRuntime();
-            case 'on':
-                return new CompilerRuntime();
-            default:
-                return new CompilerRuntime(['dir' => $compileDir]);
+        switch ($compileDir = getenv(self::COMPILE_DIR)) {
+            case false: return new AstRuntime();
+            case 'on': return new CompilerRuntime();
+            default: return new CompilerRuntime($compileDir);
         }
     }
 }

@@ -1,8 +1,8 @@
 <?php
 namespace JmesPath\Tests\Tree;
 
-use JmesPath\Runtime\AstRuntime;
-use JmesPath\Tree\TreeInterpreter;
+use JmesPath\AstRuntime;
+use JmesPath\TreeInterpreter;
 
 /**
  * @covers JmesPath\Tree\TreeInterpreter
@@ -11,7 +11,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
 {
     public function testReturnsNullWhenMergingNonArray()
     {
-        $t = new TreeInterpreter(new AstRuntime());
+        $t = new TreeInterpreter();
         $this->assertNull($t->visit(array(
             'type' => 'flatten',
             'children' => array(
@@ -26,7 +26,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
     public function testWorksWithArrayObjectAsObject()
     {
         $runtime = new AstRuntime();
-        $this->assertEquals('baz', $runtime->search('foo.bar', new \ArrayObject([
+        $this->assertEquals('baz', $runtime('foo.bar', new \ArrayObject([
             'foo' => new \ArrayObject(['bar' => 'baz'])
         ])));
     }
@@ -34,7 +34,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
     public function testWorksWithArrayObjectAsArray()
     {
         $runtime = new AstRuntime();
-        $this->assertEquals('baz', $runtime->search('foo[0].bar', new \ArrayObject([
+        $this->assertEquals('baz', $runtime('foo[0].bar', new \ArrayObject([
             'foo' => new \ArrayObject([new \ArrayObject(['bar' => 'baz'])])
         ])));
     }
@@ -44,7 +44,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
         $runtime = new AstRuntime();
         $this->assertEquals(
             ['baz'],
-            $runtime->search('foo[*].bar', new \ArrayObject([
+            $runtime('foo[*].bar', new \ArrayObject([
                 'foo' => new \ArrayObject([
                     new \ArrayObject([
                         'bar' => 'baz'
@@ -59,7 +59,7 @@ class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
         $runtime = new AstRuntime();
         $this->assertEquals(
             ['baz'],
-            $runtime->search('foo.*.bar', new \ArrayObject([
+            $runtime('foo.*.bar', new \ArrayObject([
                 'foo' => new \ArrayObject([
                     'abc' => new \ArrayObject([
                         'bar' => 'baz'
