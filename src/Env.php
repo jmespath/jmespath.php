@@ -14,9 +14,6 @@ final class Env
 {
     const COMPILE_DIR = 'JP_PHP_COMPILE';
 
-    /** @var callable */
-    private static $runtime;
-
     /**
      * Returns data from the input array that matches a JMESPath expression.
      *
@@ -27,11 +24,10 @@ final class Env
      */
     public static function search($expression, $data)
     {
-        if (!self::$runtime) {
-            self::$runtime = self::createRuntime();
+        static $runtime;
+        if (!$runtime) {
+            $runtime = Env::createRuntime();
         }
-
-        $runtime = self::$runtime;
         return $runtime($expression, $data);
     }
 
