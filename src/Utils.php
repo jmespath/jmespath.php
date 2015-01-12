@@ -93,14 +93,14 @@ class Utils
      *
      * @return bool
      */
-    public static function equal($a, $b)
+    public static function isEqual($a, $b)
     {
         if ($a === $b) {
             return true;
         } elseif ($a instanceof \stdClass) {
-            return self::equal((array) $a, $b);
+            return self::isEqual((array) $a, $b);
         } elseif ($b instanceof \stdClass) {
-            return self::equal($a, (array) $b);
+            return self::isEqual($a, (array) $b);
         } else {
             return false;
         }

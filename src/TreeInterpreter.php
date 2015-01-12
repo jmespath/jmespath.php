@@ -167,9 +167,9 @@ class TreeInterpreter
                 $left = $this->dispatch($node['children'][0], $value);
                 $right = $this->dispatch($node['children'][1], $value);
                 if ($node['value'] == '==') {
-                    return Utils::equal($left, $right);
+                    return Utils::isEqual($left, $right);
                 } elseif ($node['value'] == '!=') {
-                    return !Utils::equal($left, $right);
+                    return !Utils::isEqual($left, $right);
                 } else {
                     return self::relativeCmp($left, $right, $node['value']);
                 }
