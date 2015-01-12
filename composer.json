@@ -23,7 +23,8 @@
   "autoload": {
     "psr-4": {
       "JmesPath\\": "src/"
-    }
+    },
+    "files": ["src/JmesPath.php"]
   },
 
   "bin": ["bin/jp.php"],

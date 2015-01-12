@@ -15,6 +15,7 @@
 * Slice syntax is now properly validated (i.e., colons are followed by the
   appropriate value).
 * Lots of code cleanup and performance improvements.
+* Added a convenient `JmesPath\search()` function.
 
 ## 1.1.1 - 2014-10-08
 
