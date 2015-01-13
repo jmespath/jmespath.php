@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.1.0 - 2014-01-13
+
+* Added `JmesPath\Env::cleanCompileDir()` to delete any previously compiled
+  JMESPath expressions.
+
 ## 2.0.0 - 2014-01-11
 
 * Moving to a flattened namespace structure.
