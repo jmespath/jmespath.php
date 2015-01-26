@@ -155,7 +155,7 @@ class Utils
         if ($endpoint < 0) {
             $endpoint += $length;
             if ($endpoint < 0) {
-                $endpoint = 0;
+                $endpoint = $step < 0 ? -1 : 0;
             }
         } elseif ($endpoint >= $length) {
             $endpoint = $step < 0 ? $length - 1 : $length;

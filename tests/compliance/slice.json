@@ -3,8 +3,7 @@
     "foo": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     "bar": {
       "baz": 1
-    },
-    "str": "abc 123, and above all listen to me"
+    }
   },
   "cases": [
     {
@@ -12,12 +11,48 @@
       "result": null
     },
     {
+      "expression": "foo[0:10:1]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
       "expression": "foo[0:10]",
       "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     },
     {
-      "expression": "foo[0:9]",
-      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      "expression": "foo[0:10:]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[0::1]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[0::]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[0:]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[:10:1]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[::1]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[:10:]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[::]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "expression": "foo[:]",
+      "result": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     },
     {
       "expression": "foo[1:9]",
@@ -38,6 +73,10 @@
     {
       "expression": "foo[::2]",
       "result": [0, 2, 4, 6, 8]
+    },
+    {
+      "expression": "foo[::-1]",
+      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
     },
     {
       "expression": "foo[1::2]",
@@ -61,7 +100,7 @@
     },
     {
       "expression": "foo[10:-20:-1]",
-      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1]
+      "result": [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
     },
     {
       "expression": "foo[10:-20]",
@@ -77,27 +116,15 @@
     },
     {
       "expression": "foo[8:2:0]",
-      "error": "runtime"
+      "error": "invalid-value"
     },
     {
       "expression": "foo[8:2:0:1]",
       "error": "syntax"
     },
     {
-      "expression": "[8:2 0 1]",
+      "expression": "foo[8:2&]",
       "error": "syntax"
-    },
-    {
-      "expression": "str[::-1]",
-      "result": "em ot netsil lla evoba dna ,321 cba"
-    },
-    {
-      "expression": "str[:-5:-1]",
-      "result": "em o"
-    },
-    {
-      "expression": "str[2:3]",
-      "result": "c"
     }
   ]
 }]
