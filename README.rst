@@ -25,9 +25,9 @@ using the ``mtdowling/jmespath.php`` package.
     JmesPath\search($expression, $data);
     // Returns: [1, 2, 3]
 
-- `JMESPath documentation <http://jmespath.readthedocs.org/en/latest/>`_
-- `JMESPath Grammar <http://jmespath.readthedocs.org/en/latest/specification.html#grammar>`_
-- `JMESPath Python library <https://github.com/boto/jmespath>`_
+- `JMESPath Tutorial <http://jmespath.org/tutorial.html>`_
+- `JMESPath Grammar <http://jmespath.org/specification.html#grammar>`_
+- `JMESPath Python library <https://github.com/jmespath/jmespath.py>`_
 
 PHP Usage
 =========
