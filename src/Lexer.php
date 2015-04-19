@@ -9,33 +9,34 @@ class Lexer
     private $regex, $offsetToToken;
 
     private $tokens = [
-        '[a-zA-Z_][a-zA-Z_0-9]*'     => 'identifier',
-        '\.'                         => 'dot',
-        '\*'                         => 'star',
-        '\[\]'                       => 'flatten',
-        '-?\d+'                      => 'number',
-        '\|\|'                       => 'or',
-        '\|'                         => 'pipe',
-        '\[\?'                       => 'filter',
-        '\['                         => 'lbracket',
-        '\]'                         => 'rbracket',
-        '"(?:\\\\\\\\|\\\\"|[^"])*"' => 'quoted_identifier',
-        '`(?:\\\\\\\\|\\\\`|[^`])*`' => 'literal',
-        ','                          => 'comma',
-        ':'                          => 'colon',
-        '@'                          => 'current',
-        '&'                          => 'expref',
-        '\('                         => 'lparen',
-        '\)'                         => 'rparen',
-        '\{'                         => 'lbrace',
-        '\}'                         => 'rbrace',
-        '!='                         => 'comparator',
-        '=='                         => 'comparator',
-        '<='                         => 'comparator',
-        '>='                         => 'comparator',
-        '<'                          => 'comparator',
-        '>'                          => 'comparator',
-        '[ \t]'                      => 'skip',
+        '[a-zA-Z_][a-zA-Z_0-9]*'         => 'identifier',
+        '\.'                             => 'dot',
+        '\*'                             => 'star',
+        '\[\]'                           => 'flatten',
+        '-?\d+'                          => 'number',
+        '\|\|'                           => 'or',
+        '\|'                             => 'pipe',
+        '\[\?'                           => 'filter',
+        '\['                             => 'lbracket',
+        '\]'                             => 'rbracket',
+        '\'(?:\\\\\\\\|\\\\\'|[^\'])*\'' => 'raw_string',
+        '"(?:\\\\\\\\|\\\\"|[^"])*"'     => 'quoted_identifier',
+        '`(?:\\\\\\\\|\\\\`|[^`])*`'     => 'literal',
+        ','                              => 'comma',
+        ':'                              => 'colon',
+        '@'                              => 'current',
+        '&'                              => 'expref',
+        '\('                             => 'lparen',
+        '\)'                             => 'rparen',
+        '\{'                             => 'lbrace',
+        '\}'                             => 'rbrace',
+        '!='                             => 'comparator',
+        '=='                             => 'comparator',
+        '<='                             => 'comparator',
+        '>='                             => 'comparator',
+        '<'                              => 'comparator',
+        '>'                              => 'comparator',
+        '[ \t]'                          => 'skip',
     ];
 
     public function __construct()
@@ -78,6 +79,11 @@ class Lexer
                         $token['value'] = $this->literal(
                             $token['value'], $offset, $input
                         );
+                        break;
+                    case 'raw_string':
+                        $token['type'] = 'literal';
+                        $token['value'] = substr($token['value'], 1, -1);
+                        $token['value'] = str_replace("\\'", "'", $token['value']);
                         break;
                 }
                 $tokens[] = $token;
