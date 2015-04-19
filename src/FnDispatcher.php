@@ -246,6 +246,24 @@ class FnDispatcher
         return array_values((array) $args[0]);
     }
 
+    private function fn_merge(array $args)
+    {
+        if (!$args) {
+            throw new \RuntimeException(
+                "merge() expects 1 or more arguments, 0 were provided"
+            );
+        }
+
+        return call_user_func_array('array_replace', $args);
+    }
+
+    private function fn_to_array(array $args)
+    {
+        $this->validate('to_array', $args, [['any']]);
+
+        return Utils::isArray($args[0]) ? $args[0] : [$args[0]];
+    }
+
     private function typeError($from, $msg)
     {
         if (strpos($from, ':')) {

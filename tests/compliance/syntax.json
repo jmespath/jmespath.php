@@ -610,18 +610,18 @@
     "comment": "Combined syntax",
     "given": [],
     "cases": [
-      {
-        "expression": "*||*|*|*",
-        "result": []
-      },
-      {
-        "expression": "*[]||[*]",
-        "result": []
-      },
-      {
-        "expression": "[*.*]",
-        "result": [[]]
-      }
+        {
+          "expression": "*||*|*|*",
+          "result": []
+        },
+        {
+          "expression": "*[]||[*]",
+          "result": []
+        },
+        {
+          "expression": "[*.*]",
+          "result": [[]]
+        }
     ]
   }
 ]

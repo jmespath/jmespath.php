@@ -23,7 +23,7 @@ class EnvTest extends \PHPUnit_Framework_TestCase
     {
         $dir = sys_get_temp_dir();
         $runtime = new CompilerRuntime($dir);
-        $runtime('@', []);
+        $runtime('@ | @ | @[0][0][0]', []);
         $this->assertNotEmpty(glob($dir . '/jmespath_*.php'));
         $this->assertGreaterThan(0, Env::cleanCompileDir());
         $this->assertEmpty(glob($dir . '/jmespath_*.php'));

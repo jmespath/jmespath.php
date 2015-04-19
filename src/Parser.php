@@ -27,14 +27,15 @@ class Parser
         'number'            => 0,
         'current'           => 0,
         'expref'            => 0,
+        'colon'             => 1,
         'pipe'              => 1,
         'comparator'        => 2,
         'or'                => 5,
         'flatten'           => 6,
         'star'              => 20,
+        'filter'            => 20,
         'dot'               => 40,
         'lbrace'            => 50,
-        'filter'            => 50,
         'lbracket'          => 55,
         'lparen'            => 60,
     ];
@@ -395,15 +396,24 @@ class Parser
         // Consume the closing bracket
         $this->next();
 
-        if ($pos == 0) {
+        if ($pos === 0) {
             // No colons were found so this is a simple index extraction
             return ['type' => 'index', 'value' => $parts[0]];
-        } elseif ($pos > 2) {
-            throw $this->syntax('Invalid array slice syntax: too many colons');
-        } else {
-            // Sliced array from start (e.g., [2:])
-            return ['type' => 'slice', 'value' => $parts];
         }
+
+        if ($pos > 2) {
+            throw $this->syntax('Invalid array slice syntax: too many colons');
+        }
+
+        // Sliced array from start (e.g., [2:])
+        return [
+            'type'     => 'projection',
+            'from'     => 'array',
+            'children' => [
+                ['type' => 'slice', 'value' => $parts],
+                $this->parseProjection(self::$bp['flatten'])
+            ]
+        ];
     }
 
     private function parseMultiSelectList()
