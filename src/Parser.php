@@ -411,7 +411,7 @@ class Parser
             'from'     => 'array',
             'children' => [
                 ['type' => 'slice', 'value' => $parts],
-                $this->parseProjection(self::$bp['flatten'])
+                $this->parseProjection(self::$bp['star'])
             ]
         ];
     }
