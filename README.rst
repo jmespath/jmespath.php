@@ -104,7 +104,7 @@ Testing
 =======
 
 A comprehensive list of test cases can be found at
-https://github.com/mtdowling/jmespath.php/tree/master/tests/JmesPath/compliance.
+https://github.com/jmespath/jmespath.php/tree/master/tests/compliance.
 These compliance tests are utilized by jmespath.php to ensure consistency with
 other implementations, and can serve as examples of the language.
 
