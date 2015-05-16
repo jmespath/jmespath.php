@@ -26,7 +26,6 @@ class TreeCompiler
             ->write('use JmesPath\\FnDispatcher as Fn;')
             ->write('use JmesPath\\Utils;')
             ->write('')
-            ->write("// {$expr}")
             ->write('function %s(Ti $interpreter, $value) {', $fnName)
             ->indent()
                 ->write('$current = $value;')

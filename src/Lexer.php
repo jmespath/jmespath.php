@@ -6,43 +6,61 @@ namespace JmesPath;
  */
 class Lexer
 {
-    private $regex, $offsetToToken;
+    /** @var array Characters that can start an identifier */
+    private $startIdentifier = [
+        'A' => true, 'B' => true, 'C' => true, 'D' => true, 'E' => true,
+        'F' => true, 'G' => true, 'H' => true, 'I' => true, 'J' => true,
+        'K' => true, 'L' => true, 'M' => true, 'N' => true, 'O' => true,
+        'P' => true, 'Q' => true, 'R' => true, 'S' => true, 'T' => true,
+        'U' => true, 'V' => true, 'W' => true, 'X' => true, 'Y' => true,
+        'Z' => true, 'a' => true, 'b' => true, 'c' => true, 'd' => true,
+        'e' => true, 'f' => true, 'g' => true, 'h' => true, 'i' => true,
+        'j' => true, 'k' => true, 'l' => true, 'm' => true, 'n' => true,
+        'o' => true, 'p' => true, 'q' => true, 'r' => true, 's' => true,
+        't' => true, 'u' => true, 'v' => true, 'w' => true, 'x' => true,
+        'y' => true, 'z' => true, '_' => true,
+    ];
 
-    private $tokens = [
-        '[a-zA-Z_][a-zA-Z_0-9]*'         => 'identifier',
-        '\.'                             => 'dot',
-        '\*'                             => 'star',
-        '\[\]'                           => 'flatten',
-        '-?\d+'                          => 'number',
-        '\|\|'                           => 'or',
-        '\|'                             => 'pipe',
-        '\[\?'                           => 'filter',
-        '\['                             => 'lbracket',
-        '\]'                             => 'rbracket',
-        '\'(?:\\\\\\\\|\\\\\'|[^\'])*\'' => 'raw_string',
-        '"(?:\\\\\\\\|\\\\"|[^"])*"'     => 'quoted_identifier',
-        '`(?:\\\\\\\\|\\\\`|[^`])*`'     => 'literal',
-        ','                              => 'comma',
-        ':'                              => 'colon',
-        '@'                              => 'current',
-        '&'                              => 'expref',
-        '\('                             => 'lparen',
-        '\)'                             => 'rparen',
-        '\{'                             => 'lbrace',
-        '\}'                             => 'rbrace',
-        '!='                             => 'comparator',
-        '=='                             => 'comparator',
-        '<='                             => 'comparator',
-        '>='                             => 'comparator',
-        '<'                              => 'comparator',
-        '>'                              => 'comparator',
-        '[ \t]'                          => 'skip',
+    /** @var array Number characters */
+    private $numbers = [
+        0 => true, 1 => true, 2 => true, 3 => true, 4 => true, 5 => true,
+        6 => true, 7 => true, 8 => true, 9 => true,
+    ];
+
+    /** @var array Characters that can start a number (ctor calculated) */
+    private $startNumber;
+
+    /** @var array Valid identifier characters (ctor calculated) */
+    private $validIdentifier;
+
+    /** @var array Map of simple single character tokens */
+    private $simpleTokens = [
+        '.' => 'dot',
+        '*' => 'star',
+        ']' => 'rbracket',
+        ',' => 'comma',
+        ':' => 'colon',
+        '@' => 'current',
+        '&' => 'expref',
+        '(' => 'lparen',
+        ')' => 'rparen',
+        '{' => 'lbrace',
+        '}' => 'rbrace',
+    ];
+
+    /** @var array Map of whitespace characters */
+    private $whitespace = [
+        ' '  => 'skip',
+        "\t" => 'skip',
+        "\n" => 'skip',
+        "\r" => 'skip',
     ];
 
     public function __construct()
     {
-        $this->regex = '((' . implode(')|(', array_keys($this->tokens)) . '))';
-        $this->offsetToToken = array_values($this->tokens);
+        $this->validIdentifier = $this->startIdentifier + $this->numbers;
+        $this->startNumber = $this->numbers;
+        $this->startNumber['-'] = true;
     }
 
     /**
@@ -56,101 +74,228 @@ class Lexer
      */
     public function tokenize($input)
     {
-        if (!preg_match_all($this->regex, $input, $matches, PREG_SET_ORDER)) {
-            throw $this->throwSyntax('Invalid expression', 0, $input);
+        if ($input === '') {
+            goto eof;
         }
 
-        $offset = 0;
+        $chars = str_split($input);
         $tokens = [];
-        foreach ($matches as $match) {
-            $type = $this->offsetToToken[count($match) - 2];
-            if ($type !== 'skip') {
-                $token = ['type' => $type, 'value' => $match[0], 'pos' => $offset];
-                switch ($token['type']) {
-                    case 'quoted_identifier':
-                        $token['value'] = $this->decodeJson(
-                            $token['value'], $offset, $input
-                        );
-                        break;
-                    case 'number':
-                        $token['value'] = (int) $token['value'];
-                        break;
-                    case 'literal':
-                        $token['value'] = $this->literal(
-                            $token['value'], $offset, $input
-                        );
-                        break;
-                    case 'raw_string':
-                        $token['type'] = 'literal';
-                        $token['value'] = substr($token['value'], 1, -1);
-                        $token['value'] = str_replace("\\'", "'", $token['value']);
-                        break;
-                }
-                $tokens[] = $token;
+
+        consume:
+
+        $current = current($chars);
+
+        if ($current === false) {
+            goto eof;
+        }
+
+        if (isset($this->simpleTokens[$current])) {
+            // Consume simple tokens like ".", ",", "@", etc.
+            $tokens[] = [
+                'type'  => $this->simpleTokens[$current],
+                'pos'   => key($chars),
+                'value' => $current
+            ];
+            next($chars);
+        } elseif (isset($this->whitespace[$current])) {
+            // Skip whitespace
+            next($chars);
+        } elseif (isset($this->startIdentifier[$current])) {
+            // Consume identifiers
+            $start = key($chars);
+            $buffer = '';
+            do {
+                $buffer .= $current;
+                $current = next($chars);
+            } while ($current !== false && isset($this->validIdentifier[$current]));
+            $tokens[] = [
+                'type'  => 'identifier',
+                'value' => $buffer,
+                'pos'   => $start
+            ];
+        } elseif (isset($this->startNumber[$current])) {
+            // Consume numbers
+            $start = key($chars);
+            $buffer = '';
+            do {
+                $buffer .= $current;
+                $current = next($chars);
+            } while ($current !== false && isset($this->numbers[$current]));
+            $tokens[] = [
+                'type'  => 'number',
+                'value' => (int) $buffer,
+                'pos'   => $start
+            ];
+        } elseif ($current === '|') {
+            // Consume pipe and OR
+            $tokens[] = $this->matchOr($chars, '|', '|', 'or', 'pipe');
+        } elseif ($current === '[') {
+            // Consume "[", "[?", and "[]"
+            $position = key($chars);
+            $actual = next($chars);
+            if ($actual === ']') {
+                next($chars);
+                $tokens[] = [
+                    'type'  => 'flatten',
+                    'pos'   => $position,
+                    'value' => '[]'
+                ];
+            } elseif ($actual === '?') {
+                next($chars);
+                $tokens[] = [
+                    'type'  => 'filter',
+                    'pos'   => $position,
+                    'value' => '[?'
+                ];
+            } else {
+                $tokens[] = [
+                    'type'  => 'lbracket',
+                    'pos'   => $position,
+                    'value' => '['
+                ];
             }
-            $offset += strlen($match[0]);
+        } elseif ($current === "'") {
+            // Consume raw string literals
+            $tokens[] = $this->inside($chars, "'", 'literal');
+        } elseif ($current === "`") {
+            // Consume JSON literals
+            $token = $this->inside($chars, '`', 'literal');
+            if ($token['type'] === 'literal') {
+                $token['value'] = str_replace('\\`', '`', $token['value']);
+                $token = $this->parseJson($token);
+            }
+            $tokens[] = $token;
+        } elseif ($current === '"') {
+            // Consume quoted identifiers
+            $token = $this->inside($chars, '"', 'quoted_identifier');
+            if ($token['type'] === 'quoted_identifier') {
+                $token['value'] = '"' . $token['value'] . '"';
+                $token = $this->parseJson($token);
+            }
+            $tokens[] = $token;
+        } elseif ($current === '!') {
+            // Consume not equal
+            $tokens[] = $this->matchOr($chars, '!', '=', 'comparator', 'unknown');
+        } elseif ($current === '>' || $current === '<') {
+            // Consume less than and greater than
+            $tokens[] = $this->matchOr($chars, $current, '=', 'comparator', 'comparator');
+        } elseif ($current === '=') {
+            // Consume equals
+            $tokens[] = $this->matchOr($chars, '=', '=', 'comparator', 'unknown');
+        } else {
+            $tokens[] = [
+                'type'  => 'unknown',
+                'pos'   => key($chars),
+                'value' => $current
+            ];
+            next($chars);
         }
 
-        $tokens[] = ['type' => 'eof', 'pos' => $offset, 'value' => null];
+        goto consume;
 
-        if (strlen($input) != $offset) {
-            $this->invalidExpression($input);
+        eof: {
+            $tokens[] = [
+                'type'  => 'eof',
+                'pos'   => strlen($input),
+                'value' => null
+            ];
+            return $tokens;
+        }
+    }
+
+    /**
+     * Returns a token based on whether or not the next token matches the
+     * expected value. If it does, a token of "$type" is returned. Otherwise,
+     * a token of "$orElse" type is returned.
+     *
+     * @param array  $chars    Array of characters by reference.
+     * @param string $current  The current character.
+     * @param string $expected Expected character.
+     * @param string $type     Expected result type.
+     * @param string $orElse   Otherwise return a token of this type.
+     *
+     * @return array Returns a conditional token.
+     */
+    private function matchOr(array &$chars, $current, $expected, $type, $orElse)
+    {
+        $position = key($chars);
+        $actual = next($chars);
+
+        if ($actual === $expected) {
+            next($chars);
+            return [
+                'type'  => $type,
+                'pos'   => $position,
+                'value' => $current . $expected
+            ];
         }
 
-        return $tokens;
-    }
-
-    private function literal($value, $offset, $input)
-    {
-        // Handles true, false, null, numbers, quoted strings, "[", and "{"
-        static $valid = '/(true|false|null)|(^[\["{])|(^\-?[0-9]*(\.[0-9]+)?([e|E][+|\-][0-9]+)?$)/';
-        $value = str_replace('\\`', '`', ltrim(substr($value, 1, -1)));
-
-        return preg_match($valid, $value) && $value !== ''
-            ? $this->decodeJson($value, $offset, $input)
-            : $this->decodeJson('"' . $value . '"', $offset, $input);
-    }
-
-    private function decodeJson($json, $offset, $input)
-    {
-        static $errs = [
-            JSON_ERROR_DEPTH          => 'JSON_ERROR_DEPTH',
-            JSON_ERROR_STATE_MISMATCH => 'JSON_ERROR_STATE_MISMATCH',
-            JSON_ERROR_CTRL_CHAR      => 'JSON_ERROR_CTRL_CHAR',
-            JSON_ERROR_SYNTAX         => 'JSON_ERROR_SYNTAX',
-            JSON_ERROR_UTF8           => 'JSON_ERROR_UTF8'
+        return [
+            'type'  => $orElse,
+            'pos'   => $position,
+            'value' => $current
         ];
+    }
 
-        $value = json_decode($json, true);
+    /**
+     * Returns a token the is the result of consuming inside of delimiter
+     * characters. Escaped delimiters will be adjusted before returning a
+     * value. If the token is not closed, "unknown" is returned.
+     *
+     * @param array  $chars Array of characters by reference.
+     * @param string $delim The delimiter character.
+     * @param string $type  Token type.
+     *
+     * @return array Returns the consumed token.
+     */
+    private function inside(array &$chars, $delim, $type)
+    {
+        $position = key($chars);
+        $current = next($chars);
+        $buffer = '';
+
+        while ($current !== $delim) {
+
+            if ($current === '\\') {
+                $buffer .= '\\';
+                $current = next($chars);
+            }
+
+            if ($current === false) {
+                return [
+                    'type'  => 'unknown',
+                    'value' => $buffer,
+                    'pos'   => $position
+                ];
+            }
+
+            $buffer .= $current;
+            $current = next($chars);
+
+        }
+
+        next($chars);
+
+        return ['type' => $type, 'value' => $buffer, 'pos' => $position];
+    }
+
+    /**
+     * Parses a JSON token or sets the token type to "unknown" on error.
+     *
+     * @param array $token Token that needs parsing.
+     *
+     * @return array Returns a token with a parsed value.
+     */
+    private function parseJson(array $token)
+    {
+        $value = json_decode($token['value'], true);
 
         if ($error = json_last_error()) {
-            $message = isset($errs[$error]) ? $errs[$error] : 'Unknown error';
-            throw $this->throwSyntax(
-                "Error decoding JSON: ({$error}) {$message}, given {$json}",
-                $offset,
-                $input
-            );
+            $token['type'] = 'unknown';
+            return $token;
         }
 
-        return $value;
-    }
-
-    private function throwSyntax($message, $offset, $input)
-    {
-        return new SyntaxErrorException(
-            $message,
-            ['value' => substr($input, $offset, 1), 'pos' => $offset],
-            $input
-        );
-    }
-
-    private function invalidExpression($input)
-    {
-        $offset = 0;
-        while (preg_match("{$this->regex}A", $input, $matches, 0, $offset)) {
-            $offset += strlen($matches[0]);
-        }
-
-        throw $this->throwSyntax('Unexpected character', $offset, $input);
+        $token['value'] = $value;
+        return $token;
     }
 }

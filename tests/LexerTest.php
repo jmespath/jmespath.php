@@ -9,55 +9,6 @@ use JmesPath\SyntaxErrorException;
  */
 class LexerTest extends \PHPUnit_Framework_TestCase
 {
-    public function testValidatesClosedQuotes()
-    {
-        $l = new Lexer();
-        try {
-            $l->tokenize('"foo"."baz');
-            $this->fail('Did not throw');
-        } catch (SyntaxErrorException $e) {
-            $expected = <<<EOT
-Syntax error at character 6
-"foo"."baz
-      ^
-EOT;
-            $this->assertContains($expected, $e->getMessage());
-        }
-    }
-
-    public function testValidatesLiteralValuesAreClosed()
-    {
-        $l = new Lexer();
-        try {
-            $l->tokenize('`{abc');
-            $this->fail('Did not throw');
-        } catch (SyntaxErrorException $e) {
-            $expected = <<<EOT
-Syntax error at character 0
-`{abc
-^
-EOT;
-            $this->assertContains($expected, $e->getMessage());
-        }
-    }
-
-    public function testValidatesLiteralValues()
-    {
-        $l = new Lexer();
-        try {
-            $l->tokenize('`{abc{}`');
-            $this->fail('Did not throw');
-        } catch (SyntaxErrorException $e) {
-            $expected = <<<EOT
-Syntax error at character 0
-`{abc{}`
-^
-Error decoding JSON: (4) JSON_ERROR_SYNTAX, given {abc{}
-EOT;
-            $this->assertContains($expected, $e->getMessage());
-        }
-    }
-
     public function inputProvider()
     {
         return array(

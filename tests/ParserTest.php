@@ -41,7 +41,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessage Invalid expression
+     * @expectedExceptionMessage Unexpected "eof" token
      */
     public function testHandlesEmptyExpressions()
     {
