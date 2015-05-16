@@ -21,21 +21,21 @@ function runSuite($file)
     foreach ($json as $suite) {
         foreach ($suite['cases'] as $case) {
             $total += runCase(
-                str_replace(getcwd(), '.', $file),
                 $suite['given'],
-                $case['expression']
+                $case['expression'],
+                $case['name']
             );
         }
     }
     return $total;
 }
 
-function runCase($file, $given, $expression)
+function runCase($given, $expression, $name)
 {
     $best = 99999;
     $runtime = \JmesPath\Env::createRuntime();
 
-    for ($i = 0; $i < 1000; $i++) {
+    for ($i = 0; $i < 100; $i++) {
         $t = microtime(true);
         $runtime($expression, $given);
         $tryTime = (microtime(true) - $t) * 1000;
@@ -51,9 +51,7 @@ function runCase($file, $given, $expression)
         }
     }
 
-    $template = "time: %fms, %s: %s\n";
-    $expression = str_replace("\n", '\n', $expression);
-    printf($template, $best, basename($file), substr($expression, 0, 50));
+    printf("time: %07.4fms name: %s\n", $best, $name);
 
     return $best;
 }
