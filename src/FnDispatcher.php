@@ -324,7 +324,7 @@ class FnDispatcher
         $ta = Utils::type($a);
         $tb = Utils::type($b);
 
-        if ($ta != $tb) {
+        if ($ta !== $tb) {
             $msg = "encountered a type mismatch in sequence: {$ta}, {$tb}";
             $this->typeError($from, $msg);
         }

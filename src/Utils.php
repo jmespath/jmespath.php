@@ -3,6 +3,15 @@ namespace JmesPath;
 
 class Utils
 {
+    static $typeMap = [
+        'boolean' => 'boolean',
+        'string'  => 'string',
+        'NULL'    => 'null',
+        'double'  => 'number',
+        'float'   => 'number',
+        'integer' => 'number'
+    ];
+
     /**
      * Gets the JMESPath type equivalent of a PHP variable.
      *
@@ -12,39 +21,32 @@ class Utils
      */
     public static function type($arg)
     {
-        static $map = [
-            'boolean' => 'boolean',
-            'string'  => 'string',
-            'NULL'    => 'null',
-            'double'  => 'number',
-            'float'   => 'number',
-            'integer' => 'number'
-        ];
-
         $type = gettype($arg);
-        if (isset($map[$type])) {
-            return $map[$type];
-        }
-
-        if ($type == 'object') {
-            if ($arg instanceof \stdClass) {
-                return 'object';
-            } elseif ($arg instanceof \Closure) {
-                return 'expression';
-            } elseif ($arg instanceof \ArrayAccess
-                && $arg instanceof \Countable
-            ) {
-                return count($arg) == 0 || $arg->offsetExists(0) ? 'array' : 'object';
-            } elseif (method_exists($arg, '__toString')) {
-                return 'string';
-            } else {
-                throw new \InvalidArgumentException(
-                    'Unable to determine JMESPath type from ' . get_class($arg)
-                );
+        if (isset(self::$typeMap[$type])) {
+            return self::$typeMap[$type];
+        } elseif ($type === 'array') {
+            if (empty($arg)) {
+                return 'array';
             }
+            reset($arg);
+            return key($arg) === 0 ? 'array' : 'object';
+        } elseif ($arg instanceof \stdClass) {
+            return 'object';
+        } elseif ($arg instanceof \Closure) {
+            return 'expression';
+        } elseif ($arg instanceof \ArrayAccess
+            && $arg instanceof \Countable
+        ) {
+            return count($arg) == 0 || $arg->offsetExists(0)
+                ? 'array'
+                : 'object';
+        } elseif (method_exists($arg, '__toString')) {
+            return 'string';
         }
 
-        return !$arg || array_keys($arg)[0] === 0 ? 'array' : 'object';
+        throw new \InvalidArgumentException(
+            'Unable to determine JMESPath type from ' . get_class($arg)
+        );
     }
 
     /**
