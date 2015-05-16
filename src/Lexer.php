@@ -6,6 +6,12 @@ namespace JmesPath;
  */
 class Lexer
 {
+    /** @var array Characters that can start a number (ctor calculated) */
+    private $startNumber;
+
+    /** @var array Valid identifier characters (ctor calculated) */
+    private $validIdentifier;
+
     /** @var array Characters that can start an identifier */
     private $startIdentifier = [
         'A' => true, 'B' => true, 'C' => true, 'D' => true, 'E' => true,
@@ -27,11 +33,13 @@ class Lexer
         6 => true, 7 => true, 8 => true, 9 => true,
     ];
 
-    /** @var array Characters that can start a number (ctor calculated) */
-    private $startNumber;
-
-    /** @var array Valid identifier characters (ctor calculated) */
-    private $validIdentifier;
+    /** @var array Map of whitespace characters */
+    private $whitespace = [
+        ' '  => true,
+        "\t" => true,
+        "\n" => true,
+        "\r" => true
+    ];
 
     /** @var array Map of simple single character tokens */
     private $simpleTokens = [
@@ -48,16 +56,9 @@ class Lexer
         '}' => 'rbrace',
     ];
 
-    /** @var array Map of whitespace characters */
-    private $whitespace = [
-        ' '  => 'skip',
-        "\t" => 'skip',
-        "\n" => 'skip',
-        "\r" => 'skip',
-    ];
-
     public function __construct()
     {
+        // Create aggregate character maps.
         $this->validIdentifier = $this->startIdentifier + $this->numbers;
         $this->startNumber = $this->numbers;
         $this->startNumber['-'] = true;
