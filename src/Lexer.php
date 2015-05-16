@@ -76,11 +76,12 @@ class Lexer
     public function tokenize($input)
     {
         $tokens = [];
-        $chars = str_split($input);
 
-        if (!$chars) {
+        if ($input === '') {
             goto eof;
         }
+
+        $chars = str_split($input);
 
         consume:
 
