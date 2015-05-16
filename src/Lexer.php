@@ -74,17 +74,18 @@ class Lexer
      */
     public function tokenize($input)
     {
-        if ($input === '') {
+        $tokens = [];
+        $chars = str_split($input);
+
+        if (!$chars) {
             goto eof;
         }
-
-        $chars = str_split($input);
-        $tokens = [];
 
         consume:
 
         $current = current($chars);
 
+        // Terminal condition
         if ($current === false) {
             goto eof;
         }
@@ -193,14 +194,15 @@ class Lexer
 
         goto consume;
 
-        eof: {
-            $tokens[] = [
-                'type'  => 'eof',
-                'pos'   => strlen($input),
-                'value' => null
-            ];
-            return $tokens;
-        }
+        eof:
+
+        $tokens[] = [
+            'type'  => 'eof',
+            'pos'   => strlen($input),
+            'value' => null
+        ];
+
+        return $tokens;
     }
 
     /**
@@ -255,23 +257,20 @@ class Lexer
         $buffer = '';
 
         while ($current !== $delim) {
-
             if ($current === '\\') {
                 $buffer .= '\\';
                 $current = next($chars);
             }
-
             if ($current === false) {
+                // Unclosed delimiter
                 return [
                     'type'  => 'unknown',
                     'value' => $buffer,
                     'pos'   => $position
                 ];
             }
-
             $buffer .= $current;
             $current = next($chars);
-
         }
 
         next($chars);
