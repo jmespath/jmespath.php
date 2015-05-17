@@ -1,6 +1,8 @@
 <?php
 namespace JmesPath;
 
+use JmesPath\Lexer as T;
+
 /**
  * JMESPath Pratt parser
  * @link http://hall.org.ua/halls/wizzard/pdf/Vaughan.Pratt.TDOP.pdf
@@ -13,42 +15,41 @@ class Parser
     private $token;
     private $tpos;
     private $expression;
-    private static $nullToken = ['type' => 'eof'];
-    private static $currentNode = ['type' => 'current'];
+    private static $nullToken = ['type' => T::T_EOF];
+    private static $currentNode = ['type' => T::T_CURRENT];
 
     private static $bp = [
-        'eof'               => 0,
-        'quoted_identifier' => 0,
-        'identifier'        => 0,
-        'rbracket'          => 0,
-        'rparen'            => 0,
-        'comma'             => 0,
-        'rbrace'            => 0,
-        'number'            => 0,
-        'current'           => 0,
-        'expref'            => 0,
-        'colon'             => 0,
-        'pipe'              => 1,
-        'comparator'        => 2,
-        'or'                => 5,
-        'flatten'           => 6,
-        'star'              => 20,
-        'filter'            => 21,
-        'dot'               => 40,
-        'lbrace'            => 50,
-        'lbracket'          => 55,
-        'lparen'            => 60,
+        T::T_EOF               => 0,
+        T::T_QUOTED_IDENTIFIER => 0,
+        T::T_IDENTIFIER        => 0,
+        T::T_RBRACKET          => 0,
+        T::T_RPAREN            => 0,
+        T::T_COMMA             => 0,
+        T::T_RBRACE            => 0,
+        T::T_NUMBER            => 0,
+        T::T_CURRENT           => 0,
+        T::T_EXPREF            => 0,
+        T::T_COLON             => 0,
+        T::T_PIPE              => 1,
+        T::T_COMPARATOR        => 2,
+        T::T_OR                => 5,
+        T::T_FLATTEN           => 6,
+        T::T_STAR              => 20,
+        T::T_FILTER            => 21,
+        T::T_DOT               => 40,
+        T::T_LBRACE            => 50,
+        T::T_LBRACKET          => 55,
+        T::T_LPAREN            => 60,
     ];
 
     /** @var array Acceptable tokens after a dot token */
     private static $afterDot = [
-        'identifier'        => true, // foo.bar
-        'quoted_identifier' => true, // foo."bar"
-        'star'              => true, // foo.*
-        'lbrace'            => true, // foo[1]
-        'lbracket'          => true, // foo{a: 0}
-        'function'          => true, // foo.*.to_string(@)
-        'filter'            => true, // foo.[?bar==10]
+        T::T_IDENTIFIER        => true, // foo.bar
+        T::T_QUOTED_IDENTIFIER => true, // foo."bar"
+        T::T_STAR              => true, // foo.*
+        T::T_LBRACE            => true, // foo[1]
+        T::T_LBRACKET          => true, // foo{a: 0}
+        T::T_FILTER            => true, // foo.[?bar==10]
     ];
 
     /**
@@ -75,7 +76,7 @@ class Parser
         $this->next();
         $result = $this->expr();
 
-        if ($this->token['type'] === 'eof') {
+        if ($this->token['type'] === T::T_EOF) {
             return $result;
         }
 
@@ -110,7 +111,7 @@ class Parser
     {
         $token = $this->token;
         $this->next();
-        $this->assertNotToken('lparen');
+        $this->assertNotToken(T::T_LPAREN);
         return ['type' => 'field', 'value' => $token['value']];
     }
 
@@ -130,21 +131,21 @@ class Parser
     private function nud_expref()
     {
         $this->next();
-        return ['type' => 'expref', 'children' => [$this->expr(self::$bp['expref'])]];
+        return ['type' => T::T_EXPREF, 'children' => [$this->expr(self::$bp[T::T_EXPREF])]];
     }
 
     private function nud_lbrace()
     {
-        static $validKeys = ['quoted_identifier' => true, 'identifier' => true];
+        static $validKeys = [T::T_QUOTED_IDENTIFIER => true, T::T_IDENTIFIER => true];
         $this->next($validKeys);
         $pairs = [];
 
         do {
             $pairs[] = $this->parseKeyValuePair();
-            if ($this->token['type'] == 'comma') {
+            if ($this->token['type'] == T::T_COMMA) {
                 $this->next($validKeys);
             }
-        } while ($this->token['type'] !== 'rbrace');
+        } while ($this->token['type'] !== T::T_RBRACE);
 
         $this->next();
 
@@ -170,9 +171,9 @@ class Parser
     {
         $this->next();
         $type = $this->token['type'];
-        if ($type == 'number' || $type == 'colon') {
+        if ($type == T::T_NUMBER || $type == T::T_COLON) {
             return $this->parseArrayIndexExpression();
-        } elseif ($type == 'star' && $this->lookahead() == 'rbracket') {
+        } elseif ($type == T::T_STAR && $this->lookahead() == T::T_RBRACKET) {
             return $this->parseWildcardArray();
         } else {
             return $this->parseMultiSelectList();
@@ -181,11 +182,11 @@ class Parser
 
     private function led_lbracket(array $left)
     {
-        static $nextTypes = ['number' => true, 'colon' => true, 'star' => true];
+        static $nextTypes = [T::T_NUMBER => true, T::T_COLON => true, T::T_STAR => true];
         $this->next($nextTypes);
         switch ($this->token['type']) {
-            case 'number':
-            case 'colon':
+            case T::T_NUMBER:
+            case T::T_COLON:
                 return [
                     'type' => 'subexpression',
                     'children' => [$left, $this->parseArrayIndexExpression()]
@@ -203,8 +204,8 @@ class Parser
             'type'     => 'projection',
             'from'     => 'array',
             'children' => [
-                ['type' => 'flatten', 'children' => [$left]],
-                $this->parseProjection(self::$bp['flatten'])
+                ['type' => T::T_FLATTEN, 'children' => [$left]],
+                $this->parseProjection(self::$bp[T::T_FLATTEN])
             ]
         ];
     }
@@ -213,13 +214,13 @@ class Parser
     {
         $this->next(self::$afterDot);
 
-        if ($this->token['type'] == 'star') {
+        if ($this->token['type'] == T::T_STAR) {
             return $this->parseWildcardObject($left);
         }
 
         return [
             'type'     => 'subexpression',
-            'children' => [$left, $this->parseDot(self::$bp['dot'])]
+            'children' => [$left, $this->parseDot(self::$bp[T::T_DOT])]
         ];
     }
 
@@ -227,8 +228,8 @@ class Parser
     {
         $this->next();
         return [
-            'type'     => 'or',
-            'children' => [$left, $this->expr(self::$bp['or'])]
+            'type'     => T::T_OR,
+            'children' => [$left, $this->expr(self::$bp[T::T_OR])]
         ];
     }
 
@@ -236,8 +237,8 @@ class Parser
     {
         $this->next();
         return [
-            'type'     => 'pipe',
-            'children' => [$left, $this->expr(self::$bp['pipe'])]
+            'type'     => T::T_PIPE,
+            'children' => [$left, $this->expr(self::$bp[T::T_PIPE])]
         ];
     }
 
@@ -246,9 +247,9 @@ class Parser
         $args = [];
         $this->next();
 
-        while ($this->token['type'] != 'rparen') {
+        while ($this->token['type'] != T::T_RPAREN) {
             $args[] = $this->expr(0);
-            if ($this->token['type'] == 'comma') {
+            if ($this->token['type'] == T::T_COMMA) {
                 $this->next();
             }
         }
@@ -266,12 +267,12 @@ class Parser
     {
         $this->next();
         $expression = $this->expr();
-        if ($this->token['type'] != 'rbracket') {
+        if ($this->token['type'] != T::T_RBRACKET) {
             throw $this->syntax('Expected a closing rbracket for the filter');
         }
 
         $this->next();
-        $rhs = $this->parseProjection(self::$bp['filter']);
+        $rhs = $this->parseProjection(self::$bp[T::T_FILTER]);
 
         return [
             'type'       => 'projection',
@@ -292,7 +293,7 @@ class Parser
         $this->next();
 
         return [
-            'type'     => 'comparator',
+            'type'     => T::T_COMPARATOR,
             'value'    => $token['value'],
             'children' => [$left, $this->expr()]
         ];
@@ -303,10 +304,10 @@ class Parser
         $type = $this->token['type'];
         if (self::$bp[$type] < 10) {
             return self::$currentNode;
-        } elseif ($type == 'dot') {
+        } elseif ($type == T::T_DOT) {
             $this->next(self::$afterDot);
             return $this->parseDot($bp);
-        } elseif ($type == 'lbracket' || $type == 'filter') {
+        } elseif ($type == T::T_LBRACKET || $type == T::T_FILTER) {
             return $this->expr($bp);
         }
 
@@ -315,7 +316,7 @@ class Parser
 
     private function parseDot($bp)
     {
-        if ($this->token['type'] == 'lbracket') {
+        if ($this->token['type'] == T::T_LBRACKET) {
             $this->next();
             return $this->parseMultiSelectList();
         }
@@ -325,7 +326,7 @@ class Parser
 
     private function parseKeyValuePair()
     {
-        static $validColon = ['colon' => true];
+        static $validColon = [T::T_COLON => true];
         $key = $this->token['value'];
         $this->next($validColon);
         $this->next();
@@ -346,14 +347,14 @@ class Parser
             'from'     => 'object',
             'children' => [
                 $left ?: self::$currentNode,
-                $this->parseProjection(self::$bp['star'])
+                $this->parseProjection(self::$bp[T::T_STAR])
             ]
         ];
     }
 
     private function parseWildcardArray(array $left = null)
     {
-        static $getRbracket = ['rbracket' => true];
+        static $getRbracket = [T::T_RBRACKET => true];
         $this->next($getRbracket);
         $this->next();
 
@@ -362,7 +363,7 @@ class Parser
             'from'     => 'array',
             'children' => [
                 $left ?: self::$currentNode,
-                $this->parseProjection(self::$bp['star'])
+                $this->parseProjection(self::$bp[T::T_STAR])
             ]
         ];
     }
@@ -373,9 +374,9 @@ class Parser
     private function parseArrayIndexExpression()
     {
         static $matchNext = [
-            'number'   => true,
-            'colon'    => true,
-            'rbracket' => true
+            T::T_NUMBER   => true,
+            T::T_COLON    => true,
+            T::T_RBRACKET => true
         ];
 
         $pos = 0;
@@ -383,15 +384,15 @@ class Parser
         $expected = $matchNext;
 
         do {
-            if ($this->token['type'] == 'colon') {
+            if ($this->token['type'] == T::T_COLON) {
                 $pos++;
                 $expected = $matchNext;
-            } elseif ($this->token['type'] == 'number') {
+            } elseif ($this->token['type'] == T::T_NUMBER) {
                 $parts[$pos] = $this->token['value'];
-                $expected = ['colon' => true, 'rbracket' => true];
+                $expected = [T::T_COLON => true, T::T_RBRACKET => true];
             }
             $this->next($expected);
-        } while ($this->token['type'] != 'rbracket');
+        } while ($this->token['type'] != T::T_RBRACKET);
 
         // Consume the closing bracket
         $this->next();
@@ -411,7 +412,7 @@ class Parser
             'from'     => 'array',
             'children' => [
                 ['type' => 'slice', 'value' => $parts],
-                $this->parseProjection(self::$bp['star'])
+                $this->parseProjection(self::$bp[T::T_STAR])
             ]
         ];
     }
@@ -422,11 +423,11 @@ class Parser
 
         do {
             $nodes[] = $this->expr();
-            if ($this->token['type'] == 'comma') {
+            if ($this->token['type'] == T::T_COMMA) {
                 $this->next();
-                $this->assertNotToken('rbracket');
+                $this->assertNotToken(T::T_RBRACKET);
             }
-        } while ($this->token['type'] != 'rbracket');
+        } while ($this->token['type'] !== T::T_RBRACKET);
         $this->next();
 
         return ['type' => 'multi_select_list', 'children' => $nodes];
@@ -440,7 +441,7 @@ class Parser
     private function lookahead()
     {
         return (!isset($this->tokens[$this->tpos + 1]))
-            ? 'eof'
+            ? T::T_EOF
             : $this->tokens[$this->tpos + 1]['type'];
     }
 
