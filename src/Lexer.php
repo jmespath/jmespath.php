@@ -421,8 +421,13 @@ class Lexer
         $value = json_decode($token['value'], true);
 
         if ($error = json_last_error()) {
-            $token['type'] = self::T_UNKNOWN;
-            return $token;
+            // Legacy support for elided quotes. Try to parse again by adding
+            // quotes around the bad input value.
+            $value = json_decode('"' . $token['value'] . '"', true);
+            if ($error = json_last_error()) {
+                $token['type'] = self::T_UNKNOWN;
+                return $token;
+            }
         }
 
         $token['value'] = $value;

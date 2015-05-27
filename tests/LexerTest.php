@@ -78,4 +78,12 @@ class LexerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(120, $tokens[6]['value']);
         $this->assertEquals('2014-12', $tokens[8]['value']);
     }
+
+    public function testCanWorkWithElidedJsonLiterals()
+    {
+        $l = new Lexer();
+        $tokens = $l->tokenize('`foo`');
+        $this->assertEquals('foo', $tokens[0]['value']);
+        $this->assertEquals('literal', $tokens[0]['type']);
+    }
 }
