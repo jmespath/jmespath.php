@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.2.0 - 2015-05-27
+
+* Added support for [JEP-12](https://github.com/jmespath/jmespath.site/blob/master/docs/proposals/raw-string-literals.rst)
+  and raw string literals (e.g., `'foo'`).
+
 ## 2.1.0 - 2014-01-13
 
 * Added `JmesPath\Env::cleanCompileDir()` to delete any previously compiled
