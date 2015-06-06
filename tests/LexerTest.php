@@ -71,12 +71,11 @@ class LexerTest extends \PHPUnit_Framework_TestCase
     public function testTokenizesJsonNumbers()
     {
         $l = new Lexer();
-        $tokens = $l->tokenize('`10`, `1.2`, `-10.20e-10`, `1.2E+2`, `2014-12`');
+        $tokens = $l->tokenize('`10`, `1.2`, `-10.20e-10`, `1.2E+2`');
         $this->assertEquals(10, $tokens[0]['value']);
         $this->assertEquals(1.2, $tokens[2]['value']);
         $this->assertEquals(-1.02E-9, $tokens[4]['value']);
         $this->assertEquals(120, $tokens[6]['value']);
-        $this->assertEquals('2014-12', $tokens[8]['value']);
     }
 
     public function testCanWorkWithElidedJsonLiterals()
