@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2.3.0 - 2016-01-05
+
+* Added support for [JEP-9](https://github.com/jmespath/jmespath.site/blob/master/docs/proposals/improved-filters.rst),
+  including unary filter expressions, and `&&` filter expressions.
+* Fixed various parsing issues, including not removing escaped single quotes
+  from raw string literals.
+* Added support for the `map` function.
+* Fixed several issues with code generation.
+
 ## 2.2.0 - 2015-05-27
 
 * Added support for [JEP-12](https://github.com/jmespath/jmespath.site/blob/master/docs/proposals/raw-string-literals.rst)
