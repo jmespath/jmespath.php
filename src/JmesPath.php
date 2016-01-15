@@ -9,7 +9,9 @@ namespace JmesPath;
  *
  * @return mixed|null
  */
-function search($expression, $data)
-{
-    return Env::search($expression, $data);
+if (!function_exists(__NAMESPACE__ . '\search')){
+    function search($expression, $data)
+    {
+        return Env::search($expression, $data);
+    }
 }
