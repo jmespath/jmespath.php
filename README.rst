@@ -119,8 +119,8 @@ To create custom functions:
 
 * Create any `callable <http://php.net/manual/en/language.types.callable.php>`_
   structure (loose function or class with functions) that implement your logic.
-* Call ``FnDispatcher::getInstance()->registerCustomFn()`` to register your function.
-  Be aware that these ``registerCustomFn()`` calls must be in a global place if you want
+* Call ``FnDispatcher::getInstance()->registerCustomFunction()`` to register your function.
+  Be aware that these ``registerCustomFunction()`` calls must be in a global place if you want
   to have your functions always available.
 
 Here is an example with a class instance:
@@ -135,7 +135,7 @@ Here is an example with a class instance:
             return $args[0] * 2;
         }
     }
-    FnDispatcher::getInstance()->registerCustomFn('myFunction', [new CustomFunctionHandler(), 'double'])
+    FnDispatcher::getInstance()->registerCustomFunction('myFunction', [new CustomFunctionHandler(), 'double'])
 
 An example with a runtime function:
 
@@ -144,7 +144,7 @@ An example with a runtime function:
     $callbackFunction = function ($args) {
         return $args[0];
     };
-    $fn->registerCustomFn('myFunction', $callbackFunction);
+    FnDispatcher::getInstance()->registerCustomFunction('myFunction', $callbackFunction);
 
 As you can see, you can use all the possible ``callable`` structures as defined in the PHP documentation.
 All those examples will lead to a function ``myFunction()`` that can be used in your expressions.
@@ -152,7 +152,7 @@ All those examples will lead to a function ``myFunction()`` that can be used in 
 Type specification
 ~~~~~~~~~~~~~~~~~~
 
-The ``FnDispatcher::getInstance()->registerCustomFn()`` function accepts an
+The ``FnDispatcher::getInstance()->registerCustomFunction()`` function accepts an
 optional third parameter that allows you to pass an array of type specifications
 for your custom function. If you pass this, the types (and count) of the passed
 parameters in the expression will be validated before your ``callable`` is executed.
@@ -161,7 +161,7 @@ Example:
 
 .. code-block:: php
 
-    $fn->registerCustomFn('myFunction', $callbackFunction, [['number'], ['string']]);
+    FnDispatcher::getInstance()->registerCustomFunction('myFunction', $callbackFunction, [['number'], ['string']]);
 
 Defines that your function expects exactly 2 parameters, the first being a ``number`` and
 the second being a ``string``. If anything else is passed in the call to your function,
