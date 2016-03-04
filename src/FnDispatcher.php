@@ -9,6 +9,17 @@ namespace JmesPath;
  */
 class FnDispatcher
 {
+
+    /**
+     * @var FnDispatcher singleton instance
+     */
+    private static $instance = null;
+
+    /**
+     * @var array custom type map
+     */
+    private $customFunctions = [];
+
     /**
      * Gets a cached instance of the default function implementations.
      *
@@ -16,12 +27,42 @@ class FnDispatcher
      */
     public static function getInstance()
     {
-        static $instance = null;
-        if (!$instance) {
-            $instance = new self();
+        if (self::$instance) {
+            self::$instance = new self();
         }
 
-        return $instance;
+        return self::$instance;
+    }
+
+    /**
+     * Registers a custom function using a user defined callback
+     *
+     * @param string   $name     name of your custom function
+     * @param callable $callable callable spec, see http://php.net/manual/en/language.types.callable.php
+     * @param array    $types    optional spec of expected function parameters
+     *
+     * @return void
+     */
+    public static function registerCustomFunction($name, $callable, $types = [])
+    {
+        self::getInstance()->registerCustomFn($name, $callable, $types);
+    }
+
+    /**
+     * Instance-bound register function, allowing for more isolated testing
+     *
+     * @param string   $name     name of your custom function
+     * @param callable $callable callable spec, see http://php.net/manual/en/language.types.callable.php
+     * @param array    $types    optional spec of expected function parameters
+     *
+     * @return void
+     */
+    public function registerCustomFn($name, $callable, $types = [])
+    {
+        $this->customFunctions[$name] = array(
+            'callable' => $callable,
+            'types' => $types
+        );
     }
 
     /**
@@ -392,10 +433,24 @@ class FnDispatcher
         };
     }
 
-    /** @internal Pass function name validation off to runtime */
+    /** @internal Pass function name validation off to runtime (if not defined in custom functions) */
     public function __call($name, $args)
     {
         $name = str_replace('fn_', '', $name);
+
+        if (
+            isset($this->customFunctions[$name]['callable']) &&
+            is_callable($this->customFunctions[$name]['callable'])
+        ) {
+
+            // is there type validation?
+            if (!empty($this->customFunctions[$name]['types'])) {
+                $this->validate($name, $args[0], $this->customFunctions[$name]['types']);
+            }
+
+            return call_user_func_array($this->customFunctions[$name]['callable'], [$args[0], $this]);
+        }
+
         throw new \RuntimeException("Call to undefined function {$name}");
     }
 }
