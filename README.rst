@@ -120,8 +120,8 @@ To create custom functions:
 * Create any `callable <http://php.net/manual/en/language.types.callable.php>`_
   structure (loose function or class with functions) that implement your logic.
 * Call ``FnDispatcher::getInstance()->registerCustomFn()`` to register your function.
-  Be aware that there ``registerCustomFn`` calls must be in a global place where they
-  always will be executed.
+  Be aware that these ``registerCustomFn()`` calls must be in a global place if you want
+  to have your functions always available.
 
 Here is an example with a class instance:
 
@@ -150,7 +150,7 @@ As you can see, you can use all the possible ``callable`` structures as defined 
 All those examples will lead to a function ``myFunction()`` that can be used in your expressions.
 
 Type specification
-^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~
 
 The ``FnDispatcher::getInstance()->registerCustomFn()`` function accepts an
 optional third parameter that allows you to pass an array of type specifications
@@ -160,6 +160,7 @@ parameters in the expression will be validated before your ``callable`` is execu
 Example:
 
 .. code-block:: php
+
     $fn->registerCustomFn('myFunction', $callbackFunction, [['number'], ['string']]);
 
 Defines that your function expects exactly 2 parameters, the first being a ``number`` and
