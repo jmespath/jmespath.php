@@ -171,7 +171,7 @@ class FnDispatcher
         $complementExpr = $this->wrapExpression('sum_by:1', $args[2], ['number', 'number']);
         $fn = function ($carry, $item) use ($groupExpr, $complementExpr) {
             $key = $groupExpr($item);
-            $carry[$key] = ($carry[$key] ? $carry[$key] : 0) + $complementExpr($item);
+            $carry[$key] = (array_key_exists($key, $carry)  ? $carry[$key] : 0) + $complementExpr($item);
             return $carry;
         };
         return $this->reduce('sum_by:1', $args[0], ['any'], $fn, []);
