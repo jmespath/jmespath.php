@@ -27,6 +27,12 @@
     "files": ["src/JmesPath.php"]
   },
 
+  "autoload-dev": {
+    "psr-4": {
+      "JmesPath\\Tests\\": "tests/"
+    }
+  },
+
   "bin": ["bin/jp.php"],
 
   "extra": {

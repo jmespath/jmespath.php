@@ -107,7 +107,7 @@ class TreeCompiler
         return $this
             ->write('%s = $value;', $a)
             ->dispatch($node['children'][0])
-            ->write('if (!$value && $value !== "0" && $value !== 0) {')
+            ->write('if (!Utils::isTruthy($value)) {')
                 ->indent()
                 ->write('$value = %s;', $a)
                 ->dispatch($node['children'][1])
@@ -121,7 +121,7 @@ class TreeCompiler
         return $this
             ->write('%s = $value;', $a)
             ->dispatch($node['children'][0])
-            ->write('if ($value || $value === "0" || $value === 0) {')
+            ->write('if (Utils::isTruthy($value)) {')
                 ->indent()
                 ->write('$value = %s;', $a)
                 ->dispatch($node['children'][1])
@@ -157,7 +157,7 @@ class TreeCompiler
                 ->indent()
                 ->write('$value = isset(%s) ? %s : null;', $arr, $arr)
                 ->outdent()
-            ->write('} elseif ($value instanceof \\stdClass) {')
+            ->write('} elseif ($value instanceof \\stdClass || $value instanceof JmesPath\\JmesPathableObjectInterface) {')
                 ->indent()
                 ->write('$value = isset(%s) ? %s : null;', $obj, $obj)
                 ->outdent()
@@ -266,7 +266,7 @@ class TreeCompiler
     {
         return $this
             ->write('$value = !is_string($value) && !Utils::isArray($value)')
-            ->write('    ? null : Utils::slice($value, %s, %s, %s);',
+            ->write('    ? null : Utils::slice(Utils::toArray($value), %s, %s, %s);',
                 var_export($node['value'][0], true),
                 var_export($node['value'][1], true),
                 var_export($node['value'][2], true)
@@ -305,6 +305,7 @@ class TreeCompiler
                 ->write('%s = [];', $merged)
                 ->write('foreach ($value as %s) {', $val)
                     ->indent()
+                    ->write('%s = Utils::toArray(%s);', $val, $val)
                     ->write('if (is_array(%s) && isset(%s[0])) {', $val, $val)
                         ->indent()
                         ->write('%s = array_merge(%s, %s);', $merged, $merged, $val)
@@ -342,7 +343,7 @@ class TreeCompiler
         $this->write('if ($value !== null) {')
             ->indent()
             ->write('%s = [];', $collected)
-            ->write('foreach ((array) $value as %s) {', $val)
+            ->write('foreach ((array) Utils::toArray($value) as %s) {', $val)
                 ->indent()
                 ->write('$value = %s;', $val)
                 ->dispatch($node['children'][1])

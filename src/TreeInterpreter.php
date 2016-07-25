@@ -47,7 +47,7 @@ class TreeInterpreter
             case 'field':
                 if (is_array($value) || $value instanceof \ArrayAccess) {
                     return isset($value[$node['value']]) ? $value[$node['value']] : null;
-                } elseif ($value instanceof \stdClass) {
+                } elseif ($value instanceof \stdClass || $value instanceof JmesPathableObjectInterface) {
                     return isset($value->{$node['value']}) ? $value->{$node['value']} : null;
                 }
                 return null;
@@ -87,7 +87,7 @@ class TreeInterpreter
                 }
 
                 $collected = [];
-                foreach ((array) $left as $val) {
+                foreach ((array) Utils::toArray($left) as $val) {
                     $result = $this->dispatch($node['children'][1], $val);
                     if ($result !== null) {
                         $collected[] = $result;
@@ -106,6 +106,7 @@ class TreeInterpreter
 
                 $merged = [];
                 foreach ($value as $values) {
+                    $values = Utils::toArray($values);
                     // Only merge up arrays lists and not hashes
                     if (is_array($values) && isset($values[0])) {
                         $merged = array_merge($merged, $values);
@@ -198,7 +199,7 @@ class TreeInterpreter
             case 'slice':
                 return is_string($value) || Utils::isArray($value)
                     ? Utils::slice(
-                        $value,
+                        Utils::toArray($value),
                         $node['value'][0],
                         $node['value'][1],
                         $node['value'][2]

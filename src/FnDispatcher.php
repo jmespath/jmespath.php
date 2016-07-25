@@ -44,10 +44,11 @@ class FnDispatcher
     private function fn_avg(array $args)
     {
         $this->validate('avg', $args, [['array']]);
-        $sum = $this->reduce('avg:0', $args[0], ['number'], function ($a, $b) {
+        $arg = Utils::toArray($args[0]);
+        $sum = $this->reduce('avg:0', $arg, ['number'], function ($a, $b) {
             return $a + $b;
         });
-        return $args[0] ? ($sum / count($args[0])) : null;
+        return $arg ? ($sum / count($arg)) : null;
     }
 
     private function fn_ceil(array $args)
@@ -59,10 +60,11 @@ class FnDispatcher
     private function fn_contains(array $args)
     {
         $this->validate('contains', $args, [['string', 'array'], ['any']]);
-        if (is_array($args[0])) {
-            return in_array($args[1], $args[0]);
+        $arg = Utils::toArray($args[0]);
+        if (is_array($arg)) {
+            return in_array($args[1], $arg);
         } elseif (is_string($args[1])) {
-            return strpos($args[0], $args[1]) !== false;
+            return strpos($arg, $args[1]) !== false;
         } else {
             return null;
         }
@@ -100,26 +102,27 @@ class FnDispatcher
         $fn = function ($a, $b, $i) use ($args) {
             return $i ? ($a . $args[0] . $b) : $b;
         };
-        return $this->reduce('join:0', $args[1], ['string'], $fn);
+        return $this->reduce('join:0', Utils::toArray($args[1]), ['string'], $fn);
     }
 
     private function fn_keys(array $args)
     {
         $this->validate('keys', $args, [['object']]);
-        return array_keys((array) $args[0]);
+        return array_keys((array) Utils::toArray($args[0]));
     }
 
     private function fn_length(array $args)
     {
         $this->validate('length', $args, [['string', 'array', 'object']]);
-        return is_string($args[0]) ? strlen($args[0]) : count((array) $args[0]);
+        $arg = Utils::toArray($args[0]);
+        return is_string($arg) ? strlen($arg) : count((array) $arg);
     }
 
     private function fn_max(array $args)
     {
         $this->validate('max', $args, [['array']]);
         $fn = function ($a, $b) { return $a >= $b ? $a : $b; };
-        return $this->reduce('max:0', $args[0], ['number', 'string'], $fn);
+        return $this->reduce('max:0', Utils::toArray($args[0]), ['number', 'string'], $fn);
     }
 
     private function fn_max_by(array $args)
@@ -131,14 +134,14 @@ class FnDispatcher
                 ? ($expr($carry) >= $expr($item) ? $carry : $item)
                 : $item;
         };
-        return $this->reduce('max_by:1', $args[0], ['any'], $fn);
+        return $this->reduce('max_by:1', Utils::toArray($args[0]), ['any'], $fn);
     }
 
     private function fn_min(array $args)
     {
         $this->validate('min', $args, [['array']]);
         $fn = function ($a, $b, $i) { return $i && $a <= $b ? $a : $b; };
-        return $this->reduce('min:0', $args[0], ['number', 'string'], $fn);
+        return $this->reduce('min:0', Utils::toArray($args[0]), ['number', 'string'], $fn);
     }
 
     private function fn_min_by(array $args)
@@ -149,16 +152,17 @@ class FnDispatcher
         $fn = function ($a, $b) use ($expr, &$i) {
             return ++$i ? ($expr($a) <= $expr($b) ? $a : $b) : $b;
         };
-        return $this->reduce('min_by:1', $args[0], ['any'], $fn);
+        return $this->reduce('min_by:1', Utils::toArray($args[0]), ['any'], $fn);
     }
 
     private function fn_reverse(array $args)
     {
         $this->validate('reverse', $args, [['array', 'string']]);
-        if (is_array($args[0])) {
-            return array_reverse($args[0]);
-        } elseif (is_string($args[0])) {
-            return strrev($args[0]);
+        $arg = Utils::toArray($args[0]);
+        if (is_array($arg)) {
+            return array_reverse($arg);
+        } elseif (is_string($arg)) {
+            return strrev($arg);
         } else {
             throw new \RuntimeException('Cannot reverse provided argument');
         }
@@ -168,14 +172,14 @@ class FnDispatcher
     {
         $this->validate('sum', $args, [['array']]);
         $fn = function ($a, $b) { return $a + $b; };
-        return $this->reduce('sum:0', $args[0], ['number'], $fn);
+        return $this->reduce('sum:0', Utils::toArray($args[0]), ['number'], $fn);
     }
 
     private function fn_sort(array $args)
     {
         $this->validate('sort', $args, [['array']]);
         $valid = ['string', 'number'];
-        return Utils::stableSort($args[0], function ($a, $b) use ($valid) {
+        return Utils::stableSort(Utils::toArray($args[0]), function ($a, $b) use ($valid) {
             $this->validateSeq('sort:0', $valid, $a, $b);
             return strnatcmp($a, $b);
         });
@@ -187,7 +191,7 @@ class FnDispatcher
         $expr = $args[1];
         $valid = ['string', 'number'];
         return Utils::stableSort(
-            $args[0],
+            Utils::toArray($args[0]),
             function ($a, $b) use ($expr, $valid) {
                 $va = $expr($a);
                 $vb = $expr($b);
@@ -221,6 +225,8 @@ class FnDispatcher
             && method_exists($v, '__toString')
         ) {
             return (string) $v;
+        } elseif (Utils::isArray($v)) {
+            $v = Utils::toArray($v);
         }
 
         return json_encode($v);
@@ -243,7 +249,7 @@ class FnDispatcher
     private function fn_values(array $args)
     {
         $this->validate('values', $args, [['array', 'object']]);
-        return array_values((array) $args[0]);
+        return array_values((array) Utils::toArray($args[0]));
     }
 
     private function fn_merge(array $args)
@@ -254,14 +260,17 @@ class FnDispatcher
             );
         }
 
-        return call_user_func_array('array_replace', $args);
+        return array_reduce($args, function ($carry, $arg) {
+            $carry = array_replace($carry, Utils::toArray($arg));
+            return $carry;
+        }, []);
     }
 
     private function fn_to_array(array $args)
     {
         $this->validate('to_array', $args, [['any']]);
 
-        return Utils::isArray($args[0]) ? $args[0] : [$args[0]];
+        return Utils::isArray($args[0]) ? Utils::toArray($args[0]) : [$args[0]];
     }
 
     private function fn_map(array $args)

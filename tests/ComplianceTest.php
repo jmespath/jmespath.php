@@ -86,6 +86,7 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
 
         foreach ($files as $name) {
             $contents = file_get_contents(__DIR__ . "/compliance/{$name}.json");
+            
             foreach ([true, false] as $asAssoc) {
                 $json = json_decode($contents, true);
                 $jsonObj = json_decode($contents);
@@ -109,6 +110,28 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
                     }
                 }
             }
+             
+            $json = json_decode($contents, true);
+            $jsonObj = json_decode($contents);
+            foreach ($json as $suiteNumber => $suite) {
+                $given = $this->toPhpObj($jsonObj[$suiteNumber]->given);
+                foreach ($suite['cases'] as $caseNumber => $case) {
+                    $caseData = [
+                        $given,
+                        $case['expression'],
+                        isset($case['result']) ? $case['result'] : null,
+                        isset($case['error']) ? $case['error'] : false,
+                        $name,
+                        $suiteNumber,
+                        $caseNumber,
+                        false,
+                        'PHP object'
+                    ];
+                    $cases[] = $caseData;
+                    $caseData[7] = true;
+                    $cases[] = $caseData;
+                }
+            }
         }
 
         return $cases;
@@ -118,6 +141,10 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
     {
         if ($data instanceof \stdClass) {
             return $this->convertAssoc((array) $data);
+        } elseif ($data instanceof ArrayLike) {
+            return $this->convertAssoc(iterator_to_array($data));
+        } elseif ($data instanceof StdClassLike) {
+            return $this->convertAssoc($data->toArray());
         } elseif (is_array($data)) {
             return array_map([$this, 'convertAssoc'], $data);
         } else {
@@ -132,5 +159,20 @@ class ComplianceTest extends \PHPUnit_Framework_TestCase
         }
 
         return json_encode($json);
+    }
+
+    private function toPhpObj($given)
+    {
+        if ($given instanceof \stdClass) {
+            $phpObj = new StdClassLike();
+            foreach ((array)$given as $property => $value) {
+                $phpObj->$property = $this->toPhpObj($value);
+            }
+            return $phpObj;
+        } elseif (is_array($given)) {
+            return new ArrayLike(array_map([$this, 'toPhpObj'], $given));
+        } else {
+            return $given;
+        }
     }
 }

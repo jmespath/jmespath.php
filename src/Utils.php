@@ -25,6 +25,10 @@ class Utils
             return $value === 0 || $value === '0';
         } elseif ($value instanceof \stdClass) {
             return (bool) get_object_vars($value);
+        } elseif ($value instanceof JmesPathableArrayInterface) {
+            return Utils::isTruthy(iterator_to_array($value));
+        } elseif ($value instanceof JmesPathableObjectInterface) {
+            return (bool) $value->toArray();
         } else {
             return true;
         }
@@ -49,6 +53,8 @@ class Utils
             reset($arg);
             return key($arg) === 0 ? 'array' : 'object';
         } elseif ($arg instanceof \stdClass) {
+            return 'object';
+        } elseif ($arg instanceof JmesPathableObjectInterface) {
             return 'object';
         } elseif ($arg instanceof \Closure) {
             return 'expression';
@@ -83,7 +89,7 @@ class Utils
         // Handle array-like values. Must be empty or offset 0 does not exist
         return $value instanceof \Countable && $value instanceof \ArrayAccess
             ? count($value) == 0 || !$value->offsetExists(0)
-            : $value instanceof \stdClass;
+            : $value instanceof \stdClass || $value instanceof JmesPathableObjectInterface;
     }
 
     /**
@@ -102,7 +108,18 @@ class Utils
         // Handle array-like values. Must be empty or offset 0 exists.
         return $value instanceof \Countable && $value instanceof \ArrayAccess
             ? count($value) == 0 || $value->offsetExists(0)
-            : false;
+            : $value instanceof JmesPathableArrayInterface;
+    }
+
+    public static function toArray($value)
+    {
+        if ($value instanceof JmesPathableArrayInterface) {
+            return iterator_to_array($value);
+        } elseif ($value instanceof JmesPathableObjectInterface) {
+            return $value->toArray();
+        } else {
+            return $value;
+        }
     }
 
     /**
@@ -121,6 +138,14 @@ class Utils
             return self::isEqual((array) $a, $b);
         } elseif ($b instanceof \stdClass) {
             return self::isEqual($a, (array) $b);
+        } elseif ($a instanceof JmesPathableArrayInterface) {
+            return Utils::isEqual(iterator_to_array($a), $b);
+        } elseif ($b instanceof JmesPathableArrayInterface) {
+            return Utils::isEqual($a, iterator_to_array($b));
+        } elseif ($a instanceof JmesPathableObjectInterface) {
+            return Utils::isEqual($a->toArray(), $b);
+        } elseif ($b instanceof JmesPathableObjectInterface) {
+            return Utils::isEqual($a, $b->toArray());
         } else {
             return false;
         }
@@ -163,7 +188,7 @@ class Utils
      */
     public static function slice($value, $start = null, $stop = null, $step = 1)
     {
-        if (!is_array($value) && !is_string($value)) {
+        if (!Utils::isArray($value) && !is_string($value)) {
             throw new \InvalidArgumentException('Expects string or array');
         }
 
