@@ -152,6 +152,31 @@ class FnDispatcher
         return $this->reduce('min_by:1', $args[0], ['any'], $fn);
     }
 
+    private function fn_group_by(array $args)
+    {
+        $this->validate('group_by', $args, [['array'], ['expression']]);
+        $expr = $this->wrapExpression('group_by:1', $args[1], ['number', 'string']);
+        $fn = function ($carry, $item) use ($expr) {
+            $key = $expr($item);
+            $carry[$key][] = $item;
+            return $carry;
+        };
+        return $this->reduce('group_by:1', $args[0], ['any'], $fn, []);
+    }
+
+    private function fn_sum_by(array $args)
+    {
+        $this->validate('sum_by', $args, [['array'], ['expression'], ['expression']]);
+        $groupExpr = $this->wrapExpression('sum_by:1', $args[1], ['number', 'string']);
+        $complementExpr = $this->wrapExpression('sum_by:1', $args[2], ['number', 'number']);
+        $fn = function ($carry, $item) use ($groupExpr, $complementExpr) {
+            $key = $groupExpr($item);
+            $carry[$key] = (array_key_exists($key, $carry)  ? $carry[$key] : 0) + $complementExpr($item);
+            return $carry;
+        };
+        return $this->reduce('sum_by:1', $args[0], ['any'], $fn, []);
+    }
+
     private function fn_reverse(array $args)
     {
         $this->validate('reverse', $args, [['array', 'string']]);
@@ -351,14 +376,15 @@ class FnDispatcher
     /**
      * Reduces and validates an array of values to a single value using a fn.
      *
-     * @param string   $from   String of function:argument_position
-     * @param array    $values Values to reduce.
-     * @param array    $types  Array of valid value types.
-     * @param callable $reduce Reduce function that accepts ($carry, $item).
+     * @param string     $from   String of function:argument_position
+     * @param array      $values Values to reduce.
+     * @param array      $types  Array of valid value types.
+     * @param callable   $reduce Reduce function that accepts ($carry, $item).
+     * @param mixed|null $initial Value to use in as initial result or in case the result is empty
      *
      * @return mixed
      */
-    private function reduce($from, array $values, array $types, callable $reduce)
+    private function reduce($from, array $values, array $types, callable $reduce, $initial = null)
     {
         $i = -1;
         return array_reduce(
@@ -368,7 +394,8 @@ class FnDispatcher
                     $this->validateSeq($from, $types, $carry, $item);
                 }
                 return $reduce($carry, $item, $i);
-            }
+            },
+            $initial
         );
     }
 
