@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.4.0 - 2016-12-03
+
+* Added support for floats when interpreting data.
+* Added a function_exists check to work around redeclaration issues.
+
 ## 2.3.0 - 2016-01-05
 
 * Added support for [JEP-9](https://github.com/jmespath/jmespath.site/blob/master/docs/proposals/improved-filters.rst),
