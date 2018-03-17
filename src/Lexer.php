@@ -233,20 +233,20 @@ class Lexer
                 if ($current == '*') {
                     $prev_type = count($tokens) > 0 ? $tokens[count($tokens) - 1]['type'] : '';
 
-                    if ($prev_type != self::T_NUMBER || $prev_type == '') {
-                        $state = self::STATE_SINGLE_CHAR;
-                    } else {
+                    if ($prev_type == self::T_NUMBER || $prev_type == self::T_LITERAL || $prev_type == self::T_IDENTIFIER) {
                         $state = self::STATE_ARITHMETIC_OP;
+                    } else {
+                        $state = self::STATE_SINGLE_CHAR;
                     }
                 }
 
                 if ($current == '-') {
                     $prev_type = count($tokens) > 0 ? $tokens[count($tokens) - 1]['type'] : '';
 
-                    if ($prev_type != self::T_NUMBER || $prev_type == '') {
-                        $state = self::STATE_NUMBER;
-                    } else {
+                    if ($prev_type == self::T_NUMBER || $prev_type == self::T_LITERAL || $prev_type == self::T_IDENTIFIER) {
                         $state = self::STATE_ARITHMETIC_OP;
+                    } else {
+                        $state = self::STATE_NUMBER;
                     }
                 }
             }

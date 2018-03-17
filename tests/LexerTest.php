@@ -86,24 +86,29 @@ class LexerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('literal', $tokens[0]['type']);
     }
 
-    public function testArithmetic()
+    public function inputProviderForArithmetic()
+    {
+        return array(
+            array('3 + 5', 1, 'plus'),
+            array('{ total: invoice.amount + invoice.tax }', 6, 'plus'),
+            array('3 - 5', 1, 'minus'),
+            array('{ total: invoice.amount - invoice.tax }', 6, 'minus'),
+            array('3 * 5', 1, 'multiply'),
+            array('{ total: invoice.amount * invoice.tax }', 6, 'multiply'),
+            array('3 / 5', 1, 'divide'),
+            array('{ total: invoice.amount / invoice.tax }', 6, 'divide'),
+            array('3 % 5', 1, 'mod'),
+            array('{ total: invoice.amount % invoice.tax }', 6, 'mod'),
+        );
+    }
+
+    /**
+     * @dataProvider inputProviderForArithmetic
+     */
+    public function testArithmetic($input, $index, $type)
     {
         $l = new Lexer();
-        $tokens = $l->tokenize('3+5*2/2+4%3-2*2');
-        $this->assertEquals('number', $tokens[0]['type']);
-        $this->assertEquals('plus', $tokens[1]['type']);
-        $this->assertEquals('number', $tokens[2]['type']);
-        $this->assertEquals('multiply', $tokens[3]['type']);
-        $this->assertEquals('number', $tokens[4]['type']);
-        $this->assertEquals('divide', $tokens[5]['type']);
-        $this->assertEquals('number', $tokens[6]['type']);
-        $this->assertEquals('plus', $tokens[7]['type']);
-        $this->assertEquals('number', $tokens[8]['type']);
-        $this->assertEquals('mod', $tokens[9]['type']);
-        $this->assertEquals('number', $tokens[10]['type']);
-        $this->assertEquals('minus', $tokens[11]['type']);
-        $this->assertEquals('number', $tokens[12]['type']);
-        $this->assertEquals('multiply', $tokens[13]['type']);
-        $this->assertEquals('number', $tokens[14]['type']);
+        $tokens = $l->tokenize($input);
+        $this->assertEquals($tokens[$index]['type'], $type);
     }
 }
