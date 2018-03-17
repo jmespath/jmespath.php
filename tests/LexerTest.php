@@ -91,5 +91,19 @@ class LexerTest extends \PHPUnit_Framework_TestCase
         $l = new Lexer();
         $tokens = $l->tokenize('3+5*2/2+4%3-2*2');
         $this->assertEquals('number', $tokens[0]['type']);
+        $this->assertEquals('plus', $tokens[1]['type']);
+        $this->assertEquals('number', $tokens[2]['type']);
+        $this->assertEquals('multiply', $tokens[3]['type']);
+        $this->assertEquals('number', $tokens[4]['type']);
+        $this->assertEquals('divide', $tokens[5]['type']);
+        $this->assertEquals('number', $tokens[6]['type']);
+        $this->assertEquals('plus', $tokens[7]['type']);
+        $this->assertEquals('number', $tokens[8]['type']);
+        $this->assertEquals('mod', $tokens[9]['type']);
+        $this->assertEquals('number', $tokens[10]['type']);
+        $this->assertEquals('minus', $tokens[11]['type']);
+        $this->assertEquals('number', $tokens[12]['type']);
+        $this->assertEquals('multiply', $tokens[13]['type']);
+        $this->assertEquals('number', $tokens[14]['type']);
     }
 }
