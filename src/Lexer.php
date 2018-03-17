@@ -2,12 +2,6 @@
 namespace JmesPath;
 
 /**
- * Modified by Konstantyn Valentinov
- * 2018-03-17
- * https://github.com/legendary614
- */
-
-/**
  * Tokenizes JMESPath expressions
  */
 class Lexer
@@ -37,12 +31,6 @@ class Lexer
     const T_LITERAL = 'literal';
     const T_EOF = 'eof';
     const T_COMPARATOR = 'comparator';
-
-    /**
-     * Added by Konstantyn Valentinov
-     * 2018-03-17
-     * Additional token types for arithmetic operators ( +, -, *, /, % )
-     */
     const T_PLUS = 'plus';
     const T_MINUS = 'minus';
     const T_MULTIPLY = 'multiply';
@@ -63,12 +51,6 @@ class Lexer
     const STATE_EQ = 11;
     const STATE_NOT = 12;
     const STATE_AND = 13;
-
-    /**
-     * Added by Konstantyn Valentinov
-     * 2018-03-17
-     * Additional states for arithmetic operators ( +, *, -, /, % ) and already mapped operators ( *, - )
-     */
     const STATE_ARITHMETIC_OP = 14;
     const STATE_FORDOUBLEMAP = 15;
 
@@ -84,25 +66,11 @@ class Lexer
         '`'  => self::STATE_JSON_LITERAL,
         '"'  => self::STATE_QUOTED_STRING,
         "'"  => self::STATE_STRING_LITERAL,
-
-        /**
-         * Added by Konstantyn Valentinov
-         * 2018-03-17
-         * Additional states for arithmetic operators ( +, /, % )
-         */
         '+'  => self::STATE_ARITHMETIC_OP,
         '/'  => self::STATE_ARITHMETIC_OP,
         '%'  => self::STATE_ARITHMETIC_OP,
-        
-        /**
-         * Added by Konstantyn Valentinov
-         * 2018-03-17
-         * Additional states for double map operators ( *, - )
-         */
-        '-'  => self::STATE_FORDOUBLEMAP,  //Added by Konstantyn Valentinov 2018-03-17
-        '*'  => self::STATE_FORDOUBLEMAP,  //Added by Konstantyn Valentinov 2018-03-17
-
-        // '-'  => self::STATE_NUMBER, //Removed by Konstantyn Valentinov 2018-03-17
+        '-'  => self::STATE_FORDOUBLEMAP,
+        '*'  => self::STATE_FORDOUBLEMAP,
         '0'  => self::STATE_NUMBER,
         '1'  => self::STATE_NUMBER,
         '2'  => self::STATE_NUMBER,
@@ -118,7 +86,6 @@ class Lexer
         "\n" => self::STATE_WHITESPACE,
         "\r" => self::STATE_WHITESPACE,
         '.'  => self::STATE_SINGLE_CHAR,
-        // '*'  => self::STATE_SINGLE_CHAR, //Removed by Konstantyn Valentinov 2018-03-17
         ']'  => self::STATE_SINGLE_CHAR,
         ','  => self::STATE_SINGLE_CHAR,
         ':'  => self::STATE_SINGLE_CHAR,
@@ -219,10 +186,6 @@ class Lexer
         '}' => self::T_RBRACE,
     ];
 
-    /**
-     * Konstantyn.V
-     * 2018-03-17
-     */
     /** @var array Map of arithmetic character tokens */
     private $arithmeticTokens = [
         '+' => self::T_PLUS,
@@ -266,31 +229,24 @@ class Lexer
 
             $state = self::$transitionTable[$current];
 
-            /**
-             * Konstantyn.V
-             * 2018-03-17
-             * As there are two states for * and -, determine each state for *, -
-             */
             if ($state === self::STATE_FORDOUBLEMAP) {
-                if ($current == '*') { //For < * > ops
-                    //get previous token type for determine match state
+                if ($current == '*') {
                     $prev_type = count($tokens) > 0 ? $tokens[count($tokens) - 1]['type'] : '';
 
-                    if ($prev_type != self::T_NUMBER || $prev_type == '') { //if previous type is number or it's the first character in expresssion
-                        $state = self::STATE_SINGLE_CHAR; // * is for single char ; foo.*
-                    } else { //if previous type is number
-                        $state = self::STATE_ARITHMETIC_OP; // * is arithmetic operator ; 3 * 5
+                    if ($prev_type != self::T_NUMBER || $prev_type == '') {
+                        $state = self::STATE_SINGLE_CHAR;
+                    } else {
+                        $state = self::STATE_ARITHMETIC_OP;
                     }
                 }
 
-                if ($current == '-') { //For < - > ops
-                    //get previous token type for determine match state
+                if ($current == '-') {
                     $prev_type = count($tokens) > 0 ? $tokens[count($tokens) - 1]['type'] : '';
 
-                    if ($prev_type != self::T_NUMBER || $prev_type == '') { //if previous type is number or it's the first character in expresssion
-                        $state = self::STATE_NUMBER; // * is for number ; foo[-1]
-                    } else { //if previous type is number
-                        $state = self::STATE_ARITHMETIC_OP; // * is arithmetic operator ; 3 - 5
+                    if ($prev_type != self::T_NUMBER || $prev_type == '') {
+                        $state = self::STATE_NUMBER;
+                    } else {
+                        $state = self::STATE_ARITHMETIC_OP;
                     }
                 }
             }
@@ -413,7 +369,7 @@ class Lexer
                 // Consume not equal
                 $tokens[] = $this->matchOr($chars, '!', '=', self::T_COMPARATOR, self::T_NOT);
 
-            } elseif ($state == self::STATE_ARITHMETIC_OP) { //Added by Konstantyn.V 2018-03-17
+            } elseif ($state == self::STATE_ARITHMETIC_OP) {
                 // Consume arithmetic operators like "+", "-", "*", etc.
                 $tokens[] = [
                     'type'  => $this->arithmeticTokens[$current],
