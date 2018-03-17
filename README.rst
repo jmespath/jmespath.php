@@ -29,6 +29,9 @@ using the ``mtdowling/jmespath.php`` package.
 - `JMESPath Grammar <http://jmespath.org/specification.html#grammar>`_
 - `JMESPath Python library <https://github.com/jmespath/jmespath.py>`_
 
+- Additional Features by legendary614
+  - Arismetic Operator in Lexer (+, -, *, /, %)
+
 PHP Usage
 =========
 

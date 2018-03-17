@@ -85,4 +85,11 @@ class LexerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $tokens[0]['value']);
         $this->assertEquals('literal', $tokens[0]['type']);
     }
+
+    public function testArithmetic()
+    {
+        $l = new Lexer();
+        $tokens = $l->tokenize('3+5*2/2+4%3-2*2');
+        $this->assertEquals('number', $tokens[0]['type']);
+    }
 }
