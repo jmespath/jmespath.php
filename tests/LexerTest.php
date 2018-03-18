@@ -89,34 +89,34 @@ class LexerTest extends \PHPUnit_Framework_TestCase
     public function inputProviderForArithmetic()
     {
         return array(
-            array('3 + 5', 1, 'plus'),
-            array('{ total: invoices[0] + 5 }', 7, 'plus'),
-            array('{ total: invoice.amount + invoice.tax }', 6, 'plus'),
+            array('3 + 5', 1, 'arithmetic'),
+            array('{ total: invoices[0] + 5 }', 7, 'arithmetic'),
+            array('{ total: invoice.amount + invoice.tax }', 6, 'arithmetic'),
             array('{ "foo+test@example.com": 10 }', 1, 'quoted_identifier'),
 
-            array('3 - 5', 1, 'minus'),
+            array('3 - 5', 1, 'arithmetic'),
             array('{ total: -3 + invoice.amout - invoice.tax }', 3, 'number'),
-            array('{ total: -3 + invoice.amout - invoice.tax }', 8, 'minus'),
-            array('{ total: invoice.amount - invoice.tax }', 6, 'minus'),
+            array('{ total: -3 + invoice.amout - invoice.tax }', 8, 'arithmetic'),
+            array('{ total: invoice.amount - invoice.tax }', 6, 'arithmetic'),
             array('{ total: invoices[-1] - 3}', 5, 'number'),
-            array('{ total: invoices[-1] - 3}', 7, 'minus'),
+            array('{ total: invoices[-1] - 3}', 7, 'arithmetic'),
 
-            array('3 * 5', 1, 'multiply'),
-            array('{ total: invoice.amount * invoice.tax }', 6, 'multiply'),
+            array('3 * 5', 1, 'arithmetic'),
+            array('{ total: invoice.amount * invoice.tax }', 6, 'arithmetic'),
             array('{ total: invoice.*.price[1] * invoice.tax }', 5, 'star'),
-            array('{ total: invoice.*.price[1] * invoice.tax }', 11, 'multiply'),
+            array('{ total: invoice.*.price[1] * invoice.tax }', 11, 'arithmetic'),
             array('[[*], *]', 2, 'star'),
             array('[[*], *]', 5, 'star'),
             array('foo.*', 2, 'star'),
-            array('`22` * 3', 1, 'multiply'),
+            array('`22` * 3', 1, 'arithmetic'),
 
-            array('3 / 5', 1, 'divide'),
-            array('{ total: invoice.amount / invoice.tax }', 6, 'divide'),
-            array('{ total: invoices[3] / invoice.tax }', 7, 'divide'),
+            array('3 / 5', 1, 'arithmetic'),
+            array('{ total: invoice.amount / invoice.tax }', 6, 'arithmetic'),
+            array('{ total: invoices[3] / invoice.tax }', 7, 'arithmetic'),
 
-            array('3 % 5', 1, 'mod'),
-            array('{ total: invoice.amount % invoice.tax }', 6, 'mod'),
-            array('{ total: invoices[2] % invoice.tax }', 7, 'mod'),
+            array('3 % 5', 1, 'arithmetic'),
+            array('{ total: invoice.amount % invoice.tax }', 6, 'arithmetic'),
+            array('{ total: invoices[2] % invoice.tax }', 7, 'arithmetic'),
         );
     }
 
