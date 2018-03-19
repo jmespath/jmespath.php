@@ -10,18 +10,29 @@ use JmesPath\SyntaxErrorException;
  */
 class ArithmeticTest extends \PHPUnit_Framework_TestCase
 {
-    public function testArithmetic()
+    public function inputProvider()
     {
-        $given = json_decode('{"foo": {"bar": {"baz": 3}}}', true);
+        return array(
+            array('foo.bar + foo.baz + foo.baz', 7),
+            array('foo.bar + foo.baz - foo.baz', 1),
+            // array('(foo.bar + foo.baz) - foo.baz', 7),
+            array('foo.bar * foo.baz', 3),
+            array('foo.baz / foo.bar', 3),
+            array('foo.bar % foo.baz', 1),
+        );
+    }
+
+    /**
+     * @dataProvider inputProvider
+     */
+    public function testArithmetic($expression, $result)
+    {
+        $failure = '';
         $given = json_decode('{"foo": {"bar": 1, "baz": 3} }', true);
-        $expression = 'foo.bar + foo.baz + foo.baz';
-        // $result = json_decode('{"baz": "correct"}', true);
-        
+                
         try {
             $runtime = new AstRuntime();
             $evalResult = $runtime($expression, $given);
-            var_dump($evalResult);
-
         } catch (\Exception $e) {
             $failed = $e instanceof SyntaxErrorException ? 'syntax' : 'runtime';
             $failureMsg = sprintf(
@@ -32,5 +43,34 @@ class ArithmeticTest extends \PHPUnit_Framework_TestCase
             );
             echo $failureMsg;
         }
+
+        $failure .= "\n --case {$expression}\n\n"
+            . "Expected: " . $this->prettyJson($result) . "\n\n";
+
+        $this->assertEquals(
+            $this->convertAssoc($result),
+            $this->convertAssoc($evalResult),
+            $failure
+        );
+    }
+
+    private function convertAssoc($data)
+    {
+        if ($data instanceof \stdClass) {
+            return $this->convertAssoc((array) $data);
+        } elseif (is_array($data)) {
+            return array_map([$this, 'convertAssoc'], $data);
+        } else {
+            return $data;
+        }
+    }
+
+    private function prettyJson($json)
+    {
+        if (defined('JSON_PRETTY_PRINT')) {
+            return json_encode($json, JSON_PRETTY_PRINT);
+        }
+
+        return json_encode($json);
     }
 }

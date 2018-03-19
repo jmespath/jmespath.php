@@ -210,6 +210,16 @@ class Parser
         ];
     }
 
+    private function led_arithmetic_multiply_or_divide_or_mod(array $left) {
+        $token = $this->token;
+        $this->next();
+        return [
+            'type'     => T::T_ARITHMETIC_MDM,
+            'value'    => $token['value'],
+            'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_MDM])]
+        ];
+    }
+
     private function led_lbracket(array $left)
     {
         static $nextTypes = [T::T_NUMBER => true, T::T_COLON => true, T::T_STAR => true];
