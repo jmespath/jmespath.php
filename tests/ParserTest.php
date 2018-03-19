@@ -16,7 +16,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
     public function testMatchesFirstTokens()
     {
         $p = new Parser(new Lexer());
-        $p->parse('.bar');
+        $result = $p->parse('.bar');
     }
 
     /**

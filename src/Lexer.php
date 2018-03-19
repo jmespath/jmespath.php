@@ -31,7 +31,8 @@ class Lexer
     const T_LITERAL = 'literal';
     const T_EOF = 'eof';
     const T_COMPARATOR = 'comparator';
-    const T_ARITHMETIC = 'arithmetic';
+    const T_ARITHMETIC_PM = 'arithmetic_plus_or_minus';
+    const T_ARITHMETIC_MDM = 'arithmetic_multiply_or_divide_or_mod';
 
     const STATE_IDENTIFIER = 0;
     const STATE_NUMBER = 1;
@@ -184,11 +185,11 @@ class Lexer
 
     /** @var array Map of arithmetic character tokens */
     private $arithmeticTokens = [
-        '+' => self::T_ARITHMETIC,
-        '-' => self::T_ARITHMETIC,
-        '*' => self::T_ARITHMETIC,
-        '/' => self::T_ARITHMETIC,
-        '%' => self::T_ARITHMETIC,
+        '+' => self::T_ARITHMETIC_PM,
+        '-' => self::T_ARITHMETIC_PM,
+        '*' => self::T_ARITHMETIC_MDM,
+        '/' => self::T_ARITHMETIC_MDM,
+        '%' => self::T_ARITHMETIC_MDM,
     ];
 
     /**

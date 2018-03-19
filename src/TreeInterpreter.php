@@ -121,7 +121,7 @@ class TreeInterpreter
 
             case 'current':
                 return $value;
-
+            
             case 'or':
                 $result = $this->dispatch($node['children'][0], $value);
                 return Utils::isTruthy($result)
@@ -182,6 +182,16 @@ class TreeInterpreter
                 } else {
                     return self::relativeCmp($left, $right, $node['value']);
                 }
+            case 'arithmetic_plus_or_minus':
+                $left = $this->dispatch($node['children'][0], $value);
+                $right = $this->dispatch($node['children'][1], $value);
+
+                if ($node['value'] == '+') {
+                    return $left+$right;
+                } elseif ($node['value'] == '-') {
+                    return $left-$right;
+                }
+                return 0;
 
             case 'condition':
                 return Utils::isTruthy($this->dispatch($node['children'][0], $value))

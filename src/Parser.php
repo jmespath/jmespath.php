@@ -34,6 +34,8 @@ class Parser
         T::T_OR                => 2,
         T::T_AND               => 3,
         T::T_COMPARATOR        => 5,
+        T::T_ARITHMETIC_PM     => 6,
+        T::T_ARITHMETIC_MDM    => 7,
         T::T_FLATTEN           => 9,
         T::T_STAR              => 20,
         T::T_FILTER            => 21,
@@ -196,6 +198,16 @@ class Parser
         } else {
             return $this->parseMultiSelectList();
         }
+    }
+
+    private function led_arithmetic_plus_or_minus(array $left) {
+        $token = $this->token;
+        $this->next();
+        return [
+            'type'     => T::T_ARITHMETIC_PM,
+            'value'    => $token['value'],
+            'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_PM])]
+        ];
     }
 
     private function led_lbracket(array $left)
