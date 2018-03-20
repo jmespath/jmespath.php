@@ -380,6 +380,66 @@ class TreeCompiler
             ->write('}');
     }
 
+    private function visit_arithmetic_plus_or_minus(array $node)
+    {
+        $value = $this->makeVar('val');
+        $a = $this->makeVar('left');
+        $b = $this->makeVar('right');
+
+        $this
+            ->write('// Visiting arithmetic_plus_or_minus node')
+            ->write('%s = $value;', $value)
+            ->dispatch($node['children'][0])
+            ->write('%s = $value;', $a)
+            ->write('$value = %s;', $value)
+            ->dispatch($node['children'][1])
+            ->write('%s = $value;', $b);
+
+        if ($node['value'] == '+') {
+            $this->write('$value = %s + %s;', $a, $b);
+        } elseif ($node['value'] == '-') {
+            $this->write('$value = %s + %s;', $a, $b);
+        } else {
+            $this->write(
+                '$value = (is_int(%s) || is_float(%s)) && (is_int(%s) || is_float(%s)) && %s %s %s;',
+                $a, $a, $b, $b, $a, $node['value'], $b
+            );
+        }
+
+        return $this;
+    }
+
+    private function visit_arithmetic_multiply_or_divide_or_mod(array $node)
+    {
+        $value = $this->makeVar('val');
+        $a = $this->makeVar('left');
+        $b = $this->makeVar('right');
+
+        $this
+            ->write('// Visiting arithmetic_multiply_or_divide_or_mod node')
+            ->write('%s = $value;', $value)
+            ->dispatch($node['children'][0])
+            ->write('%s = $value;', $a)
+            ->write('$value = %s;', $value)
+            ->dispatch($node['children'][1])
+            ->write('%s = $value;', $b);
+
+        if ($node['value'] == '*') {
+            $this->write('$value = %s * %s;', $a, $b);
+        } elseif ($node['value'] == '/') {
+            $this->write('$value = %s / %s;', $a, $b);
+        } elseif ($node['value'] == '%') {
+            $this->write('$value = %s % %s;', $a, $b);
+        } else {
+            $this->write(
+                '$value = (is_int(%s) || is_float(%s)) && (is_int(%s) || is_float(%s)) && %s %s %s;',
+                $a, $a, $b, $b, $a, $node['value'], $b
+            );
+        }
+
+        return $this;
+    }
+
     private function visit_comparator(array $node)
     {
         $value = $this->makeVar('val');

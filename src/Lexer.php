@@ -230,7 +230,7 @@ class Lexer
                 if ($current == '*') {
                     $prev_type = count($tokens) > 0 ? $tokens[count($tokens) - 1]['type'] : '';
 
-                    if ($prev_type == self::T_NUMBER || $prev_type == self::T_LITERAL || $prev_type == self::T_IDENTIFIER || $prev_type == self::T_RBRACKET) {
+                    if ($prev_type == self::T_NUMBER || $prev_type == self::T_LITERAL || $prev_type == self::T_IDENTIFIER || $prev_type == self::T_RBRACKET || $prev_type == self::T_RPAREN) {
                         $state = self::STATE_ARITHMETIC_OP;
                     } else {
                         $state = self::STATE_SINGLE_CHAR;
@@ -240,7 +240,7 @@ class Lexer
                 if ($current == '-') {
                     $prev_type = count($tokens) > 0 ? $tokens[count($tokens) - 1]['type'] : '';
 
-                    if ($prev_type == self::T_NUMBER || $prev_type == self::T_LITERAL || $prev_type == self::T_IDENTIFIER || $prev_type == self::T_RBRACKET) {
+                    if ($prev_type == self::T_NUMBER || $prev_type == self::T_LITERAL || $prev_type == self::T_IDENTIFIER || $prev_type == self::T_RBRACKET || $prev_type == self::T_RPAREN) {
                         $state = self::STATE_ARITHMETIC_OP;
                     } else {
                         $state = self::STATE_NUMBER;

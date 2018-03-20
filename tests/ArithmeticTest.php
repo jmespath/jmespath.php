@@ -5,34 +5,49 @@ use JmesPath\AstRuntime;
 use JmesPath\CompilerRuntime;
 use JmesPath\SyntaxErrorException;
 
-/**
- * @covers JmesPath\Parser
- */
 class ArithmeticTest extends \PHPUnit_Framework_TestCase
 {
-    public function inputProvider()
+    private static $path;
+
+    public static function setUpBeforeClass()
     {
-        return array(
-            array('foo.bar + foo.baz + foo.baz', 7),
-            array('foo.bar + foo.baz - foo.baz', 1),
-            // array('(foo.bar + foo.baz) - foo.baz', 7),
-            array('foo.bar * foo.baz', 3),
-            array('foo.baz / foo.bar', 3),
-            array('foo.bar % foo.baz', 1),
-        );
+        self::$path = __DIR__ . '/../../compiled';
+        array_map('unlink', glob(self::$path . '/jmespath_*.php'));
+    }
+
+    public static function tearDownAfterClass()
+    {
+        array_map('unlink', glob(self::$path . '/jmespath_*.php'));
     }
 
     /**
-     * @dataProvider inputProvider
+     * @dataProvider arithmeticProvider
      */
-    public function testArithmetic($expression, $result)
-    {
+    public function testPassesArithmetic(
+        $data,
+        $expression,
+        $result,
+        $error,
+        $file,
+        $suite,
+        $case,
+        $compiled,
+        $asAssoc
+    ) {
+        $evalResult = null;
+        $failed = false;
+        $failureMsg = '';
         $failure = '';
-        $given = json_decode('{"foo": {"bar": 1, "baz": 3} }', true);
-                
+        $compiledStr = '';
+
         try {
-            $runtime = new AstRuntime();
-            $evalResult = $runtime($expression, $given);
+            if ($compiled) {
+                $compiledStr = \JmesPath\Env::COMPILE_DIR . '=on ';
+                $runtime = new CompilerRuntime(self::$path);
+            } else {
+                $runtime = new AstRuntime();
+            }
+            $evalResult = $runtime($expression, $data);
         } catch (\Exception $e) {
             $failed = $e instanceof SyntaxErrorException ? 'syntax' : 'runtime';
             $failureMsg = sprintf(
@@ -41,17 +56,62 @@ class ArithmeticTest extends \PHPUnit_Framework_TestCase
                 $e->getFile(),
                 $e->getLine()
             );
-            echo $failureMsg;
         }
 
-        $failure .= "\n --case {$expression}\n\n"
+        $file = __DIR__ . '/arithmetic/' . $file . '.json';
+        $failure .= "\n{$compiledStr}php bin/jp.php --file {$file} --suite {$suite} --case {$case}\n\n"
             . "Expected: " . $this->prettyJson($result) . "\n\n";
+        $failure .= 'Associative? ' . var_export($asAssoc, true) . "\n\n";
+
+        if (!$error && $failed) {
+            $this->fail("Should not have failed\n{$failure}=> {$failed} {$failureMsg}");
+        } elseif ($error && !$failed) {
+            $this->fail("Should have failed\n{$failure}");
+        }
 
         $this->assertEquals(
             $this->convertAssoc($result),
             $this->convertAssoc($evalResult),
             $failure
         );
+    }
+
+    public function arithmeticProvider()
+    {
+        $cases = [];
+
+        $files = array_map(function ($f) {
+            return basename($f, '.json');
+        }, glob(__DIR__ . '/arithmetic/*.json'));
+
+        foreach ($files as $name) {
+            $contents = file_get_contents(__DIR__ . "/arithmetic/{$name}.json");
+            foreach ([true, false] as $asAssoc) {
+                $json = json_decode($contents, true);
+                $jsonObj = json_decode($contents);
+                foreach ($json as $suiteNumber => $suite) {
+                    $given = $asAssoc ? $suite['given'] : $jsonObj[$suiteNumber]->given;
+                    foreach ($suite['cases'] as $caseNumber => $case) {
+                        $caseData = [
+                            $given,
+                            $case['expression'],
+                            isset($case['result']) ? $case['result'] : null,
+                            isset($case['error']) ? $case['error'] : false,
+                            $name,
+                            $suiteNumber,
+                            $caseNumber,
+                            false,
+                            $asAssoc
+                        ];
+                        $cases[] = $caseData;
+                        $caseData[7] = true;
+                        $cases[] = $caseData;
+                    }
+                }
+            }
+        }
+
+        return $cases;
     }
 
     private function convertAssoc($data)
