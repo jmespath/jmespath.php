@@ -30,13 +30,15 @@ class Parser
         T::T_CURRENT           => 0,
         T::T_EXPREF            => 0,
         T::T_COLON             => 0,
+        
+        T::T_ARITHMETIC_PM     => 1,
+        T::T_ARITHMETIC_MDM    => 2,
+
         T::T_PIPE              => 1,
         T::T_OR                => 2,
         T::T_AND               => 3,
         T::T_COMPARATOR        => 5,
-        T::T_ARITHMETIC_PM     => 6,
-        T::T_ARITHMETIC_MDM    => 7,
-        T::T_FLATTEN           => 9,
+        T::T_FLATTEN           => 7,
         T::T_STAR              => 20,
         T::T_FILTER            => 21,
         T::T_DOT               => 40,
@@ -132,6 +134,16 @@ class Parser
         return ['type' => 'literal', 'value' => $token['value']];
     }
 
+    private function nud_number()
+    {
+        $token = $this->token;
+        $this->next();
+        if ($this->token['type'] != T::T_ARITHMETIC_PM && $this->token['type'] != T::T_ARITHMETIC_MDM) {
+            throw $this->syntax('not arithmetic');
+        }
+        return ['type' => 'number', 'value' => $token['value']];
+    }
+
     private function nud_expref()
     {
         $this->next();
@@ -203,21 +215,38 @@ class Parser
     private function led_arithmetic_plus_or_minus(array $left) {
         $token = $this->token;
         $this->next();
-        return [
-            'type'     => T::T_ARITHMETIC_PM,
-            'value'    => $token['value'],
-            'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_PM])]
-        ];
+
+        if ($this->token['type'] == T::T_NUMBER) {
+            return [
+                'type'     => T::T_ARITHMETIC_PM,
+                'value'    => $token['value'],
+                'children' => [$left, $this->parseNumberExpression()]
+            ];
+        } else {
+            return [
+                'type'     => T::T_ARITHMETIC_PM,
+                'value'    => $token['value'],
+                'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_PM])]
+            ];
+        }
     }
 
     private function led_arithmetic_multiply_or_divide_or_mod(array $left) {
         $token = $this->token;
         $this->next();
-        return [
-            'type'     => T::T_ARITHMETIC_MDM,
-            'value'    => $token['value'],
-            'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_MDM])]
-        ];
+        if ($this->token['type'] == T::T_NUMBER) {
+            return [
+                'type'     => T::T_ARITHMETIC_MDM,
+                'value'    => $token['value'],
+                'children' => [$left, $this->parseNumberExpression()]
+            ];
+        } else {
+            return [
+                'type'     => T::T_ARITHMETIC_MDM,
+                'value'    => $token['value'],
+                'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_MDM])]
+            ];
+        }
     }
 
     private function led_lbracket(array $left)
@@ -416,6 +445,17 @@ class Parser
             ]
         ];
     }
+
+    private function parseNumberExpression()
+    {
+        $value = $this->token['value'];
+        $this->next();
+
+        return [
+            'type' => 'number',
+            'value' => $value,
+        ];
+    }    
 
     /**
      * Parses an array index expression (e.g., [0], [1:2:3]

@@ -200,6 +200,11 @@ class TreeCompiler
         return $this->write('$value = %s;', var_export($node['value'], true));
     }
 
+    private function visit_number(array $node)
+    {
+        return $this->write('$value = %d;', var_export($node['value'], true));
+    }
+
     private function visit_pipe(array $node)
     {
         return $this
@@ -398,7 +403,7 @@ class TreeCompiler
         if ($node['value'] == '+') {
             $this->write('$value = %s + %s;', $a, $b);
         } elseif ($node['value'] == '-') {
-            $this->write('$value = %s + %s;', $a, $b);
+            $this->write('$value = %s - %s;', $a, $b);
         } else {
             $this->write(
                 '$value = (is_int(%s) || is_float(%s)) && (is_int(%s) || is_float(%s)) && %s %s %s;',

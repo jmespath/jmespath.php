@@ -5,13 +5,26 @@
                 1,
                 2,
                 3
-            ]
+            ],
+            "baz": {
+                "ttl": 1,
+                "tto": 2,
+                "ttx": 10
+            }
         }
     },
     "cases": [
         {
-            "expression": "foo.bar[1] * foo.bar[2]",
-            "result": 6
+            "expression": "9 - (2 * 3)",
+            "result": 3
+        },
+        {
+            "expression": "{ total: foo.bar[1] + foo.baz.tto }",
+            "result": { "total" : 4 }
+        },
+        {
+            "expression": "{ total: foo.bar[1] + foo.bar[1] * foo.baz.ttx }",
+            "result": { "total" : 22 }
         }
     ]
 }]
