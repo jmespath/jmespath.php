@@ -3,3 +3,5 @@ composer.lock
 phpunit.xml
 compiled
 artifacts/
+tests/ArithmeticTest.php
+tests/arithmetic
