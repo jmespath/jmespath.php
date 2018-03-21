@@ -138,7 +138,7 @@ class Parser
     {
         $token = $this->token;
         $this->next();
-        if ($this->token['type'] != T::T_ARITHMETIC_PM && $this->token['type'] != T::T_ARITHMETIC_MDM) {
+        if ($this->token['type'] != T::T_ARITHMETIC_PM && $this->token['type'] != T::T_ARITHMETIC_MDM && $this->token['type'] != T::T_EOF) {
             throw $this->syntax('not arithmetic');
         }
         return ['type' => 'number', 'value' => $token['value']];
@@ -216,37 +216,51 @@ class Parser
         $token = $this->token;
         $this->next();
 
-        if ($this->token['type'] == T::T_NUMBER) {
-            return [
-                'type'     => T::T_ARITHMETIC_PM,
-                'value'    => $token['value'],
-                'children' => [$left, $this->parseNumberExpression()]
-            ];
-        } else {
-            return [
-                'type'     => T::T_ARITHMETIC_PM,
-                'value'    => $token['value'],
-                'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_PM])]
-            ];
-        }
+        // if ($this->token['type'] == T::T_NUMBER) {
+        //     return [
+        //         'type'     => T::T_ARITHMETIC_PM,
+        //         'value'    => $token['value'],
+        //         'children' => [$left, $this->parseNumberExpression()]
+        //     ];
+        // } else {
+        //     return [
+        //         'type'     => T::T_ARITHMETIC_PM,
+        //         'value'    => $token['value'],
+        //         'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_PM])]
+        //     ];
+        // }
+        
+        
+        return [
+            'type'     => T::T_ARITHMETIC_PM,
+            'value'    => $token['value'],
+            'children' => [$left, $this->expr(0)]
+        ];
     }
 
     private function led_arithmetic_multiply_or_divide_or_mod(array $left) {
         $token = $this->token;
         $this->next();
-        if ($this->token['type'] == T::T_NUMBER) {
-            return [
-                'type'     => T::T_ARITHMETIC_MDM,
-                'value'    => $token['value'],
-                'children' => [$left, $this->parseNumberExpression()]
-            ];
-        } else {
-            return [
-                'type'     => T::T_ARITHMETIC_MDM,
-                'value'    => $token['value'],
-                'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_MDM])]
-            ];
-        }
+        // if ($this->token['type'] == T::T_NUMBER) {
+        //     return [
+        //         'type'     => T::T_ARITHMETIC_MDM,
+        //         'value'    => $token['value'],
+        //         'children' => [$left, $this->parseNumberExpression()]
+        //     ];
+        // } else {
+        //     return [
+        //         'type'     => T::T_ARITHMETIC_MDM,
+        //         'value'    => $token['value'],
+        //         'children' => [$left, $this->expr(self::$bp[T::T_ARITHMETIC_MDM])]
+        //     ];
+        // }
+
+
+        return [
+            'type'     => T::T_ARITHMETIC_MDM,
+            'value'    => $token['value'],
+            'children' => [$left, $this->expr(0)]
+        ];
     }
 
     private function led_lbracket(array $left)

@@ -15,7 +15,7 @@
     },
     "cases": [
         {
-            "expression": "9 - (2 * 3)",
+            "expression": "9 - 2 * 3",
             "result": 3
         },
         {
