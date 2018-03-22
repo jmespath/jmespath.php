@@ -6,6 +6,9 @@ namespace JmesPath;
  */
 class TreeInterpreter
 {
+    /**root data */
+    private $root = null;
+
     /** @var callable */
     private $fnDispatcher;
 
@@ -29,6 +32,7 @@ class TreeInterpreter
      */
     public function visit(array $node, $data)
     {
+        $this->root = $data;
         return $this->dispatch($node, $data);
     }
 
@@ -43,6 +47,8 @@ class TreeInterpreter
         $dispatcher = $this->fnDispatcher;
 
         switch ($node['type']) {
+            case 'root':
+                return $this->root;
 
             case 'field':
                 if (is_array($value) || $value instanceof \ArrayAccess) {
@@ -50,7 +56,7 @@ class TreeInterpreter
                 } elseif ($value instanceof \stdClass) {
                     return isset($value->{$node['value']}) ? $value->{$node['value']} : null;
                 }
-                return null;
+                return null;                      
 
             case 'subexpression':
                 return $this->dispatch(

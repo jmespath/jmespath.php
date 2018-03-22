@@ -117,6 +117,7 @@ class LexerTest extends \PHPUnit_Framework_TestCase
             array('3 % 5', 1, 'arithmetic_multiply_or_divide_or_mod'),
             array('{ total: invoice.amount % invoice.tax }', 6, 'arithmetic_multiply_or_divide_or_mod'),
             array('{ total: invoices[2] % invoice.tax }', 7, 'arithmetic_multiply_or_divide_or_mod'),
+            array('{ total: $.selected }', 3, 'root'),
         );
     }
 

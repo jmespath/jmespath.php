@@ -25,9 +25,10 @@ class TreeCompiler
             ->write('use JmesPath\\TreeInterpreter as Ti;')
             ->write('use JmesPath\\FnDispatcher as Fn;')
             ->write('use JmesPath\\Utils;')
-            ->write('')
+            ->write('$root = null;')
             ->write('function %s(Ti $interpreter, $value) {', $fnName)
             ->indent()
+                ->write('$root = $value;')
                 ->dispatch($ast)
                 ->write('')
                 ->write('return $value;')
@@ -147,6 +148,12 @@ class TreeCompiler
                 ->dispatch($node['children'][1])
                 ->outdent()
             ->write('}');
+    }
+
+    private function visit_root(array $node)
+    {
+        $this->write('$value = $root;');
+        return $this;
     }
 
     private function visit_field(array $node)

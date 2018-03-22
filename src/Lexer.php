@@ -33,6 +33,7 @@ class Lexer
     const T_COMPARATOR = 'comparator';
     const T_ARITHMETIC_PM = 'arithmetic_plus_or_minus';
     const T_ARITHMETIC_MDM = 'arithmetic_multiply_or_divide_or_mod';
+    const T_ROOT = 'root';
 
     const STATE_IDENTIFIER = 0;
     const STATE_NUMBER = 1;
@@ -50,6 +51,7 @@ class Lexer
     const STATE_AND = 13;
     const STATE_ARITHMETIC_OP = 14;
     const STATE_FORDOUBLEMAP = 15;
+    const STATE_ROOT = 16;
 
     /** @var array We know what token we are consuming based on each char */
     private static $transitionTable = [
@@ -82,6 +84,7 @@ class Lexer
         "\t" => self::STATE_WHITESPACE,
         "\n" => self::STATE_WHITESPACE,
         "\r" => self::STATE_WHITESPACE,
+        '$'  => self::STATE_SINGLE_CHAR,
         '.'  => self::STATE_SINGLE_CHAR,
         ']'  => self::STATE_SINGLE_CHAR,
         ','  => self::STATE_SINGLE_CHAR,
@@ -181,6 +184,7 @@ class Lexer
         ')' => self::T_RPAREN,
         '{' => self::T_LBRACE,
         '}' => self::T_RBRACE,
+        '$' => self::T_ROOT,
     ];
 
     /** @var array Map of arithmetic character tokens */
@@ -247,7 +251,7 @@ class Lexer
                     }
                 }
             }
-
+            
             if ($state === self::STATE_SINGLE_CHAR) {
 
                 // Consume simple tokens like ".", ",", "@", etc.
