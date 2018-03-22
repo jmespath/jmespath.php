@@ -144,7 +144,7 @@ class Parser
     {
         $token = $this->token;
         $this->next();
-        if ($this->token['type'] != T::T_ARITHMETIC_PM && $this->token['type'] != T::T_ARITHMETIC_MDM && $this->token['type'] != T::T_EOF) {
+        if ($this->token['type'] != T::T_ARITHMETIC_PM && $this->token['type'] != T::T_ARITHMETIC_MDM && $this->token['type'] != T::T_RPAREN && $this->token['type'] != T::T_RBRACE && $this->token['type'] != T::T_EOF) {
             throw $this->syntax('not arithmetic');
         }
         return ['type' => 'number', 'value' => $token['value']];

@@ -1,0 +1,45 @@
+[{
+    "given": {
+        "locations": [
+            {
+                "name": "Seattle",
+                "state": "WA"
+            },
+            {
+                "name": "New York",
+                "state": "NY"
+            },
+            {
+                "name": "Bellevue",
+                "state": "WA"
+            },
+            {
+                "name": "Olympia",
+                "state": "WA"
+            }
+        ],
+        "selected": "WA",
+        "active": "NY",
+        "glue": " "
+    },
+    "cases": [
+        {
+            "expression": "locations[?state == $.selected].name | sort(@) | {WashingtonCities: join(', ', @)}",
+            "result": {
+                "WashingtonCities": "Bellevue, Olympia, Seattle"
+            }
+        },
+        {
+            "expression": "locations[?state == 'WA'].name | sort(@) | {WashingtonCities: join($.glue, @)}",
+            "result": {
+                "WashingtonCities": "Bellevue Olympia Seattle"
+            }
+        },
+        {
+            "expression": "locations[?state == $.active].name | sort(@) | {WashingtonCities: join($.glue, @)}",
+            "result": {
+                "WashingtonCities": "New York"
+            }
+        }
+    ]
+}]

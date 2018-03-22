@@ -2,51 +2,57 @@
     "given": {
         "foo": {
             "bar": [
-                1,
-                2,
-                3
+                10,
+                100,
+                1000
             ],
-            "baz": {
-                "ttl": 1,
-                "tto": 2,
-                "ttx": 10
+            "two": 2,
+            "three": 3,
+            "four": 4,
+            "star": {
+                "val": 3
             }
-        }
+        },
+        "baz" : 3
     },
     "cases": [
         {
-            "expression": "9 - 2 * 3",
+            "expression": "3",
             "result": 3
+        },
+        {
+            "expression": "(9 - 3) * 5",
+            "result": 30
+        },
+        {
+            "expression": "5 + 3 * 2 + foo.bar[0] - foo.two",
+            "result": 19
+        },
+        {
+            "expression": "foo.two + foo.three % foo.two - foo.two",
+            "result": 1
+        },
+        {
+            "expression": "{ total: foo.two + foo.three * 5 * 2 / 10 }",
+            "result": { "total": 5 }
         }
     ]
-},
-{
-    "given": {
-        "locations": [{
-                "name": "Seattle",
-                "state": "WA"
-            },
-            {
-                "name": "New York",
-                "state": "NY"
-            },
-            {
-                "name": "Bellevue",
-                "state": "WA"
-            },
-            {
-                "name": "Olympia",
-                "state": "WA"
-            }
-        ],
-        "selected": "WA"
-    },
+},{
+    "given": [
+        {
+            "foo": 1
+        },
+        {
+            "foo": 2
+        },
+        {
+            "bar": 3
+        }
+    ],
     "cases": [
         {
-            "expression": "locations[?state == $.selected].name | sort(@) | {WashingtonCities: join(', ', @)}",
-            "result": {
-                "WashingtonCities": "Bellevue, Olympia, Seattle"
-            }
+            "expression": "([*].foo)[0] * ([*].foo)[1] + ([*].bar)[0]",
+            "result": 5
         }
     ]
 }]

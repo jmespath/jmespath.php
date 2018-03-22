@@ -441,7 +441,7 @@ class TreeCompiler
         } elseif ($node['value'] == '/') {
             $this->write('$value = %s / %s;', $a, $b);
         } elseif ($node['value'] == '%') {
-            $this->write('$value = %s % %s;', $a, $b);
+            $this->write('$value = %s %% %s;', $a, $b);
         } else {
             $this->write(
                 '$value = (is_int(%s) || is_float(%s)) && (is_int(%s) || is_float(%s)) && %s %s %s;',
