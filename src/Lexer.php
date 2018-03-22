@@ -51,7 +51,6 @@ class Lexer
     const STATE_AND = 13;
     const STATE_ARITHMETIC_OP = 14;
     const STATE_FORDOUBLEMAP = 15;
-    const STATE_ROOT = 16;
 
     /** @var array We know what token we are consuming based on each char */
     private static $transitionTable = [
