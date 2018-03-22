@@ -5,3 +5,4 @@ compiled
 artifacts/
 tests/ArithmeticTest.php
 tests/arithmetic
+.vscode
