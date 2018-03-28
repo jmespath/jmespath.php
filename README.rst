@@ -2,7 +2,7 @@
 jmespath.php
 ============
 
-JMESPath (pronounced "jaymz path") allows you to declaratively specify how to
+JMESPath (pronounced 'jaymz path') allows you to declaratively specify how to
 extract elements from a JSON document. *jmespath.php* allows you to use
 JMESPath in PHP applications with PHP data structures. It requires PHP 5.4 or
 greater and can be installed through `Composer <http://getcomposer.org/doc/00-intro.md>`_
@@ -29,8 +29,44 @@ using the ``mtdowling/jmespath.php`` package.
 - `JMESPath Grammar <http://jmespath.org/specification.html#grammar>`_
 - `JMESPath Python library <https://github.com/jmespath/jmespath.py>`_
 
-- Additional Features by legendary614
-  - Arismetic Operator in Lexer (+, -, *, /, %)
+Additional Features
+===================
+
+The following features have been added to this fork.
+
+Arithmetic Operators
+--------------------
+
+The following operators are supported: ``+`` (addition), ``-`` (substraction),
+``*`` (multiplication), ``/`` (division) and ``%`` (modulo).
+
+.. code-block:: php
+
+    JmesPath\search('(foo.bar.baz + foo.boo.baz) * 100', $data);
+    // Returns: 400
+
+Root reference
+--------------
+
+Use ``$`` to reference to the root of the data anywhere in an expression.
+
+.. code-block:: php
+
+    $expression = 'locations[?state == $.selected].name | sort(@) | [Cities: join($.glue, @)]';
+
+    $data = [
+        'locations' => [
+            ['name' => 'Seattle', 'state' => 'WA'],
+            ['name' => 'New York', 'state' => 'NY'],
+            ['name' => 'Bellevue', 'state' => 'WA'],
+            ['name' => 'Olympia', 'state' => 'WA']
+        ],
+        'selected' => 'WA',
+        'glue' => ', '
+    ];
+
+    JmesPath\search($expression, $data);
+    // Returns: [ 'Cities' => 'Bellevue, Olympia, Seattle' ]
 
 PHP Usage
 =========
@@ -100,7 +136,7 @@ Environment Variables
 ^^^^^^^^^^^^^^^^^^^^^
 
 You can utilize the CompilerRuntime in ``JmesPath\search()`` by setting
-the ``JP_PHP_COMPILE`` environment variable to "on" or to a directory
+the ``JP_PHP_COMPILE`` environment variable to 'on' or to a directory
 on disk used to store cached expressions.
 
 Testing
