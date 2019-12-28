@@ -2,11 +2,12 @@
 namespace JmesPath\Tests\Tree;
 
 use JmesPath\TreeCompiler;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers JmesPath\Tree\TreeCompiler
  */
-class TreeCompilerTest extends \PHPUnit_Framework_TestCase
+class TreeCompilerTest extends TestCase
 {
     public function testCreatesSourceCode()
     {

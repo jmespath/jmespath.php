@@ -3,8 +3,9 @@ namespace JmesPath\Tests;
 
 use JmesPath\Env;
 use JmesPath\CompilerRuntime;
+use PHPUnit\Framework\TestCase;
 
-class EnvTest extends \PHPUnit_Framework_TestCase
+class EnvTest extends TestCase
 {
     public function testSearchesInput()
     {

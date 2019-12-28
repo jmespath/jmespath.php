@@ -4,8 +4,9 @@ namespace JmesPath\Tests;
 use JmesPath\AstRuntime;
 use JmesPath\CompilerRuntime;
 use JmesPath\SyntaxErrorException;
+use PHPUnit\Framework\TestCase;
 
-class ComplianceTest extends \PHPUnit_Framework_TestCase
+class ComplianceTest extends TestCase
 {
     private static $path;
 

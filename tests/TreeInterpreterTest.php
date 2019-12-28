@@ -3,11 +3,12 @@ namespace JmesPath\Tests\Tree;
 
 use JmesPath\AstRuntime;
 use JmesPath\TreeInterpreter;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers JmesPath\Tree\TreeInterpreter
  */
-class TreeInterpreterTest extends \PHPUnit_Framework_TestCase
+class TreeInterpreterTest extends TestCase
 {
     public function testReturnsNullWhenMergingNonArray()
     {
