@@ -25,9 +25,11 @@ final class Env
     public static function search($expression, $data)
     {
         static $runtime;
+
         if (!$runtime) {
             $runtime = Env::createRuntime();
         }
+
         return $runtime($expression, $data);
     }
 
@@ -39,7 +41,7 @@ final class Env
      */
     public static function createRuntime()
     {
-        switch ($compileDir = getenv(self::COMPILE_DIR)) {
+        switch ($compileDir = self::getEnvVariable(self::COMPILE_DIR)) {
             case false: return new AstRuntime();
             case 'on': return new CompilerRuntime();
             default: return new CompilerRuntime($compileDir);
@@ -55,12 +57,35 @@ final class Env
     public static function cleanCompileDir()
     {
         $total = 0;
-        $compileDir = getenv(self::COMPILE_DIR) ?: sys_get_temp_dir();
+        $compileDir = self::getEnvVariable(self::COMPILE_DIR) ?: sys_get_temp_dir();
+
         foreach (glob("{$compileDir}/jmespath_*.php") as $file) {
             $total++;
             unlink($file);
         }
 
         return $total;
+    }
+
+    /**
+     * Reads an environment variable from $_SERVER, $_ENV or via getenv().
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    private static function getEnvVariable($name)
+    {
+        if (array_key_exists($name, $_SERVER)) {
+            return $_SERVER[$name];
+        }
+
+        if (array_key_exists($name, $_ENV)) {
+            return $_ENV[$name];
+        }
+
+        $value = getenv($name);
+
+        return $value === false ? null : $value;
     }
 }
