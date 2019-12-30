@@ -17,6 +17,7 @@
   },
 
   "require-dev": {
+    "composer/xdebug-handler": "^1.2",
     "phpunit/phpunit": "^4.8.36|^7.5.15"
   },
 

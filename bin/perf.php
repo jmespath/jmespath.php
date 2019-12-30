@@ -9,6 +9,10 @@ if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     throw new RuntimeException('Unable to locate autoload.php file.');
 }
 
+$xdebug = new \Composer\XdebugHandler\XdebugHandler('perf.php');
+$xdebug->check();
+unset($xdebug);
+
 $dir = isset($argv[1]) ? $argv[1] : __DIR__ . '/../tests/compliance/perf';
 is_dir($dir) or die('Dir not found: ' . $dir);
 // Warm up the runner
