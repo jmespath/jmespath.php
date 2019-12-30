@@ -61,6 +61,7 @@ class ComplianceTest extends TestCase
 
         $file = __DIR__ . '/compliance/' . $file . '.json';
         $failure .= "\n{$compiledStr}php bin/jp.php --file {$file} --suite {$suite} --case {$case}\n\n"
+            . "Result: " . $this->prettyJson($evalResult) . "\n\n"
             . "Expected: " . $this->prettyJson($result) . "\n\n";
         $failure .= 'Associative? ' . var_export($asAssoc, true) . "\n\n";
 

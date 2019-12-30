@@ -84,6 +84,10 @@
       "error": "invalid-type"
     },
     {
+      "expression": "avg(empty_list)",
+      "result": null
+    },
+    {
       "expression": "ceil(`1.2`)",
       "result": 2
     },
@@ -174,6 +178,10 @@
     {
       "expression": "length('abc')",
       "result": 3
+    },
+    {
+      "expression": "length('✓foo')",
+      "result": 4
     },
     {
       "expression": "length('')",
@@ -568,12 +576,12 @@
       "error": "invalid-arity"
     },
     {
-      "description": "function projection on single arg function",
+      "comment": "function projection on single arg function",
       "expression": "numbers[].to_string(@)",
       "result": ["-1", "3", "4", "5"]
     },
     {
-      "description": "function projection on single arg function",
+      "comment": "function projection on single arg function",
       "expression": "array[].to_number(@)",
       "result": [-1, 3, 4, 5, 100]
     }
@@ -591,7 +599,7 @@
   },
   "cases": [
     {
-      "description": "function projection on variadic function",
+      "comment": "function projection on variadic function",
       "expression": "foo[].not_null(f, e, d, c, b, a)",
       "result": ["b", "c", "d", "e", "f"]
     }
@@ -609,7 +617,7 @@
   },
   "cases": [
     {
-      "description": "sort by field expression",
+      "comment": "sort by field expression",
       "expression": "sort_by(people, &age)",
       "result": [
          {"age": 10, "age_str": "10", "bool": true, "name": 3},
@@ -630,7 +638,7 @@
       ]
     },
     {
-      "description": "sort by function expression",
+      "comment": "sort by function expression",
       "expression": "sort_by(people, &to_number(age_str))",
       "result": [
          {"age": 10, "age_str": "10", "bool": true, "name": 3},
@@ -641,7 +649,7 @@
       ]
     },
     {
-      "description": "function projection on sort_by function",
+      "comment": "function projection on sort_by function",
       "expression": "sort_by(people, &age)[].name",
       "result": [3, "a", "c", "b", "d"]
     },
@@ -690,6 +698,10 @@
       "result": {"age": 50, "age_str": "50", "bool": false, "name": "d"}
     },
     {
+      "expression": "max_by(`[]`, &age)",
+      "result": null
+    },
+    {
       "expression": "min_by(people, &age)",
       "result": {"age": 10, "age_str": "10", "bool": true, "name": 3}
     },
@@ -708,6 +720,10 @@
     {
       "expression": "min_by(people, &to_number(age_str))",
       "result": {"age": 10, "age_str": "10", "bool": true, "name": 3}
+    },
+    {
+      "expression": "min_by(`[]`, &age)",
+      "result": null
     }
   ]
 }, {
@@ -729,7 +745,7 @@
   },
   "cases": [
     {
-      "description": "stable sort order",
+      "comment": "stable sort order",
       "expression": "sort_by(people, &age)",
       "result": [
          {"age": 10, "order": "1"},
