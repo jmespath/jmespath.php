@@ -180,6 +180,10 @@
       "result": 3
     },
     {
+      "expression": "length('✓foo')",
+      "result": 4
+    },
+    {
       "expression": "length('')",
       "result": 0
     },
