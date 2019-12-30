@@ -19,6 +19,22 @@
             "result": "correct"
          },
          {
+            "expression": "foo . bar . baz",
+            "result": "correct"
+         },
+         {
+            "expression": "foo\t.\tbar\t.\tbaz",
+            "result": "correct"
+         },
+         {
+            "expression": "foo\r.\rbar\r.\rbaz",
+            "result": "correct"
+         },
+         {
+            "expression": "foo\r\n.\r\nbar\r\n.\r\nbaz",
+            "result": "correct"
+         },
+         {
             "expression": "foo.bar.baz.bad",
             "result": null
          },
