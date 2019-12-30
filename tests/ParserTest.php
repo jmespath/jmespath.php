@@ -3,11 +3,12 @@ namespace JmesPath\Tests;
 
 use JmesPath\Lexer;
 use JmesPath\Parser;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers JmesPath\Parser
  */
-class ParserTest extends \PHPUnit_Framework_TestCase
+class ParserTest extends TestCase
 {
     /**
      * @expectedException \JmesPath\SyntaxErrorException

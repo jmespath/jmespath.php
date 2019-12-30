@@ -3,11 +3,12 @@ namespace JmesPath\Tests;
 
 use JmesPath\Lexer;
 use JmesPath\SyntaxErrorException;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers JmesPath\Lexer
  */
-class LexerTest extends \PHPUnit_Framework_TestCase
+class LexerTest extends TestCase
 {
     public function inputProvider()
     {

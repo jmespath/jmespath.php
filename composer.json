@@ -17,7 +17,7 @@
   },
 
   "require-dev": {
-    "phpunit/phpunit": "~4.0"
+    "phpunit/phpunit": "^4.8.36|^7.5.15"
   },
 
   "autoload": {
@@ -31,7 +31,7 @@
 
   "extra": {
     "branch-alias": {
-      "dev-master": "2.0-dev"
+      "dev-master": "2.5-dev"
     }
   }
 }
