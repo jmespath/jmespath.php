@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.5.0 - 2019-12-30
+
+* Full support for PHP 7.0-7.4.
+* Fixed autoloading when run from within vendor folder.
+* Full multibyte (UTF-8) string support.
+
 ## 2.4.0 - 2016-12-03
 
 * Added support for floats when interpreting data.
