@@ -118,7 +118,9 @@ class FnDispatcher
     private function fn_max(array $args)
     {
         $this->validate('max', $args, [['array']]);
-        $fn = function ($a, $b) { return $a >= $b ? $a : $b; };
+        $fn = function ($a, $b) {
+            return $a >= $b ? $a : $b;
+        };
         return $this->reduce('max:0', $args[0], ['number', 'string'], $fn);
     }
 
@@ -137,7 +139,9 @@ class FnDispatcher
     private function fn_min(array $args)
     {
         $this->validate('min', $args, [['array']]);
-        $fn = function ($a, $b, $i) { return $i && $a <= $b ? $a : $b; };
+        $fn = function ($a, $b, $i) {
+            return $i && $a <= $b ? $a : $b;
+        };
         return $this->reduce('min:0', $args[0], ['number', 'string'], $fn);
     }
 
@@ -167,7 +171,9 @@ class FnDispatcher
     private function fn_sum(array $args)
     {
         $this->validate('sum', $args, [['array']]);
-        $fn = function ($a, $b) { return $a + $b; };
+        $fn = function ($a, $b) {
+            return $a + $b;
+        };
         return $this->reduce('sum:0', $args[0], ['number'], $fn);
     }
 

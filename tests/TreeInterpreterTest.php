@@ -13,15 +13,15 @@ class TreeInterpreterTest extends TestCase
     public function testReturnsNullWhenMergingNonArray()
     {
         $t = new TreeInterpreter();
-        $this->assertNull($t->visit(array(
+        $this->assertNull($t->visit([
             'type' => 'flatten',
-            'children' => array(
-                array('type' => 'literal', 'value' => 1),
-                array('type' => 'literal', 'value' => 1)
-            )
-        ), array(), array(
+            'children' => [
+                ['type' => 'literal', 'value' => 1],
+                ['type' => 'literal', 'value' => 1]
+            ]
+        ], [], [
             'runtime' => new AstRuntime()
-        )));
+        ]));
     }
 
     public function testWorksWithArrayObjectAsObject()

@@ -12,36 +12,36 @@ class LexerTest extends TestCase
 {
     public function inputProvider()
     {
-        return array(
-            array('0', 'number'),
-            array('1', 'number'),
-            array('2', 'number'),
-            array('3', 'number'),
-            array('4', 'number'),
-            array('5', 'number'),
-            array('6', 'number'),
-            array('7', 'number'),
-            array('8', 'number'),
-            array('9', 'number'),
-            array('-1', 'number'),
-            array('-1.5', 'number'),
-            array('109.5', 'number'),
-            array('.', 'dot'),
-            array('{', 'lbrace'),
-            array('}', 'rbrace'),
-            array('[', 'lbracket'),
-            array(']', 'rbracket'),
-            array(':', 'colon'),
-            array(',', 'comma'),
-            array('||', 'or'),
-            array('*', 'star'),
-            array('foo', 'identifier'),
-            array('"foo"', 'quoted_identifier'),
-            array('`true`', 'literal'),
-            array('`false`', 'literal'),
-            array('`null`', 'literal'),
-            array('`"true"`', 'literal')
-        );
+        return [
+            ['0', 'number'],
+            ['1', 'number'],
+            ['2', 'number'],
+            ['3', 'number'],
+            ['4', 'number'],
+            ['5', 'number'],
+            ['6', 'number'],
+            ['7', 'number'],
+            ['8', 'number'],
+            ['9', 'number'],
+            ['-1', 'number'],
+            ['-1.5', 'number'],
+            ['109.5', 'number'],
+            ['.', 'dot'],
+            ['{', 'lbrace'],
+            ['}', 'rbrace'],
+            ['[', 'lbracket'],
+            [']', 'rbracket'],
+            [':', 'colon'],
+            [',', 'comma'],
+            ['||', 'or'],
+            ['*', 'star'],
+            ['foo', 'identifier'],
+            ['"foo"', 'quoted_identifier'],
+            ['`true`', 'literal'],
+            ['`false`', 'literal'],
+            ['`null`', 'literal'],
+            ['`"true"`', 'literal']
+        ];
     }
 
     /**
