@@ -1,0 +1,7 @@
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/.travis.yml export-ignore
+/CHANGELOG.md export-ignore
+/Makefile export-ignore
+/phpunit.xml.dist export-ignore
+/tests export-ignore
