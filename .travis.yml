@@ -6,7 +6,6 @@ matrix:
   include:
     - php: hhvm-3.18
     - php: hhvm-3.24
-    - php: hhvm-3.30
 
 before_install:
   - travis_retry composer self-update --2
