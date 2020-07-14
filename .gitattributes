@@ -2,6 +2,7 @@
 
 /.gitignore export-ignore
 /.gitattributes export-ignore
+/.github export-ignore
 /.travis.yml export-ignore
 /CHANGELOG.md export-ignore
 /Makefile export-ignore
