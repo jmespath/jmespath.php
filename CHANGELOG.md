@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.8.0 - UPCOMING
+## 2.6.0 - 2020-07-31
 
 * Support for PHP 8.0.
 
