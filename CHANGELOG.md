@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.8.0 - UPCOMING
+
+* Support for PHP 8.0.
+
 ## 2.5.0 - 2019-12-30
 
 * Full support for PHP 7.0-7.4.
