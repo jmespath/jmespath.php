@@ -91,3 +91,33 @@ jobs:
 
       - name: Execute PHPUnit
         run: vendor\bin\phpunit.bat
+
+  test_hhvm:
+    name: HHVM ${{ matrix.hhvm }}
+    runs-on: ubuntu-16.04
+
+    strategy:
+      matrix:
+        hhvm: ["3.15", "3.18", "3.21", "3.24"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install HHVM
+        shell: bash
+        run: sudo .github/bin/hhvm.sh ${{ matrix.hhvm }}
+
+      - name: Install Composer
+        shell: bash
+        run: sudo .github/bin/composer.sh
+
+      - name: Install Dependencies
+        uses: nick-invision/retry@v1
+        with:
+          timeout_minutes: 5
+          max_attempts: 5
+          command: composer update --no-interaction --no-progress
+
+      - name: Execute PHPUnit
+        run: hhvm vendor/bin/phpunit
