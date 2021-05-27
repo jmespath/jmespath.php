@@ -98,7 +98,7 @@ jobs:
 
     strategy:
       matrix:
-        hhvm: ["3.15", "3.18", "3.21", "3.24", "3.27", "3.30"]
+        hhvm: ["3.15", "3.18", "3.21", "3.24"]
 
     steps:
       - name: Checkout Code
