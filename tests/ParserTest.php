@@ -48,4 +48,24 @@ class ParserTest extends TestCase
     {
         (new Parser(new Lexer()))->parse('');
     }
+
+    /**
+     * @dataProvider invalidExpressionProvider
+     * @expectedException \JmesPath\SyntaxErrorException
+     * @expectedExceptionMessag Syntax error at character 0
+     */
+    public function testHandlesInvalidExpressions(string $expr)
+    {
+        (new Parser(new Lexer()))->parse($expr);
+    }
+
+    public function invalidExpressionProvider()
+    {
+        return [
+            ['='],
+            ['<'],
+            ['>'],
+            ['|']
+        ];
+    }
 }
