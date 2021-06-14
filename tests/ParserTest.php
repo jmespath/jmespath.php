@@ -54,7 +54,7 @@ class ParserTest extends TestCase
      * @expectedException \JmesPath\SyntaxErrorException
      * @expectedExceptionMessag Syntax error at character 0
      */
-    public function testHandlesInvalidExpressions(string $expr)
+    public function testHandlesInvalidExpressions($expr)
     {
         (new Parser(new Lexer()))->parse($expr);
     }
