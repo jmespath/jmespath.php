@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.7.0 - UPCOMING
+## 2.7.0 - 2023-08-15
 
 * Fixed flattening in arrays starting with null
 * Drop support for HHVM and PHP earlier than 7.2.5.
