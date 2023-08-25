@@ -2,6 +2,7 @@
 
 ## 2.7.0 - UPCOMING
 
+* Fixed flattening in arrays starting with null
 * Drop support for HHVM and PHP earlier than 7.2.5.
 * Add support for PHP 8.1, 8.2, and 8.3.
 

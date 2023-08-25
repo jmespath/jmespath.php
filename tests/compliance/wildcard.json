@@ -456,5 +456,16 @@
             "result": [0, 0]
          }
      ]
+},
+{
+    "given": {
+        "foo": [null, 1, null, 2, null]
+    },
+    "cases": [
+        {
+            "expression": "foo[*]",
+            "result": [1, 2]
+        }
+    ]
 }
 ]
