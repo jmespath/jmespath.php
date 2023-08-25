@@ -3,6 +3,7 @@ namespace JmesPath\Tests;
 
 use JmesPath\Lexer;
 use JmesPath\Parser;
+use JmesPath\SyntaxErrorException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -11,61 +12,29 @@ use PHPUnit\Framework\TestCase;
 class ParserTest extends TestCase
 {
     /**
-     * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessage Syntax error at character 0
-     */
-    public function testMatchesFirstTokens()
-    {
-        $p = new Parser(new Lexer());
-        $p->parse('.bar');
-    }
-
-    /**
-     * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessage Syntax error at character 1
-     */
-    public function testThrowsSyntaxErrorForInvalidSequence()
-    {
-        $p = new Parser(new Lexer());
-        $p->parse('a,');
-    }
-
-    /**
-     * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessage Syntax error at character 2
-     */
-    public function testMatchesAfterFirstToken()
-    {
-        $p = new Parser(new Lexer());
-        $p->parse('a.,');
-    }
-
-    /**
-     * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessage Unexpected "eof" token
-     */
-    public function testHandlesEmptyExpressions()
-    {
-        (new Parser(new Lexer()))->parse('');
-    }
-
-    /**
      * @dataProvider invalidExpressionProvider
-     * @expectedException \JmesPath\SyntaxErrorException
-     * @expectedExceptionMessag Syntax error at character 0
      */
-    public function testHandlesInvalidExpressions($expr)
+    public function testHandlesInvalidExpressions(string $expr, string $msg): void
     {
-        (new Parser(new Lexer()))->parse($expr);
+        $p = new Parser(new Lexer());
+
+        $this->expectException(SyntaxErrorException::class);
+        $this->expectExceptionMessage($msg);
+
+        $p->parse($expr);
     }
 
-    public function invalidExpressionProvider()
+    public static function invalidExpressionProvider(): array
     {
         return [
-            ['='],
-            ['<'],
-            ['>'],
-            ['|']
+            ['', 'Unexpected "eof" token'],
+            ['.bar', 'Syntax error at character 0'],
+            ['a,', 'Syntax error at character 1'],
+            ['a.,', 'Syntax error at character 2'],
+            ['=', 'Syntax error at character 0'],
+            ['<', 'Syntax error at character 0'],
+            ['>', 'Syntax error at character 0'],
+            ['|', 'Syntax error at character 0']
         ];
     }
 }

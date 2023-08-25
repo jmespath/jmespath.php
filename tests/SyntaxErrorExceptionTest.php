@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
  */
 class SyntaxErrorExceptionTest extends TestCase
 {
-    public function testCreatesWithNoArray()
+    public function testCreatesWithNoArray(): void
     {
         $e = new SyntaxErrorException(
             'Found comma',
@@ -22,10 +22,10 @@ abc,def
    ^
 Found comma
 EOT;
-        $this->assertContains($expected, $e->getMessage());
+        $this->assertStringContainsString($expected, $e->getMessage());
     }
 
-    public function testCreatesWithArray()
+    public function testCreatesWithArray(): void
     {
         $e = new SyntaxErrorException(
             ['dot' => true, 'eof' => true],
@@ -38,6 +38,6 @@ abc,def
    ^
 Expected one of the following: dot, eof; found comma ","
 EOT;
-        $this->assertContains($expected, $e->getMessage());
+        $this->assertStringContainsString($expected, $e->getMessage());
     }
 }

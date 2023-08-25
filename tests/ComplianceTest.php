@@ -10,13 +10,13 @@ class ComplianceTest extends TestCase
 {
     private static $path;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         self::$path = __DIR__ . '/../../compiled';
         array_map('unlink', glob(self::$path . '/jmespath_*.php'));
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         array_map('unlink', glob(self::$path . '/jmespath_*.php'));
     }
@@ -34,7 +34,7 @@ class ComplianceTest extends TestCase
         $case,
         $compiled,
         $asAssoc
-    ) {
+    ): void {
         $evalResult = null;
         $failed = false;
         $failureMsg = '';
@@ -61,8 +61,8 @@ class ComplianceTest extends TestCase
 
         $file = __DIR__ . '/compliance/' . $file . '.json';
         $failure .= "\n{$compiledStr}php bin/jp.php --file {$file} --suite {$suite} --case {$case}\n\n"
-            . "Result: " . $this->prettyJson($evalResult) . "\n\n"
-            . "Expected: " . $this->prettyJson($result) . "\n\n";
+            . "Result: " . json_encode($evalResult, JSON_PRETTY_PRINT) . "\n\n"
+            . "Expected: " . json_encode($result, JSON_PRETTY_PRINT) . "\n\n";
         $failure .= 'Associative? ' . var_export($asAssoc, true) . "\n\n";
 
         if (!$error && $failed) {
@@ -78,7 +78,7 @@ class ComplianceTest extends TestCase
         );
     }
 
-    public function complianceProvider()
+    public static function complianceProvider(): array
     {
         $cases = [];
 
@@ -125,14 +125,5 @@ class ComplianceTest extends TestCase
         } else {
             return $data;
         }
-    }
-
-    private function prettyJson($json)
-    {
-        if (defined('JSON_PRETTY_PRINT')) {
-            return json_encode($json, JSON_PRETTY_PRINT);
-        }
-
-        return json_encode($json);
     }
 }

@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
  */
 class TreeCompilerTest extends TestCase
 {
-    public function testCreatesSourceCode()
+    public function testCreatesSourceCode(): void
     {
         $t = new TreeCompiler();
         $source = $t->visit(
@@ -17,8 +17,8 @@ class TreeCompilerTest extends TestCase
             'testing',
             'foo'
         );
-        $this->assertContains('<?php', $source);
-        $this->assertContains('$value = isset($value->{\'foo\'}) ? $value->{\'foo\'} : null;', $source);
-        $this->assertContains('$value = isset($value[\'foo\']) ? $value[\'foo\'] : null;', $source);
+        $this->assertStringContainsString('<?php', $source);
+        $this->assertStringContainsString('$value = isset($value->{\'foo\'}) ? $value->{\'foo\'} : null;', $source);
+        $this->assertStringContainsString('$value = isset($value[\'foo\']) ? $value[\'foo\'] : null;', $source);
     }
 }

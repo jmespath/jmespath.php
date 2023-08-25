@@ -7,20 +7,20 @@ use PHPUnit\Framework\TestCase;
 
 class EnvTest extends TestCase
 {
-    public function testSearchesInput()
+    public function testSearchesInput(): void
     {
         $data = ['foo' => 123];
         $this->assertEquals(123, Env::search('foo', $data));
         $this->assertEquals(123, Env::search('foo', $data));
     }
 
-    public function testSearchesWithFunction()
+    public function testSearchesWithFunction(): void
     {
         $data = ['foo' => 123];
         $this->assertEquals(123, \JmesPath\search('foo', $data));
     }
 
-    public function testCleansCompileDir()
+    public function testCleansCompileDir(): void
     {
         $dir = sys_get_temp_dir();
         $runtime = new CompilerRuntime($dir);

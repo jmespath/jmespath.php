@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 class UtilsTest extends TestCase
 {
-    public function typeProvider()
+    public static function typeProvider(): array
     {
         return [
             ['a', 'string'],
@@ -29,20 +29,19 @@ class UtilsTest extends TestCase
     /**
      * @dataProvider typeProvider
      */
-    public function testGetsTypes($given, $type)
+    public function testGetsTypes($given, string $type): void
     {
         $this->assertEquals($type, Utils::type($given));
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testThrowsForInvalidArg()
+    public function testThrowsForInvalidArg(): void
     {
+        $this->expectException(\InvalidArgumentException::class);
+
         Utils::type(new _TestClass());
     }
 
-    public function isArrayProvider()
+    public static function isArrayProvider(): array
     {
         return [
             [[], true],
@@ -58,12 +57,12 @@ class UtilsTest extends TestCase
     /**
      * @dataProvider isArrayProvider
      */
-    public function testChecksIfArray($given, $result)
+    public function testChecksIfArray($given, bool $result)
     {
         $this->assertSame($result, Utils::isArray($given));
     }
 
-    public function isObjectProvider()
+    public static function isObjectProvider(): array
     {
         return [
             [[], true],
@@ -79,12 +78,12 @@ class UtilsTest extends TestCase
     /**
      * @dataProvider isObjectProvider
      */
-    public function testChecksIfObject($given, $result)
+    public function testChecksIfObject($given, $result): void
     {
         $this->assertSame($result, Utils::isObject($given));
     }
 
-    public function testHasStableSort()
+    public function testHasStableSort(): void
     {
         $data = [new _TestStr(), new _TestStr(), 0, 10, 2];
         $result = Utils::stableSort($data, function ($a, $b) {
@@ -99,14 +98,14 @@ class UtilsTest extends TestCase
         $this->assertEquals(0, $result[4]);
     }
 
-    public function testSlicesArrays()
+    public function testSlicesArrays(): void
     {
         $this->assertEquals([3, 2, 1], Utils::slice([1, 2, 3], null, null, -1));
         $this->assertEquals([1, 3], Utils::slice([1, 2, 3], null, null, 2));
         $this->assertEquals([2, 3], Utils::slice([1, 2, 3], 1));
     }
 
-    public function testSlicesStrings()
+    public function testSlicesStrings(): void
     {
         $this->assertEquals('cba', Utils::slice('abc', null, null, -1));
         $this->assertEquals('ac', Utils::slice('abc', null, null, 2));
@@ -116,15 +115,16 @@ class UtilsTest extends TestCase
 
 class _TestClass implements \ArrayAccess
 {
-    public function offsetExists($offset) {}
+    public function offsetExists($offset): bool {}
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset) {}
-    public function offsetSet($offset, $value) {}
-    public function offsetUnset($offset) {}
+    public function offsetSet($offset, $value): void {}
+    public function offsetUnset($offset): void {}
 }
 
 class _TestStr
 {
-    public function __toString()
+    public function __toString(): string
     {
         return '100';
     }

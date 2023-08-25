@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 class fnDispatcherTest extends TestCase
 {
-    public function testConvertsToString()
+    public function testConvertsToString(): void
     {
         $fn = new FnDispatcher();
         $this->assertEquals('foo', $fn('to_string', ['foo']));
@@ -22,7 +22,7 @@ class fnDispatcherTest extends TestCase
 
 class _TestStringClass
 {
-    public function __toString()
+    public function __toString(): string
     {
         return 'foo';
     }
@@ -30,12 +30,12 @@ class _TestStringClass
 
 class _TestJsonStringClass implements \JsonSerializable
 {
-    public function __toString()
+    public function __toString(): string
     {
         return 'no!';
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): string
     {
         return 'foo';
     }

@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
  */
 class TreeInterpreterTest extends TestCase
 {
-    public function testReturnsNullWhenMergingNonArray()
+    public function testReturnsNullWhenMergingNonArray(): void
     {
         $t = new TreeInterpreter();
         $this->assertNull($t->visit([
@@ -24,7 +24,7 @@ class TreeInterpreterTest extends TestCase
         ]));
     }
 
-    public function testWorksWithArrayObjectAsObject()
+    public function testWorksWithArrayObjectAsObject(): void
     {
         $runtime = new AstRuntime();
         $this->assertEquals('baz', $runtime('foo.bar', new \ArrayObject([
@@ -32,7 +32,7 @@ class TreeInterpreterTest extends TestCase
         ])));
     }
 
-    public function testWorksWithArrayObjectAsArray()
+    public function testWorksWithArrayObjectAsArray(): void
     {
         $runtime = new AstRuntime();
         $this->assertEquals('baz', $runtime('foo[0].bar', new \ArrayObject([
@@ -40,7 +40,7 @@ class TreeInterpreterTest extends TestCase
         ])));
     }
 
-    public function testWorksWithArrayProjections()
+    public function testWorksWithArrayProjections(): void
     {
         $runtime = new AstRuntime();
         $this->assertEquals(
@@ -55,7 +55,7 @@ class TreeInterpreterTest extends TestCase
         );
     }
 
-    public function testWorksWithObjectProjections()
+    public function testWorksWithObjectProjections(): void
     {
         $runtime = new AstRuntime();
         $this->assertEquals(

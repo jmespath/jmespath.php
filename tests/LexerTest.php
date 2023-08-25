@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
  */
 class LexerTest extends TestCase
 {
-    public function inputProvider()
+    public static function inputProvider(): array
     {
         return [
             ['0', 'number'],
@@ -47,14 +47,14 @@ class LexerTest extends TestCase
     /**
      * @dataProvider inputProvider
      */
-    public function testTokenizesInput($input, $type)
+    public function testTokenizesInput(string $input, string $type): void
     {
         $l = new Lexer();
         $tokens = $l->tokenize($input);
         $this->assertEquals($tokens[0]['type'], $type);
     }
 
-    public function testTokenizesJsonLiterals()
+    public function testTokenizesJsonLiterals(): void
     {
         $l = new Lexer();
         $tokens = $l->tokenize('`null`, `false`, `true`, `"abc"`, `"ab\\"c"`,'
@@ -69,7 +69,7 @@ class LexerTest extends TestCase
         $this->assertSame(-0.5, $tokens[14]['value']);
     }
 
-    public function testTokenizesJsonNumbers()
+    public function testTokenizesJsonNumbers(): void
     {
         $l = new Lexer();
         $tokens = $l->tokenize('`10`, `1.2`, `-10.20e-10`, `1.2E+2`');
@@ -79,7 +79,7 @@ class LexerTest extends TestCase
         $this->assertEquals(120, $tokens[6]['value']);
     }
 
-    public function testCanWorkWithElidedJsonLiterals()
+    public function testCanWorkWithElidedJsonLiterals(): void
     {
         $l = new Lexer();
         $tokens = $l->tokenize('`foo`');
