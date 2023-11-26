@@ -20,6 +20,7 @@ class Lexer
     const T_RBRACKET = 'rbracket';
     const T_FLATTEN = 'flatten';
     const T_IDENTIFIER = 'identifier';
+    const T_VARIABLE = 'variable';
     const T_NUMBER = 'number';
     const T_QUOTED_IDENTIFIER = 'quoted_identifier';
     const T_UNKNOWN = 'unknown';
@@ -46,6 +47,7 @@ class Lexer
     const STATE_EQ = 11;
     const STATE_NOT = 12;
     const STATE_AND = 13;
+    const STATE_VARIABLE = 14;
 
     /** @var array We know what token we are consuming based on each char */
     private static $transitionTable = [
@@ -84,6 +86,7 @@ class Lexer
         ')'  => self::STATE_SINGLE_CHAR,
         '{'  => self::STATE_SINGLE_CHAR,
         '}'  => self::STATE_SINGLE_CHAR,
+        '$'  => self::STATE_VARIABLE,
         '_'  => self::STATE_IDENTIFIER,
         'A'  => self::STATE_IDENTIFIER,
         'B'  => self::STATE_IDENTIFIER,
@@ -223,17 +226,30 @@ class Lexer
             } elseif ($state === self::STATE_IDENTIFIER) {
 
                 // Consume identifiers
-                $start = key($chars);
-                $buffer = '';
-                do {
-                    $buffer .= $current;
-                    $current = next($chars);
-                } while ($current !== false && isset($this->validIdentifier[$current]));
                 $tokens[] = [
                     'type'  => self::T_IDENTIFIER,
-                    'value' => $buffer,
-                    'pos'   => $start
+                    'pos'   => key($chars),
+                    'value' => $this->consumeIdentifier($chars)
                 ];
+
+            } elseif ($state === self::STATE_VARIABLE) {
+
+                // Consume variable reference
+                $start = key($chars);
+                $actual = next($chars);
+                if (self::$transitionTable[$actual] === self::STATE_IDENTIFIER) {
+                    $tokens[] = [
+                        'type'  => self::T_VARIABLE,
+                        'pos'   => $start,
+                        'value' => $this->consumeIdentifier($chars)
+                    ];
+                } else {
+                    $tokens[] = [
+                        'type'  => self::T_UNKNOWN,
+                        'pos'   => $start,
+                        'value' => $current
+                    ];
+                }
 
             } elseif ($state === self::STATE_WHITESPACE) {
 
@@ -415,6 +431,27 @@ class Lexer
         next($chars);
 
         return ['type' => $type, 'value' => $buffer, 'pos' => $position];
+    }
+
+    /**
+     * Consumes input until any character is found that is invalid in an identifier.
+     *
+     * It is assumed the first character in the input has already been recognized as
+     * a valid first character for an identifier.
+     *
+     * @param &array $chars Reference to the input to be consumed
+     *
+     * @return string Returns the consumed identifier
+     */
+    private function consumeIdentifier(array &$chars): string {
+        $current = current($chars);
+        $buffer = '';
+        do {
+            $buffer .= $current;
+            $current = next($chars);
+        } while ($current !== false && isset($this->validIdentifier[$current]));
+
+        return $buffer;
     }
 
     /**
