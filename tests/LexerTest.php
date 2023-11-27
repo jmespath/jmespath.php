@@ -35,6 +35,8 @@ class LexerTest extends TestCase
             [',', 'comma'],
             ['||', 'or'],
             ['*', 'star'],
+            ['=', 'assign'],
+            ['==', 'comparator'],
             ['$', 'unknown'],
             ['foo', 'identifier'],
             ['$foo', 'variable'],

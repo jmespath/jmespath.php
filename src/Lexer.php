@@ -32,6 +32,7 @@ class Lexer
     const T_LITERAL = 'literal';
     const T_EOF = 'eof';
     const T_COMPARATOR = 'comparator';
+    const T_ASSIGN = 'assign';
 
     const STATE_IDENTIFIER = 0;
     const STATE_NUMBER = 1;
@@ -333,7 +334,7 @@ class Lexer
             } elseif ($state === self::STATE_EQ) {
 
                 // Consume equals
-                $tokens[] = $this->matchOr($chars, '=', '=', self::T_COMPARATOR, self::T_UNKNOWN);
+                $tokens[] = $this->matchOr($chars, '=', '=', self::T_COMPARATOR, self::T_ASSIGN);
 
             } elseif ($state == self::STATE_AND) {
 
