@@ -100,6 +100,73 @@ You can utilize the CompilerRuntime in ``JmesPath\search()`` by setting
 the ``JP_PHP_COMPILE`` environment variable to "on" or to a directory
 on disk used to store cached expressions.
 
+Custom functions
+----------------
+
+The JMESPath language has numerous
+`built-in functions
+<http://jmespath.org/specification.html#built-in-functions>`__, but it is
+also possible to add your own custom functions.  Keep in mind that
+custom function support in jmespath.php is experimental and the API may
+change based on feedback.
+
+**If you have a custom function that you've found useful, consider submitting
+it to jmespath.site and propose that it be added to the JMESPath language.**
+You can submit proposals
+`here <https://github.com/jmespath/jmespath.site/issues>`__.
+
+To create custom functions:
+
+* Create any `callable <http://php.net/manual/en/language.types.callable.php>`_
+  structure (loose function or class with functions) that implement your logic.
+* Call ``FnDispatcher::registerCustomFunction()`` to register your function.
+  Be aware that these ``registerCustomFunction()`` calls must be in a global place if you want
+  to have your functions always available.
+
+Here is an example with a class instance:
+
+.. code-block:: php
+
+    // Create a class that contains your function
+    class CustomFunctionHandler
+    {
+        public function double($args)
+        {
+            return $args[0] * 2;
+        }
+    }
+    FnDispatcher::registerCustomFunction('myFunction', [new CustomFunctionHandler(), 'double'])
+
+An example with a runtime function:
+
+.. code-block:: php
+
+    $callbackFunction = function ($args) {
+        return $args[0];
+    };
+    FnDispatcher::registerCustomFunction('myFunction', $callbackFunction);
+
+As you can see, you can use all the possible ``callable`` structures as defined in the PHP documentation.
+All those examples will lead to a function ``myFunction()`` that can be used in your expressions.
+
+Type specification
+~~~~~~~~~~~~~~~~~~
+
+The ``FnDispatcher::registerCustomFunction()`` function accepts an
+optional third parameter that allows you to pass an array of type specifications
+for your custom function. If you pass this, the types (and count) of the passed
+parameters in the expression will be validated before your ``callable`` is executed.
+
+Example:
+
+.. code-block:: php
+
+    FnDispatcher::registerCustomFunction('myFunction', $callbackFunction, [['number'], ['string']]);
+
+Defines that your function expects exactly 2 parameters, the first being a ``number`` and
+the second being a ``string``. If anything else is passed in the call to your function,
+a ``\RuntimeException`` will be thrown.
+
 Testing
 =======
 
