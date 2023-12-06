@@ -26,7 +26,7 @@ class TreeCompiler
             ->write('use JmesPath\\FnDispatcher as Fd;')
             ->write('use JmesPath\\Utils;')
             ->write('')
-            ->write('function %s(Ti $interpreter, $value) {', $fnName)
+            ->write('function %s(Ti $interpreter, $value, array $bindings = []) {', $fnName)
             ->indent()
                 ->dispatch($ast)
                 ->write('')
@@ -407,6 +407,50 @@ class TreeCompiler
         }
 
         return $this;
+    }
+
+    private function visit_let(array $node) {
+        return $this
+            ->write('$value = (function() use ($value, $bindings) {')
+            ->indent()
+            ->write('$newBindings = [];')
+            ->dispatch($node['children'][0])
+            ->write('$bindings = array_merge($bindings, $newBindings);')
+            ->dispatch($node['children'][1])
+            ->write('return $value;')
+            ->outdent()
+            ->write('})();');
+    }
+
+    private function visit_bindings(array $node) {
+        $value = $this->makeVar('prev');
+        $this
+            ->write('if ($value !== null) {')
+            ->indent()
+            ->write('%s = $value;', $value);
+
+        $first = true;
+        foreach ($node['children'] as $child) {
+            if (!$first) {
+                $this->write('$value = %s;', $value);
+            }
+            $first = false;
+            $this->dispatch($child);
+        }
+
+        return $this
+            ->write('$value = %s;', $value)
+            ->outdent()
+            ->write('}');
+    }
+
+    private function visit_variable_binding(array $node) {
+        return $this->dispatch($node['children'][0])
+            ->write("\$newBindings['{$node['value']}'] = \$value;");
+    }
+
+    private function visit_variable(array $node) {
+        return $this->write("\$value = \$bindings['{$node['value']}'];");
     }
 
     /** @internal */
