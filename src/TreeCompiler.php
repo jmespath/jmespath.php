@@ -450,7 +450,13 @@ class TreeCompiler
     }
 
     private function visit_variable(array $node) {
-        return $this->write("\$value = \$bindings['{$node['value']}'];");
+        return $this
+            ->write("if (!array_key_exists('{$node['value']}', \$bindings)) {")
+            ->indent()
+            ->write('throw new \\RuntimeException("Undefined variable: \\${$node[\'value\']}");')
+            ->outdent()
+            ->write('}')
+            ->write("\$value = \$bindings['{$node['value']}'];");
     }
 
     /** @internal */
