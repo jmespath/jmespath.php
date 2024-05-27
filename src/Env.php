@@ -76,11 +76,11 @@ final class Env
      */
     private static function getEnvVariable($name)
     {
-        if (array_key_exists($name, $_SERVER)) {
+        if (!empty($_SERVER) && array_key_exists($name, $_SERVER)) {
             return $_SERVER[$name];
         }
 
-        if (array_key_exists($name, $_ENV)) {
+        if (!empty($_ENV) && array_key_exists($name, $_ENV)) {
             return $_ENV[$name];
         }
 
