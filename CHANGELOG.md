@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.8.0 - UPCOMING
+## 2.8.0 - 2024-09-04
 
 * Add support for PHP 8.4.
 
