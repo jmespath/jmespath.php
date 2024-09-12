@@ -22,6 +22,7 @@ class Parser
         T::T_EOF               => 0,
         T::T_QUOTED_IDENTIFIER => 0,
         T::T_IDENTIFIER        => 0,
+        T::T_VARIABLE          => 0,
         T::T_RBRACKET          => 0,
         T::T_RPAREN            => 0,
         T::T_COMMA             => 0,
@@ -105,6 +106,11 @@ class Parser
     private function nud_identifier()
     {
         $token = $this->token;
+
+        if ($token['value'] === 'let' && $this->lookahead() === T::T_VARIABLE) {
+            return $this->parseLetExpression();
+        }
+
         $this->next();
         return ['type' => 'field', 'value' => $token['value']];
     }
@@ -115,6 +121,14 @@ class Parser
         $this->next();
         $this->assertNotToken(T::T_LPAREN);
         return ['type' => 'field', 'value' => $token['value']];
+    }
+
+    private function nud_variable()
+    {
+        $token = $this->token;
+
+        $this->next();
+        return $token;
     }
 
     private function nud_current()
@@ -459,6 +473,42 @@ class Parser
         $this->next();
 
         return ['type' => 'multi_select_list', 'children' => $nodes];
+    }
+
+    private function parseLetExpression()
+    {
+        static $validVariable = [ T::T_VARIABLE => true ];
+        static $validAssign = [ T::T_ASSIGN => true ];
+
+        $bindings = [];
+
+        do {
+            $this->next($validVariable);
+            $variable = $this->token['value'];
+
+            $this->next($validAssign);
+            $this->next();
+
+            $bindings[] = [
+                'type'     => 'variable_binding',
+                'value'    => $variable,
+                'children' => [ $this->expr() ]
+            ];
+        } while ($this->token['type'] === T::T_COMMA);
+
+        if ($this->token['type'] !== T::T_IDENTIFIER || $this->token['value'] !== 'in') {
+            $this->syntax("Expected ',' or 'in'");
+        }
+
+        $this->next();
+
+        return [
+            'type' => 'let',
+            'children' => [
+                [ 'type' => 'bindings', 'children' => $bindings ],
+                $this->expr()
+            ]
+        ];
     }
 
     private function syntax($msg)
