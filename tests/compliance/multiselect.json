@@ -394,5 +394,43 @@
           "result": null
         }
     ]
+},
+{
+    "given": {
+      "people": [
+        {
+          "age": 20,
+          "other": "foo",
+          "name": "Bob"
+        },
+        {
+          "age": 25,
+          "other": "bar",
+          "name": "Fred"
+        },
+        {
+          "age": 30,
+          "other": "baz",
+          "name": "George"
+        }
+      ]
+    },
+    "cases": [
+        {
+          "comment": "Filter and Multiselect access",
+          "expression": "people[?age >= `25`].{name: name}",
+          "result": [{"name": "Fred"}, {"name": "George"}]
+        },
+        {
+         "comment": "Filter and Multiselect access",
+         "expression": "people[?age >= `25`].{name: name}[0]",
+         "result": {"name": "Fred"}
+        },
+        {
+         "comment": "Filter and Multiselect access",
+         "expression": "people[?age >= `25`].{name: name}[0].name",
+         "result": "Fred"
+        }
+    ]
 }
 ]
