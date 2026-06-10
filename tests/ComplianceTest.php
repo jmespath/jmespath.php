@@ -12,13 +12,17 @@ class ComplianceTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$path = __DIR__ . '/../../compiled';
-        array_map('unlink', glob(self::$path . '/jmespath_*.php'));
+        self::$path = sys_get_temp_dir() . '/jmespath-compliance-compiled';
+        if (!is_dir(self::$path)) {
+            mkdir(self::$path, 0777, true);
+        }
+        array_map('unlink', glob(self::$path . '/jmespath_*.php') ?: []);
     }
 
     public static function tearDownAfterClass(): void
     {
-        array_map('unlink', glob(self::$path . '/jmespath_*.php'));
+        array_map('unlink', glob(self::$path . '/jmespath_*.php') ?: []);
+        @rmdir(self::$path);
     }
 
     /**
@@ -43,12 +47,14 @@ class ComplianceTest extends TestCase
 
         try {
             if ($compiled) {
-                $compiledStr = \JmesPath\Env::COMPILE_DIR . '=on ';
+                $compiledStr = \JmesPath\Env::COMPILE_DIR . '=' . self::$path . ' ';
                 $runtime = new CompilerRuntime(self::$path);
             } else {
                 $runtime = new AstRuntime();
             }
             $evalResult = $runtime($expression, $data);
+        } catch (\PHPUnit\Exception $e) {
+            throw $e;
         } catch (\Exception $e) {
             $failed = $e instanceof SyntaxErrorException ? 'syntax' : 'runtime';
             $failureMsg = sprintf(
@@ -69,6 +75,11 @@ class ComplianceTest extends TestCase
             $this->fail("Should not have failed\n{$failure}=> {$failed} {$failureMsg}");
         } elseif ($error && !$failed) {
             $this->fail("Should have failed\n{$failure}");
+        } elseif ($error) {
+            $expectedKind = $error === 'syntax' ? 'syntax' : 'runtime';
+            if ($failed !== $expectedKind) {
+                $this->fail("Expected {$expectedKind} ({$error}) but got {$failed}\n{$failure}");
+            }
         }
 
         $this->assertEquals(
