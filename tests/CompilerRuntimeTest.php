@@ -29,7 +29,7 @@ class CompilerRuntimeTest extends TestCase
     {
         $this->assertSame(
             'jmespath_' . md5(
-                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':3:foo.bar'
+                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':4:foo.bar'
             ),
             CompilerRuntime::functionName('foo.bar')
         );
@@ -63,6 +63,41 @@ class CompilerRuntimeTest extends TestCase
         try {
             foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
                 $this->assertTrue($runtime('`1` == `1.0`', null));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
+    public function testRuntimesStopProjectionsAtMultiSelectHashes(): void
+    {
+        $dir = $this->createTempDir();
+        $data = [
+            'people' => [
+                ['age' => 20, 'name' => 'Bob'],
+                ['age' => 25, 'name' => 'Fred'],
+                ['age' => 30, 'name' => 'George'],
+            ],
+        ];
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertSame(
+                    [['name' => 'Fred'], ['name' => 'George']],
+                    $runtime('people[?age >= `25`].{name: name}', $data)
+                );
+                $this->assertSame(
+                    ['name' => 'Fred'],
+                    $runtime('people[?age >= `25`].{name: name}[0]', $data)
+                );
+                $this->assertSame(
+                    'Fred',
+                    $runtime('people[?age >= `25`].{name: name}[0].name', $data)
+                );
+                $this->assertNull($runtime('people[?age >= `25`].{name: name}.name', $data));
+
+                // Multi-select lists already ended projections; pin the symmetry.
+                $this->assertSame(['Bob'], $runtime('people[*].[name][0]', $data));
             }
         } finally {
             $this->removeTempDir($dir);

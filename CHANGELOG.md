@@ -7,6 +7,7 @@
 * Fixed reverse() and string slicing to operate on UTF-8 characters rather than bytes.
 * Fixed slicing of array-like (ArrayAccess + Countable) values.
 * Fixed equality and contains() to use JSON semantics, e.g. 1 == 1.0 is now true.
+* Fixed multi-select hashes to end projections, so following tokens apply to the projected list.
 * Fixed sort() and sort_by() to compare numbers numerically.
 * Changed sort(), sort_by(), max(), min(), max_by() and min_by() to order strings by code point.
 * Fixed max_by() and min_by() to error on mixed-type keys instead of returning arbitrary elements.

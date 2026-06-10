@@ -353,6 +353,10 @@ class Parser
         if ($this->token['type'] == T::T_LBRACKET) {
             $this->next();
             return $this->parseMultiSelectList();
+        } elseif ($this->token['type'] == T::T_LBRACE) {
+            // Like the multi-select list above, a multi-select hash ends any
+            // projection: tokens that follow apply to the projected list.
+            return $this->nud_lbrace();
         }
 
         return $this->expr($bp);
