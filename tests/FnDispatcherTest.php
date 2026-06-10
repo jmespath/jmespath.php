@@ -1,10 +1,10 @@
 <?php
 namespace JmesPath\Tests;
 
-use JmesPath\fnDispatcher;
+use JmesPath\FnDispatcher;
 use PHPUnit\Framework\TestCase;
 
-class fnDispatcherTest extends TestCase
+class FnDispatcherTest extends TestCase
 {
     public function testConvertsToString(): void
     {
@@ -28,6 +28,42 @@ class fnDispatcherTest extends TestCase
 
         $fn = new FnDispatcher();
         $fn('map', [function ($v) { return $v; }, null]);
+    }
+
+    /**
+     * @dataProvider toNumberProvider
+     */
+    public function testToNumberParsesJsonNumberStrings($input, $expected): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertSame($expected, $fn('to_number', [$input]));
+    }
+
+    public static function toNumberProvider(): array
+    {
+        return [
+            ['1e2', 100.0],
+            ['1E+2', 100.0],
+            ['1E-2', 0.01],
+            ['1.5', 1.5],
+            ['4', 4],
+            ['-0', 0],
+            [(string) PHP_INT_MAX, PHP_INT_MAX],
+            [(string) PHP_INT_MIN, PHP_INT_MIN],
+            ['9223372036854775808', 9.223372036854776E+18],
+            ['+1', null],
+            ['01', null],
+            [' 1', null],
+            ['1 ', null],
+            ["1\n", null],
+            ['.5', null],
+            ['1.', null],
+            ['NaN', null],
+            ['INF', null],
+            ['0x1A', null],
+            ['1e10000', null],
+        ];
     }
 }
 
