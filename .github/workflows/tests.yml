@@ -7,7 +7,7 @@ on:
 jobs:
   tests_linux:
     name: PHP ${{ matrix.php }} Linux
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -28,7 +28,7 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Install PHP Dependencies
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 5
           max_attempts: 5
@@ -36,10 +36,10 @@ jobs:
 
       - name: Execute PHPUnit
         run: vendor/bin/phpunit
- 
+
   tests_windows:
     name: PHP ${{ matrix.php }} Windows
-    runs-on: windows-2022
+    runs-on: windows-2025
 
     strategy:
       matrix:
@@ -52,7 +52,7 @@ jobs:
           git config --global core.eol lf
 
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -65,7 +65,7 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Install PHP Dependencies
-        uses: nick-invision/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 5
           max_attempts: 5
