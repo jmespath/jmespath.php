@@ -36,7 +36,7 @@ class EnvTest extends TestCase
         $serverValue = $serverExists ? $_SERVER[Env::COMPILE_DIR] : null;
         $_SERVER[Env::COMPILE_DIR] = 'on';
 
-        $expr = 'env' . str_replace('.', '', uniqid('', true));
+        $expr = 'env' . bin2hex(random_bytes(12));
         $filename = sys_get_temp_dir() . '/' . CompilerRuntime::functionName($expr) . '.php';
         $runtime = new CompilerRuntime(sys_get_temp_dir());
 

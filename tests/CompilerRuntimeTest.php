@@ -9,7 +9,7 @@ class CompilerRuntimeTest extends TestCase
     public function testCompiledFileUsesVersionedName(): void
     {
         $dir = $this->createTempDir();
-        $expr = 'field' . str_replace('.', '', uniqid('', true));
+        $expr = 'field' . bin2hex(random_bytes(12));
         $runtime = new CompilerRuntime($dir);
 
         try {
@@ -36,7 +36,7 @@ class CompilerRuntimeTest extends TestCase
 
     private function createTempDir()
     {
-        $dir = sys_get_temp_dir() . '/jmespath-compiler-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/jmespath-compiler-' . bin2hex(random_bytes(12));
         mkdir($dir);
 
         return realpath($dir);
