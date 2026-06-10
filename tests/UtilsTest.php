@@ -116,6 +116,34 @@ class UtilsTest extends TestCase
         $this->assertSame($result, Utils::isObject($given));
     }
 
+    public static function isTruthyProvider(): array
+    {
+        return [
+            [0, true],
+            [0.0, true],
+            [-0.0, true],
+            ['0', true],
+            ['0.0', true],
+            [1, true],
+            ['a', true],
+            [[0], true],
+            [(object) ['a' => 1], true],
+            [null, false],
+            [false, false],
+            ['', false],
+            [[], false],
+            [new \stdClass(), false],
+        ];
+    }
+
+    /**
+     * @dataProvider isTruthyProvider
+     */
+    public function testChecksTruthiness($given, bool $result): void
+    {
+        $this->assertSame($result, Utils::isTruthy($given));
+    }
+
     public function testHasStableSort(): void
     {
         $data = [new _TestStr(), new _TestStr(), 0, 10, 2];
