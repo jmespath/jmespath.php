@@ -11,7 +11,9 @@ class AstRuntimeTest extends TestCase
     {
         $runtime = new AstRuntime();
         $cache = new \ReflectionProperty(AstRuntime::class, 'cache');
-        $cache->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $cache->setAccessible(true);
+        }
         $data = ['x' => 1];
 
         for ($i = 1; $i <= 2100; $i++) {
@@ -42,7 +44,9 @@ class AstRuntimeTest extends TestCase
     {
         $runtime = new AstRuntime();
         $cache = new \ReflectionProperty(AstRuntime::class, 'cache');
-        $cache->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $cache->setAccessible(true);
+        }
 
         $this->assertSame(1, $runtime('a', ['a' => 1]));
         for ($i = 1; $i <= 1100; $i++) {

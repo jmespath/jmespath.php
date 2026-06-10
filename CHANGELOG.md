@@ -2,6 +2,7 @@
 
 ## 2.9.0 - Upcoming
 
+* Added PHP 8.5 support.
 * Fixed to_number() to parse number strings using the JSON number grammar.
 * Fixed reverse() and string slicing to operate on UTF-8 characters rather than bytes.
 * Fixed slicing of array-like (ArrayAccess + Countable) values.
