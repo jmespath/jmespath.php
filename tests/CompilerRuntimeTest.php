@@ -69,6 +69,23 @@ class CompilerRuntimeTest extends TestCase
         }
     }
 
+    public function testCompiledRuntimeSortsNumerically(): void
+    {
+        $dir = $this->createTempDir();
+
+        try {
+            $runtime = new CompilerRuntime($dir);
+            $this->assertSame([-2, -1, 3], $runtime('sort(@)', [-1, -2, 3]));
+            $data = json_decode(
+                '{"values":[{"v":"A","w":0.63554},{"v":"B","w":0.20155},{"v":"C","w":0.6058}]}',
+                true
+            );
+            $this->assertSame(['B', 'C', 'A'], $runtime('sort_by(values, &w)[].v', $data));
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
     private function createTempDir()
     {
         $dir = sys_get_temp_dir() . '/jmespath-compiler-' . bin2hex(random_bytes(12));

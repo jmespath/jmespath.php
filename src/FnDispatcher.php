@@ -212,7 +212,7 @@ class FnDispatcher
         $valid = ['string', 'number'];
         return Utils::stableSort($args[0], function ($a, $b) use ($valid) {
             $this->validateSeq('sort:0', $valid, $a, $b);
-            return strnatcmp($a, $b);
+            return self::compareValues($a, $b);
         });
     }
 
@@ -227,7 +227,7 @@ class FnDispatcher
                 $va = $expr($a);
                 $vb = $expr($b);
                 $this->validateSeq('sort_by:0', $valid, $va, $vb);
-                return strnatcmp($va, $vb);
+                return self::compareValues($va, $vb);
             }
         );
     }
