@@ -21,4 +21,25 @@ class TreeCompilerTest extends TestCase
         $this->assertStringContainsString('$value = isset($value->{\'foo\'}) ? $value->{\'foo\'} : null;', $source);
         $this->assertStringContainsString('$value = isset($value[\'foo\']) ? $value[\'foo\'] : null;', $source);
     }
+
+    public function testFromlessProjectionUsesCorrectGuard(): void
+    {
+        $t = new TreeCompiler();
+        $source = $t->visit(
+            [
+                'type' => 'projection',
+                'children' => [
+                    ['type' => 'current'],
+                    ['type' => 'current'],
+                ],
+            ],
+            'testing',
+            '[*]'
+        );
+
+        $this->assertStringContainsString(
+            'if (!is_array($value) && !($value instanceof \\stdClass)) { $value = null; }',
+            $source
+        );
+    }
 }

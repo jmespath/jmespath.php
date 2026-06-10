@@ -21,7 +21,7 @@ Provide the JSON input and expression:
     echo '{}' | jp.php expression
 
 Or provide the path to a compliance script, a suite, and test case number:
-    jp.php --script path_to_script --suite test_suite_number --case test_case_number [expression]
+    jp.php --file path_to_compliance_json --suite test_suite_number --case test_case_number [expression]
 
 EOT;
 
@@ -58,7 +58,7 @@ if (isset($args['file']) || isset($args['suite']) || isset($args['case'])) {
         if (isset($set['cases'][$args['case']]['result'])) {
             echo json_encode($set['cases'][$args['case']]['result'], JSON_PRETTY_PRINT) . "\n\n";
         } elseif (isset($set['cases'][$args['case']]['error'])) {
-            echo "{$set['cases'][$argv['case']]['error']} error\n\n";
+            echo "{$set['cases'][$args['case']]['error']} error\n\n";
         } else {
             echo "NULL\n\n";
         }
