@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.9.0 - Upcoming
+## 2.9.0 - 2026-06-10
 
 * Added PHP 8.5 support.
 * Fixed to_number() to parse number strings using the JSON number grammar.
