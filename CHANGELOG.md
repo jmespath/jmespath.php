@@ -7,6 +7,7 @@
 * Fixed PHP warnings emitted while parsing certain invalid expressions.
 * Fixed the caret position in syntax error messages for errors at the end of an expression.
 * Fixed map() to error on non-array second arguments instead of returning [].
+* Fixed Env::cleanCompileDir() when JP_PHP_COMPILE=on.
 
 ## 2.8.0 - 2024-09-04
 
