@@ -38,6 +38,17 @@ class FnDispatcherTest extends TestCase
         $this->assertSame('☃ba', $fn('reverse', ['ab☃']));
     }
 
+    public function testContainsUsesJsonSemantics(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertFalse($fn('contains', [[1, 2, 3], '2']));
+        $this->assertFalse($fn('contains', [['1', 8], 1]));
+        $this->assertTrue($fn('contains', [[1, 2], 2.0]));
+        $this->assertTrue($fn('contains', [[['a' => 1]], (object) ['a' => 1]]));
+        $this->assertFalse($fn('contains', ['foobar', 123]));
+    }
+
     /**
      * @dataProvider toNumberProvider
      */

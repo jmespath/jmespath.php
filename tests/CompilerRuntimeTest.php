@@ -56,6 +56,19 @@ class CompilerRuntimeTest extends TestCase
         }
     }
 
+    public function testRuntimesUseJsonSemanticEqualityForNumbers(): void
+    {
+        $dir = $this->createTempDir();
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertTrue($runtime('`1` == `1.0`', null));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
     private function createTempDir()
     {
         $dir = sys_get_temp_dir() . '/jmespath-compiler-' . bin2hex(random_bytes(12));

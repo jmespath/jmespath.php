@@ -60,12 +60,18 @@ class FnDispatcher
     {
         $this->validate('contains', $args, [['string', 'array'], ['any']]);
         if (is_array($args[0])) {
-            return in_array($args[1], $args[0]);
-        } elseif (is_string($args[1])) {
-            return mb_strpos($args[0], $args[1], 0, 'UTF-8') !== false;
-        } else {
-            return null;
+            foreach ($args[0] as $value) {
+                if (Utils::isEqual($value, $args[1])) {
+                    return true;
+                }
+            }
+
+            return false;
         }
+
+        return is_string($args[1])
+            ? mb_strpos($args[0], $args[1], 0, 'UTF-8') !== false
+            : false;
     }
 
     private function fn_ends_with(array $args)
