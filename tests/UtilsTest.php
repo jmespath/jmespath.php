@@ -99,6 +99,23 @@ class UtilsTest extends TestCase
         $this->assertEquals(0, $result[4]);
     }
 
+    public function testComparesValuesUsingJsonSemantics(): void
+    {
+        $this->assertTrue(Utils::isEqual(1, 1.0));
+        $this->assertTrue(Utils::isEqual(['a' => 1], (object) ['a' => 1.0]));
+        $this->assertTrue(Utils::isEqual(
+            (object) ['a' => (object) ['b' => 1]],
+            (object) ['a' => (object) ['b' => 1]]
+        ));
+        $this->assertTrue(Utils::isEqual(['a' => 1, 'b' => 2], ['b' => 2, 'a' => 1]));
+        $this->assertTrue(Utils::isEqual([], new \stdClass()));
+        $this->assertFalse(Utils::isEqual(['a' => 1], ['a' => 2]));
+        $this->assertFalse(Utils::isEqual([1], [1, 1]));
+        $this->assertFalse(Utils::isEqual('1', 1));
+        $this->assertFalse(Utils::isEqual(1, true));
+        $this->assertFalse(Utils::isEqual(0, null));
+    }
+
     public function testSlicesArrays(): void
     {
         $this->assertEquals([3, 2, 1], Utils::slice([1, 2, 3], null, null, -1));

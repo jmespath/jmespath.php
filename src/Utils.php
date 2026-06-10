@@ -106,7 +106,10 @@ class Utils
     }
 
     /**
-     * JSON aware value comparison function.
+     * JSON-semantic equality: one number type, structural comparison for arrays
+     * and objects, and no object key-order sensitivity.
+     * Empty arrays and empty objects compare equal because PHP cannot represent
+     * that distinction after associative JSON decoding.
      *
      * @param mixed $a First value to compare
      * @param mixed $b Second value to compare
@@ -115,15 +118,38 @@ class Utils
      */
     public static function isEqual($a, $b)
     {
-        if ($a === $b) {
-            return true;
-        } elseif ($a instanceof \stdClass) {
-            return self::isEqual((array) $a, $b);
-        } elseif ($b instanceof \stdClass) {
-            return self::isEqual($a, (array) $b);
-        } else {
-            return false;
+        $typeA = self::type($a);
+        $typeB = self::type($b);
+
+        if ($typeA !== $typeB) {
+            return ($typeA === 'array' || $typeA === 'object')
+                && ($typeB === 'array' || $typeB === 'object')
+                && (array) $a === []
+                && (array) $b === [];
         }
+
+        if ($typeA === 'number') {
+            return $a == $b;
+        }
+
+        if ($typeA === 'array' || $typeA === 'object') {
+            $a = (array) $a;
+            $b = (array) $b;
+
+            if (count($a) !== count($b)) {
+                return false;
+            }
+
+            foreach ($a as $key => $value) {
+                if (!array_key_exists($key, $b) || !self::isEqual($value, $b[$key])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return $a === $b;
     }
 
     /**

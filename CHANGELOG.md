@@ -5,6 +5,7 @@
 * Fixed to_number() to parse number strings using the JSON number grammar.
 * Fixed reverse() and string slicing to operate on UTF-8 characters rather than bytes.
 * Fixed slicing of array-like (ArrayAccess + Countable) values.
+* Fixed equality and contains() to use JSON semantics, e.g. 1 == 1.0 is now true.
 * Fixed the compiled runtime to apply JMESPath truthiness to || and &&.
 * Fixed @(foo), foo[-] and oversized index literals to throw syntax errors.
 * Fixed PHP warnings emitted while parsing certain invalid expressions.
