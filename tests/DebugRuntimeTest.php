@@ -10,7 +10,7 @@ class DebugRuntimeTest extends TestCase
     public function testCompiledDebugOutputUsesCustomCacheDirAndPreservesPercents(): void
     {
         $dir = $this->createTempDir();
-        $key = 'x%sy%%z' . str_replace('.', '', uniqid('', true));
+        $key = 'x%sy%%z' . bin2hex(random_bytes(12));
         $expr = json_encode($key);
         $out = fopen('php://memory', 'w+');
 
@@ -36,7 +36,7 @@ class DebugRuntimeTest extends TestCase
 
     private function createTempDir()
     {
-        $dir = sys_get_temp_dir() . '/jmespath-debug-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/jmespath-debug-' . bin2hex(random_bytes(12));
         mkdir($dir);
 
         return realpath($dir);
