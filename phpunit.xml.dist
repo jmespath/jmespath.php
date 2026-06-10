@@ -7,6 +7,11 @@
              convertDeprecationsToExceptions="true"
     >
 
+    <php>
+        <ini name="error_reporting" value="-1"/>
+        <ini name="display_errors" value="1"/>
+    </php>
+
     <testsuites>
         <testsuite name="Unit Tests">
             <directory>tests</directory>
