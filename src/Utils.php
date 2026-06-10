@@ -192,7 +192,7 @@ class Utils
      */
     public static function slice($value, $start = null, $stop = null, $step = 1)
     {
-        if (!is_array($value) && !is_string($value)) {
+        if (!is_string($value) && !self::isArray($value)) {
             throw new \InvalidArgumentException('Expects string or array');
         }
 
@@ -239,7 +239,10 @@ class Utils
     private static function sliceIndices($subject, $start, $stop, $step)
     {
         $type = gettype($subject);
-        $len = $type == 'string' ? mb_strlen($subject, 'UTF-8') : count($subject);
+        if ($type == 'string') {
+            $subject = mb_str_split($subject, 1, 'UTF-8');
+        }
+        $len = count($subject);
         list($start, $stop, $step) = self::adjustSlice($len, $start, $stop, $step);
 
         $result = [];

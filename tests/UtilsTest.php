@@ -1,6 +1,7 @@
 <?php
 namespace JmesPath\Tests;
 
+use JmesPath\AstRuntime;
 use JmesPath\Utils;
 use PHPUnit\Framework\TestCase;
 
@@ -110,6 +111,31 @@ class UtilsTest extends TestCase
         $this->assertEquals('cba', Utils::slice('abc', null, null, -1));
         $this->assertEquals('ac', Utils::slice('abc', null, null, 2));
         $this->assertEquals('bc', Utils::slice('abc', 1));
+    }
+
+    public function testSlicesUtf8Strings(): void
+    {
+        $this->assertSame('é', Utils::slice('éa', 0, 1));
+        $this->assertSame('cbaé', Utils::slice('éabc', null, null, -1));
+    }
+
+    public function testSlicesArrayAccessCountable(): void
+    {
+        $this->assertSame([1, 2], Utils::slice(new \ArrayObject([1, 2, 3]), 0, 2));
+    }
+
+    public function testRejectsObjectLikeValuesInSlice(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Utils::slice(new \ArrayObject(['foo' => 'bar']), 0, 1);
+    }
+
+    public function testRuntimeSlicesArrayAccessCountable(): void
+    {
+        $runtime = new AstRuntime();
+
+        $this->assertSame([1, 2], $runtime('[0:2]', new \ArrayObject([1, 2, 3])));
     }
 }
 

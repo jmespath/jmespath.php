@@ -162,7 +162,7 @@ class FnDispatcher
         if (is_array($args[0])) {
             return array_reverse($args[0]);
         } elseif (is_string($args[0])) {
-            return strrev($args[0]);
+            return implode('', array_reverse(mb_str_split($args[0], 1, 'UTF-8')));
         } else {
             throw new \RuntimeException('Cannot reverse provided argument');
         }

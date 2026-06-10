@@ -30,6 +30,14 @@ class FnDispatcherTest extends TestCase
         $fn('map', [function ($v) { return $v; }, null]);
     }
 
+    public function testReversesUtf8Strings(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertSame('aé', $fn('reverse', ['éa']));
+        $this->assertSame('☃ba', $fn('reverse', ['ab☃']));
+    }
+
     /**
      * @dataProvider toNumberProvider
      */
