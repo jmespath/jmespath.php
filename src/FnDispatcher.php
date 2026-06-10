@@ -272,7 +272,7 @@ class FnDispatcher
 
     private function fn_map(array $args)
     {
-        $this->validate('map', $args, [['expression'], ['any']]);
+        $this->validate('map', $args, [['expression'], ['array']]);
         $result = [];
         foreach ($args[1] as $a) {
             $result[] = $args[0]($a);

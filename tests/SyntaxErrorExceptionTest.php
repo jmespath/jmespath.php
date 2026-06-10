@@ -40,4 +40,11 @@ Expected one of the following: dot, eof; found comma ","
 EOT;
         $this->assertStringContainsString($expected, $e->getMessage());
     }
+
+    public function testDefaultsMissingTokenKeysToEndOfExpression(): void
+    {
+        $e = new SyntaxErrorException(['comma' => true], ['type' => 'eof'], 'abc');
+
+        $this->assertStringContainsString('Syntax error at character 3', $e->getMessage());
+    }
 }
