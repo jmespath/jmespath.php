@@ -38,7 +38,9 @@ class ParserTest extends TestCase
             ['@(foo)', 'Invalid function name'],
             ['@=', 'Did not reach the end of the token stream'],
             ['`1` `2`', 'Did not reach the end of the token stream'],
-            ['{a: @', 'Syntax error at character 5']
+            ['{a: @', 'Syntax error at character 5'],
+            ['foo[-]', 'Syntax error at character 4'],
+            ['foo[999999999999999999999999999999999999999]', 'Syntax error at character 4']
         ];
     }
 

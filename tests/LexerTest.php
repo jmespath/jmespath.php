@@ -86,4 +86,45 @@ class LexerTest extends TestCase
         $this->assertEquals('foo', $tokens[0]['value']);
         $this->assertEquals('literal', $tokens[0]['type']);
     }
+
+    public function testHugeIndexLiteralIsUnknownInsteadOfClamped(): void
+    {
+        $lexer = new Lexer();
+        $tokens = $lexer->tokenize('foo[999999999999999999999999999999999999999]');
+
+        $this->assertSame('identifier', $tokens[0]['type']);
+        $this->assertSame('lbracket', $tokens[1]['type']);
+        $this->assertSame('unknown', $tokens[2]['type']);
+    }
+
+    public function testBareMinusIndexIsUnknown(): void
+    {
+        $lexer = new Lexer();
+        $tokens = $lexer->tokenize('foo[-]');
+
+        $this->assertSame('unknown', $tokens[2]['type']);
+    }
+
+    public function testIndexIntegerBoundariesAndLeadingZeros(): void
+    {
+        $lexer = new Lexer();
+
+        $tokens = $lexer->tokenize('foo[' . PHP_INT_MAX . ']');
+        $this->assertSame(PHP_INT_MAX, $tokens[2]['value']);
+
+        $tokens = $lexer->tokenize('foo[' . PHP_INT_MIN . ']');
+        $this->assertSame(PHP_INT_MIN, $tokens[2]['value']);
+
+        $tokens = $lexer->tokenize('foo[' . PHP_INT_MAX . '0]');
+        $this->assertSame('unknown', $tokens[2]['type']);
+
+        $tokens = $lexer->tokenize('foo[' . PHP_INT_MIN . '0]');
+        $this->assertSame('unknown', $tokens[2]['type']);
+
+        $tokens = $lexer->tokenize('foo[0000000000000000000000007]');
+        $this->assertSame(7, $tokens[2]['value']);
+
+        $tokens = $lexer->tokenize('foo[-0]');
+        $this->assertSame(0, $tokens[2]['value']);
+    }
 }
