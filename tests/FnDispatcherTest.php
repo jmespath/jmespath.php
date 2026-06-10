@@ -173,6 +173,55 @@ class FnDispatcherTest extends TestCase
         $this->assertSame($low, $fn('min', [[$low, $high]]));
     }
 
+    public function testSortComparesNumbersNumerically(): void
+    {
+        $fn = FnDispatcher::getInstance();
+
+        $this->assertSame([0.20155, 0.6058, 0.63554], $fn('sort', [[0.6058, 0.20155, 0.63554]]));
+        $this->assertSame([-2, -1, 3], $fn('sort', [[-1, -2, 3]]));
+        $this->assertSame([5, 1.0E+20], $fn('sort', [[1.0E+20, 5]]));
+        $this->assertSame([2, 2.5, 10], $fn('sort', [[2.5, 10, 2]]));
+    }
+
+    public function testSortComparesStringsByCodePoint(): void
+    {
+        $fn = FnDispatcher::getInstance();
+
+        $this->assertSame(['x1', 'x10', 'x2'], $fn('sort', [['x10', 'x2', 'x1']]));
+        $this->assertSame(['10', '2', '9'], $fn('sort', [['10', '9', '2']]));
+        $this->assertSame(['001', '01', '1'], $fn('sort', [['1', '01', '001']]));
+    }
+
+    public function testSortByOrdersFloatKeysNumerically(): void
+    {
+        $data = json_decode(
+            '{"values":[{"i32_lv2":"A","f_weight":0.63554},{"i32_lv2":"B","f_weight":0.20155},{"i32_lv2":"C","f_weight":0.6058}]}',
+            true
+        );
+
+        $this->assertSame(['B', 'C', 'A'], Env::search('sort_by(values, &to_number(f_weight))[].i32_lv2', $data));
+        $this->assertSame(['B', 'C', 'A'], Env::search('sort_by(values, &f_weight)[].i32_lv2', $data));
+    }
+
+    public function testSortByIsStableForEqualKeys(): void
+    {
+        $data = [
+            ['k' => 1, 'n' => 'third'],
+            ['k' => 0, 'n' => 'first'],
+            ['k' => 0, 'n' => 'second'],
+        ];
+
+        $this->assertSame(['first', 'second', 'third'], Env::search('sort_by(@, &k)[].n', $data));
+    }
+
+    public function testSortMixedTypesStillThrows(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('type mismatch in sequence: number, string');
+
+        FnDispatcher::getInstance()('sort', [[1, 'a']]);
+    }
+
     /**
      * @dataProvider toNumberProvider
      */
