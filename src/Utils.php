@@ -58,12 +58,18 @@ class Utils
             return count($arg) == 0 || $arg->offsetExists(0)
                 ? 'array'
                 : 'object';
-        } elseif (method_exists($arg, '__toString')) {
-            return 'string';
+        } elseif (is_object($arg)) {
+            if (method_exists($arg, '__toString')) {
+                return 'string';
+            }
+
+            throw new \InvalidArgumentException(
+                'Unable to determine JMESPath type from ' . get_class($arg)
+            );
         }
 
         throw new \InvalidArgumentException(
-            'Unable to determine JMESPath type from ' . get_class($arg)
+            'Unable to determine JMESPath type from ' . gettype($arg)
         );
     }
 

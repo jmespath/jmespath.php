@@ -332,7 +332,7 @@ class TreeCompiler
             ->write('');
 
         if (!isset($node['from'])) {
-            $this->write('if (!is_array($value) || !($value instanceof \stdClass)) { $value = null; }');
+            $this->write('if (!is_array($value) && !($value instanceof \stdClass)) { $value = null; }');
         } elseif ($node['from'] == 'object') {
             $this->write('if (!Utils::isObject($value)) { $value = null; }');
         } elseif ($node['from'] == 'array') {

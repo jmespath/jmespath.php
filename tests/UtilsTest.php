@@ -2,6 +2,7 @@
 namespace JmesPath\Tests;
 
 use JmesPath\AstRuntime;
+use JmesPath\Env;
 use JmesPath\Utils;
 use PHPUnit\Framework\TestCase;
 
@@ -40,6 +41,37 @@ class UtilsTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
 
         Utils::type(new _TestClass());
+    }
+
+    public function testThrowsInvalidArgumentForPlainObjects(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Utils::type(new _TestPlainClass());
+    }
+
+    public function testThrowsInvalidArgumentForResources(): void
+    {
+        $resource = fopen('php://memory', 'r');
+
+        try {
+            $this->expectException(\InvalidArgumentException::class);
+            Utils::type($resource);
+        } finally {
+            fclose($resource);
+        }
+    }
+
+    public function testTypeFunctionThrowsInvalidArgumentForResources(): void
+    {
+        $resource = fopen('php://memory', 'r');
+
+        try {
+            $this->expectException(\InvalidArgumentException::class);
+            Env::search('type(@)', $resource);
+        } finally {
+            fclose($resource);
+        }
     }
 
     public static function isArrayProvider(): array
@@ -171,4 +203,8 @@ class _TestStr
     {
         return '100';
     }
+}
+
+class _TestPlainClass
+{
 }

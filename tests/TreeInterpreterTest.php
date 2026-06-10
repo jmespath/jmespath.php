@@ -24,6 +24,20 @@ class TreeInterpreterTest extends TestCase
         ]));
     }
 
+    public function testFromlessProjectionReturnsNullForNonArraysWithoutDiagnostics(): void
+    {
+        $t = new TreeInterpreter();
+
+        $this->assertNull($t->visit($this->fromlessProjection(), 1));
+    }
+
+    public function testFromlessProjectionTraversesArrays(): void
+    {
+        $t = new TreeInterpreter();
+
+        $this->assertSame([1, 2, 3], $t->visit($this->fromlessProjection(), [1, 2, 3]));
+    }
+
     public function testWorksWithArrayObjectAsObject(): void
     {
         $runtime = new AstRuntime();
@@ -68,5 +82,16 @@ class TreeInterpreterTest extends TestCase
                 ])
             ]))
         );
+    }
+
+    private function fromlessProjection(): array
+    {
+        return [
+            'type' => 'projection',
+            'children' => [
+                ['type' => 'current'],
+                ['type' => 'current'],
+            ],
+        ];
     }
 }
