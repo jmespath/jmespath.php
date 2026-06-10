@@ -106,7 +106,7 @@ class FnDispatcher
         $fn = function ($a, $b, $i) use ($args) {
             return $i ? ($a . $args[0] . $b) : $b;
         };
-        return $this->reduce('join:0', $args[1], ['string'], $fn);
+        return $args[1] ? $this->reduce('join:0', $args[1], ['string'], $fn) : '';
     }
 
     private function fn_keys(array $args)
@@ -203,7 +203,7 @@ class FnDispatcher
         $fn = function ($a, $b) {
             return Utils::add($a, $b);
         };
-        return $this->reduce('sum:0', $args[0], ['number'], $fn);
+        return $args[0] ? $this->reduce('sum:0', $args[0], ['number'], $fn) : 0;
     }
 
     private function fn_sort(array $args)
