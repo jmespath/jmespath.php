@@ -22,7 +22,7 @@ class Utils
     public static function isTruthy($value)
     {
         if (!$value) {
-            return $value === 0 || $value === '0';
+            return $value === 0 || $value === 0.0 || $value === '0';
         } elseif ($value instanceof \stdClass) {
             return (bool) get_object_vars($value);
         } else {

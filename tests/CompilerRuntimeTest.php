@@ -56,6 +56,47 @@ class CompilerRuntimeTest extends TestCase
         }
     }
 
+    public function testRuntimesTreatFloatZeroAsTruthy(): void
+    {
+        $dir = $this->createTempDir();
+        $data = ['orders' => [['price' => 0.0], ['price' => 1.0], ['price' => 2.0]]];
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertSame([0.0, 1.0, 2.0], $runtime('orders[?price].price', $data));
+                $this->assertSame(0.0, $runtime('a || b', ['a' => 0.0, 'b' => 'fallback']));
+                $this->assertSame('x', $runtime('a && b', ['a' => 0.0, 'b' => 'x']));
+                $this->assertFalse($runtime('!a', ['a' => 0.0]));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
+    public function testRuntimesApplyJmesPathTruthinessInFilters(): void
+    {
+        $dir = $this->createTempDir();
+        $data = ['orders' => [
+            ['price' => 0],
+            ['price' => 0.0],
+            ['price' => '0'],
+            ['price' => '0.0'],
+            ['price' => ''],
+            ['price' => null],
+            ['price' => false],
+            ['price' => []],
+            ['price' => new \stdClass()],
+        ]];
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertSame([0, 0.0, '0', '0.0'], $runtime('orders[?price].price', $data));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
     public function testRuntimesUseJsonSemanticEqualityForNumbers(): void
     {
         $dir = $this->createTempDir();
