@@ -18,6 +18,17 @@ class fnDispatcherTest extends TestCase
         $this->assertEquals('foo', $fn('to_string', [new _TestStringClass()]));
         $this->assertEquals('"foo"', $fn('to_string', [new _TestJsonStringClass()]));
     }
+
+    public function testMapRequiresArraySecondArgument(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage(
+            'Argument 1 of map must be one of the following types: array. null found'
+        );
+
+        $fn = new FnDispatcher();
+        $fn('map', [function ($v) { return $v; }, null]);
+    }
 }
 
 class _TestStringClass

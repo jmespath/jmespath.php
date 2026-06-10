@@ -34,7 +34,51 @@ class ParserTest extends TestCase
             ['=', 'Syntax error at character 0'],
             ['<', 'Syntax error at character 0'],
             ['>', 'Syntax error at character 0'],
-            ['|', 'Syntax error at character 0']
+            ['|', 'Syntax error at character 0'],
+            ['@(foo)', 'Invalid function name'],
+            ['@=', 'Did not reach the end of the token stream'],
+            ['`1` `2`', 'Did not reach the end of the token stream'],
+            ['{a: @', 'Syntax error at character 5']
+        ];
+    }
+
+    /**
+     * @dataProvider invalidLedTokenProvider
+     */
+    public function testInvalidExpressionsThrowCleanSyntaxErrors(string $expr): void
+    {
+        $diags = [];
+        set_error_handler(function ($errno, $errstr) use (&$diags) {
+            $diags[] = $errstr;
+            return true;
+        });
+
+        try {
+            try {
+                (new Parser())->parse($expr);
+                $this->fail("Expected SyntaxErrorException for: $expr");
+            } catch (SyntaxErrorException $e) {
+                $this->assertStringContainsString('Syntax error at character', $e->getMessage());
+            }
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $diags, "PHP warnings/notices emitted while parsing: $expr");
+    }
+
+    public static function invalidLedTokenProvider(): array
+    {
+        return [
+            ['avg([].size)+'],
+            ['a = b'],
+            ['@ `1`'],
+            ['@``'],
+            ['foo[]+'],
+            ['foo#bar'],
+            ['@ `"`'],
+            ['+foo'],
+            ['"foo'],
         ];
     }
 }
