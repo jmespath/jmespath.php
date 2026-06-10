@@ -50,6 +50,22 @@ class FnDispatcherTest extends TestCase
         $this->assertFalse($fn('contains', ['foobar', 123]));
     }
 
+    public function testSumOfEmptyArrayIsZero(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertSame(0, $fn('sum', [[]]));
+        $this->assertSame(3, $fn('sum', [[1, 2]]));
+    }
+
+    public function testJoinOfEmptyArrayIsEmptyString(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertSame('', $fn('join', ['|', []]));
+        $this->assertSame('a|b', $fn('join', ['|', ['a', 'b']]));
+    }
+
     public function testMaxAndMinCompareStringsByCodePoint(): void
     {
         $fn = new FnDispatcher();
