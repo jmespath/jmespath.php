@@ -107,7 +107,7 @@ class TreeCompiler
         return $this
             ->write('%s = $value;', $a)
             ->dispatch($node['children'][0])
-            ->write('if (!$value && $value !== "0" && $value !== 0) {')
+            ->write('if (!Utils::isTruthy($value)) {')
                 ->indent()
                 ->write('$value = %s;', $a)
                 ->dispatch($node['children'][1])
@@ -121,7 +121,7 @@ class TreeCompiler
         return $this
             ->write('%s = $value;', $a)
             ->dispatch($node['children'][0])
-            ->write('if ($value || $value === "0" || $value === 0) {')
+            ->write('if (Utils::isTruthy($value)) {')
                 ->indent()
                 ->write('$value = %s;', $a)
                 ->dispatch($node['children'][1])

@@ -3,6 +3,7 @@
 ## 2.9.0 - Upcoming
 
 * Fixed to_number() to parse number strings using the JSON number grammar.
+* Fixed the compiled runtime to apply JMESPath truthiness to || and &&.
 * Fixed @(foo), foo[-] and oversized index literals to throw syntax errors.
 * Fixed PHP warnings emitted while parsing certain invalid expressions.
 * Fixed the caret position in syntax error messages for errors at the end of an expression.
