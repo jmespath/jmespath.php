@@ -236,14 +236,53 @@ class FnDispatcher
     {
         $this->validateArity('to_number', count($args), 1);
         $value = $args[0];
-        $type = Utils::type($value);
-        if ($type == 'number') {
+
+        if (Utils::type($value) == 'number') {
             return $value;
-        } elseif ($type == 'string' && is_numeric($value)) {
-            return mb_strpos($value, '.', 0, 'UTF-8') ? (float) $value : (int) $value;
-        } else {
+        }
+
+        if (!is_string($value)) {
             return null;
         }
+
+        return $this->parseJsonNumber($value);
+    }
+
+    /**
+     * Parses a string conforming to the JSON number grammar (RFC 8259) into
+     * an int when exactly representable, otherwise a float. Returns null for
+     * non-conforming or non-finite input.
+     */
+    private function parseJsonNumber($value)
+    {
+        if (!preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$/D', $value)) {
+            return null;
+        }
+
+        if (preg_match('/^-?(?:0|[1-9][0-9]*)$/D', $value)) {
+            return $this->parseJsonInteger($value);
+        }
+
+        $number = (float) $value;
+
+        return is_finite($number) ? $number : null;
+    }
+
+    private function parseJsonInteger($value)
+    {
+        $negative = $value[0] === '-';
+        $digits = $negative ? substr($value, 1) : $value;
+        $limit = $negative ? substr((string) PHP_INT_MIN, 1) : (string) PHP_INT_MAX;
+
+        if (strlen($digits) < strlen($limit)
+            || (strlen($digits) === strlen($limit) && strcmp($digits, $limit) <= 0)
+        ) {
+            return (int) $value;
+        }
+
+        $number = (float) $value;
+
+        return is_finite($number) ? $number : null;
     }
 
     private function fn_values(array $args)

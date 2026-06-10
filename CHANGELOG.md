@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.9.0 - Upcoming
+
+* Fixed to_number() to parse number strings using the JSON number grammar.
+* Fixed @(foo) to throw a syntax error.
+* Fixed PHP warnings emitted while parsing certain invalid expressions.
+* Fixed the caret position in syntax error messages for errors at the end of an expression.
+* Fixed map() to error on non-array second arguments instead of returning [].
+
 ## 2.8.0 - 2024-09-04
 
 * Add support for PHP 8.4.
