@@ -29,4 +29,29 @@ class EnvTest extends TestCase
         $this->assertGreaterThan(0, Env::cleanCompileDir());
         $this->assertEmpty(glob($dir . '/jmespath_*.php'));
     }
+
+    public function testCleansCompileDirWhenCompileEnvIsOn(): void
+    {
+        $serverExists = array_key_exists(Env::COMPILE_DIR, $_SERVER);
+        $serverValue = $serverExists ? $_SERVER[Env::COMPILE_DIR] : null;
+        $_SERVER[Env::COMPILE_DIR] = 'on';
+
+        $expr = 'env' . str_replace('.', '', uniqid('', true));
+        $filename = sys_get_temp_dir() . '/' . CompilerRuntime::functionName($expr) . '.php';
+        $runtime = new CompilerRuntime(sys_get_temp_dir());
+
+        try {
+            $this->assertSame(1, $runtime($expr, [$expr => 1]));
+            $this->assertFileExists($filename);
+            $this->assertGreaterThan(0, Env::cleanCompileDir());
+            $this->assertFileNotExists($filename);
+        } finally {
+            @unlink($filename);
+            if ($serverExists) {
+                $_SERVER[Env::COMPILE_DIR] = $serverValue;
+            } else {
+                unset($_SERVER[Env::COMPILE_DIR]);
+            }
+        }
+    }
 }
