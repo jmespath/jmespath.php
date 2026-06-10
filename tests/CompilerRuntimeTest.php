@@ -1,6 +1,7 @@
 <?php
 namespace JmesPath\Tests;
 
+use JmesPath\AstRuntime;
 use JmesPath\CompilerRuntime;
 use PHPUnit\Framework\TestCase;
 
@@ -9,7 +10,7 @@ class CompilerRuntimeTest extends TestCase
     public function testCompiledFileUsesVersionedName(): void
     {
         $dir = $this->createTempDir();
-        $expr = 'field' . str_replace('.', '', uniqid('', true));
+        $expr = 'field' . bin2hex(random_bytes(12));
         $runtime = new CompilerRuntime($dir);
 
         try {
@@ -28,15 +29,36 @@ class CompilerRuntimeTest extends TestCase
     {
         $this->assertSame(
             'jmespath_' . md5(
-                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':2:foo.bar'
+                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':3:foo.bar'
             ),
             CompilerRuntime::functionName('foo.bar')
         );
     }
 
+    public function testRuntimesUseJmesPathTruthinessForEmptyObjects(): void
+    {
+        $dir = $this->createTempDir();
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertSame('x', $runtime('empty_hash || fallback', [
+                    'empty_hash' => new \stdClass(),
+                    'fallback' => 'x',
+                ]));
+
+                $this->assertEquals(new \stdClass(), $runtime('empty_hash && fallback', [
+                    'empty_hash' => new \stdClass(),
+                    'fallback' => 'x',
+                ]));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
     private function createTempDir()
     {
-        $dir = sys_get_temp_dir() . '/jmespath-compiler-' . uniqid('', true);
+        $dir = sys_get_temp_dir() . '/jmespath-compiler-' . bin2hex(random_bytes(12));
         mkdir($dir);
 
         return realpath($dir);
