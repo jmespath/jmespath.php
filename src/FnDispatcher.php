@@ -124,8 +124,8 @@ class FnDispatcher
     private function fn_max(array $args)
     {
         $this->validate('max', $args, [['array']]);
-        $fn = function ($a, $b) {
-            return $a >= $b ? $a : $b;
+        $fn = function ($a, $b, $i) {
+            return $i && self::compareValues($a, $b) >= 0 ? $a : $b;
         };
         return $this->reduce('max:0', $args[0], ['number', 'string'], $fn);
     }
@@ -134,10 +134,21 @@ class FnDispatcher
     {
         $this->validate('max_by', $args, [['array'], ['expression']]);
         $expr = $this->wrapExpression('max_by:1', $args[1], ['number', 'string']);
-        $fn = function ($carry, $item, $index) use ($expr) {
-            return $index
-                ? ($expr($carry) >= $expr($item) ? $carry : $item)
-                : $item;
+        $carryKey = null;
+        $fn = function ($carry, $item, $index) use ($expr, &$carryKey) {
+            if (!$index) {
+                return $item;
+            }
+            if ($index === 1) {
+                $carryKey = $expr($carry);
+            }
+            $itemKey = $expr($item);
+            $this->validateSeq('max_by:0', ['number', 'string'], $carryKey, $itemKey);
+            if (self::compareValues($carryKey, $itemKey) >= 0) {
+                return $carry;
+            }
+            $carryKey = $itemKey;
+            return $item;
         };
         return $this->reduce('max_by:1', $args[0], ['any'], $fn);
     }
@@ -146,7 +157,7 @@ class FnDispatcher
     {
         $this->validate('min', $args, [['array']]);
         $fn = function ($a, $b, $i) {
-            return $i && $a <= $b ? $a : $b;
+            return $i && self::compareValues($a, $b) <= 0 ? $a : $b;
         };
         return $this->reduce('min:0', $args[0], ['number', 'string'], $fn);
     }
@@ -155,9 +166,21 @@ class FnDispatcher
     {
         $this->validate('min_by', $args, [['array'], ['expression']]);
         $expr = $this->wrapExpression('min_by:1', $args[1], ['number', 'string']);
-        $i = -1;
-        $fn = function ($a, $b) use ($expr, &$i) {
-            return ++$i ? ($expr($a) <= $expr($b) ? $a : $b) : $b;
+        $carryKey = null;
+        $fn = function ($carry, $item, $index) use ($expr, &$carryKey) {
+            if (!$index) {
+                return $item;
+            }
+            if ($index === 1) {
+                $carryKey = $expr($carry);
+            }
+            $itemKey = $expr($item);
+            $this->validateSeq('min_by:0', ['number', 'string'], $carryKey, $itemKey);
+            if (self::compareValues($carryKey, $itemKey) <= 0) {
+                return $carry;
+            }
+            $carryKey = $itemKey;
+            return $item;
         };
         return $this->reduce('min_by:1', $args[0], ['any'], $fn);
     }
@@ -397,6 +420,21 @@ class FnDispatcher
                 . "Found {$ta}, {$tb}.";
             $this->typeError($from, $msg);
         }
+    }
+
+    /**
+     * Compares two values of the same JMESPath type.
+     *
+     * @param mixed $a Value A
+     * @param mixed $b Value B
+     *
+     * @return int Negative if $a < $b, zero if equal, positive if $a > $b.
+     */
+    private static function compareValues($a, $b)
+    {
+        return Utils::type($a) === 'string'
+            ? strcmp((string) $a, (string) $b)
+            : ($a <=> $b);
     }
 
     /**
