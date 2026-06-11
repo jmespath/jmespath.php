@@ -5,7 +5,7 @@ use JmesPath\Lexer as T;
 
 /**
  * JMESPath Pratt parser
- * @link http://hall.org.ua/halls/wizzard/pdf/Vaughan.Pratt.TDOP.pdf
+ * @link https://dl.acm.org/doi/10.1145/512927.512931
  */
 class Parser
 {
