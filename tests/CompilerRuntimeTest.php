@@ -3,6 +3,7 @@ namespace JmesPath\Tests;
 
 use JmesPath\AstRuntime;
 use JmesPath\CompilerRuntime;
+use JmesPath\SyntaxErrorException;
 use PHPUnit\Framework\TestCase;
 
 class CompilerRuntimeTest extends TestCase
@@ -29,7 +30,7 @@ class CompilerRuntimeTest extends TestCase
     {
         $this->assertSame(
             'jmespath_' . md5(
-                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':4:foo.bar'
+                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':5:foo.bar'
             ),
             CompilerRuntime::functionName('foo.bar')
         );
@@ -157,6 +158,35 @@ class CompilerRuntimeTest extends TestCase
                 true
             );
             $this->assertSame(['B', 'C', 'A'], $runtime('sort_by(values, &w)[].v', $data));
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
+    public function testRejectsLiteralFunctionName(): void
+    {
+        $dir = $this->createTempDir();
+
+        try {
+            $runtime = new CompilerRuntime($dir);
+            $runtime('`"not_a_function"`(@)', []);
+            $this->fail('Expected SyntaxErrorException');
+        } catch (SyntaxErrorException $e) {
+            $this->assertSame([], glob($dir . '/*') ?: []);
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
+    public function testStillCompilesValidFunctions(): void
+    {
+        $dir = $this->createTempDir();
+
+        try {
+            $runtime = new CompilerRuntime($dir);
+
+            $this->assertSame(3, $runtime('length(@)', [1, 2, 3]));
+            $this->assertTrue($runtime("contains(@, 'b')", ['a', 'b', 'c']));
         } finally {
             $this->removeTempDir($dir);
         }
