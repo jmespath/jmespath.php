@@ -274,7 +274,7 @@ class Parser
 
     private function led_lparen(array $left)
     {
-        if (!isset($left['value'])) {
+        if (!isset($left['type'], $left['value']) || $left['type'] !== 'field') {
             throw $this->syntax('Invalid function name');
         }
 

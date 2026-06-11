@@ -42,4 +42,27 @@ class TreeCompilerTest extends TestCase
             $source
         );
     }
+
+    public function testEscapesFunctionName(): void
+    {
+        $compiler = new TreeCompiler();
+        $source = $compiler->visit(
+            [
+                'type'     => 'function',
+                'value'    => '" . $shouldNotBeCode . "',
+                'children' => [],
+            ],
+            'testing',
+            'example'
+        );
+
+        $this->assertStringContainsString(
+            '$value = Fd::getInstance()->__invoke(\'" . $shouldNotBeCode . "\', $args);',
+            $source
+        );
+        $this->assertStringNotContainsString(
+            '__invoke("" . $shouldNotBeCode . "", $args);',
+            $source
+        );
+    }
 }

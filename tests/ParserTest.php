@@ -36,6 +36,8 @@ class ParserTest extends TestCase
             ['>', 'Syntax error at character 0'],
             ['|', 'Syntax error at character 0'],
             ['@(foo)', 'Invalid function name'],
+            ['`"not_a_function"`(@)', 'Invalid function name'],
+            ["'not_a_function'(@)", 'Invalid function name'],
             ['@=', 'Did not reach the end of the token stream'],
             ['`1` `2`', 'Did not reach the end of the token stream'],
             ['{a: @', 'Syntax error at character 5'],
@@ -67,6 +69,22 @@ class ParserTest extends TestCase
         }
 
         $this->assertSame([], $diags, "PHP warnings/notices emitted while parsing: $expr");
+    }
+
+    public function testParsesIdentifierFunctionName(): void
+    {
+        $parser = new Parser();
+
+        $this->assertSame(
+            [
+                'type'     => 'function',
+                'value'    => 'length',
+                'children' => [
+                    ['type' => 'current'],
+                ],
+            ],
+            $parser->parse('length(@)')
+        );
     }
 
     public static function invalidLedTokenProvider(): array

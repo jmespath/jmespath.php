@@ -257,8 +257,8 @@ class TreeCompiler
         }
 
         return $this->write(
-            '$value = Fd::getInstance()->__invoke("%s", %s);',
-            $node['value'], $args
+            '$value = Fd::getInstance()->__invoke(%s, %s);',
+            var_export($node['value'], true), $args
         );
     }
 

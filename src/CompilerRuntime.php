@@ -14,7 +14,7 @@ namespace JmesPath;
  */
 class CompilerRuntime
 {
-    const CACHE_VERSION = 4;
+    const CACHE_VERSION = 5;
 
     private $parser;
     private $compiler;
