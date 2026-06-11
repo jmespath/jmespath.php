@@ -192,7 +192,7 @@ class Utils
      * @param callable $sortFn Callable used to sort values
      *
      * @return array Returns the sorted array
-     * @link http://en.wikipedia.org/wiki/Schwartzian_transform
+     * @link https://en.wikipedia.org/wiki/Schwartzian_transform
      */
     public static function stableSort(array $data, callable $sortFn)
     {
