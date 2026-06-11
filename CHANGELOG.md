@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.9.1 - Upcoming
+## 2.9.1 - 2026-06-11
 
 * Fixed the compiled runtime to emit function names as string literals, preventing arbitrary code execution.
 * Fixed the parser to reject non-identifier function callees, such as literal and raw string callees.
