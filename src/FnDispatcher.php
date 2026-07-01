@@ -70,7 +70,7 @@ class FnDispatcher
         }
 
         return is_string($args[1])
-            ? mb_strpos($args[0], $args[1], 0, 'UTF-8') !== false
+            ? str_contains($args[0], $args[1])
             : false;
     }
 
