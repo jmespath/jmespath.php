@@ -32,7 +32,7 @@ for ($i = 1, $total = count($argv); $i < $total; $i++) {
         if (substr($argv[$i], 0, 2) == '--') {
             $currentKey = str_replace('--', '', $argv[$i]);
         } else {
-            $currentKey = trim($argv[$i]);
+            $currentKey = trim($argv[$i], " \n\r\t\0\x0B");
         }
     } else {
         $args[$currentKey] = $argv[$i];
