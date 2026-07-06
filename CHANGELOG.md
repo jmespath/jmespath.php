@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.9.2 - Unreleased
+## 2.9.2 - 2026-07-06
 
 * Pass explicit trim characters ahead of the PHP 8.6 trim default change.
 
