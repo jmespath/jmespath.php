@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.9.2 - Unreleased
+
+* Pass explicit trim characters ahead of the PHP 8.6 trim default change.
+
 ## 2.9.1 - 2026-06-11
 
 * Fixed the compiled runtime to emit function names as string literals, preventing arbitrary code execution.
