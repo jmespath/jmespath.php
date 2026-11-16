@@ -85,6 +85,14 @@ class FnDispatcherTest extends TestCase
         $this->assertFalse($fn('contains', ['foobar', 123]));
     }
 
+    public function testContainsFindsEmptySearchString(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertTrue($fn('contains', ['foobar', '']));
+        $this->assertTrue($fn('contains', ['', '']));
+    }
+
     public function testSumOfEmptyArrayIsZero(): void
     {
         $fn = new FnDispatcher();

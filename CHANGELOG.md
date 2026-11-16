@@ -5,6 +5,7 @@
 * Fixed merge() to error on scalar and null arguments instead of triggering PHP errors.
 * Fixed merge() to accept stdClass objects.
 * Fixed syntax error messages for unexpected array, object, boolean and null literals.
+* Fixed contains() with an empty search string on PHP 7.
 
 ## 2.9.2 - 2026-07-06
 
