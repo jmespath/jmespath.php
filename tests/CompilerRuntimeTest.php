@@ -30,7 +30,7 @@ class CompilerRuntimeTest extends TestCase
     {
         $this->assertSame(
             'jmespath_' . md5(
-                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':6:foo.bar'
+                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':7:foo.bar'
             ),
             CompilerRuntime::functionName('foo.bar')
         );
@@ -105,6 +105,26 @@ class CompilerRuntimeTest extends TestCase
         try {
             foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
                 $this->assertTrue($runtime('`1` == `1.0`', null));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
+    public function testRuntimesReturnNullWhenOrderingNonNumbers(): void
+    {
+        $dir = $this->createTempDir();
+        $data = ['one' => 1, 'two' => 2, 'string' => 'a', 'list' => []];
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertNull($runtime('string < one', $data));
+                $this->assertNull($runtime('one >= list', $data));
+                $this->assertNull($runtime('string > string', $data));
+                $this->assertNull($runtime('missing <= one', $data));
+                $this->assertSame('fallback', $runtime("not_null(string < one, 'fallback')", $data));
+                $this->assertSame('fallback', $runtime("(string < one).not_null(@, 'fallback')", $data));
+                $this->assertFalse($runtime('two < one', $data));
             }
         } finally {
             $this->removeTempDir($dir);
