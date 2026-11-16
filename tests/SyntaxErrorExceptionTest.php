@@ -41,6 +41,32 @@ EOT;
         $this->assertStringContainsString($expected, $e->getMessage());
     }
 
+    /**
+     * @dataProvider literalValueProvider
+     */
+    public function testCreatesWithLiteralToken($value, string $found): void
+    {
+        $e = new SyntaxErrorException(
+            ['dot' => true, 'eof' => true],
+            ['type' => 'literal', 'pos' => 3, 'value' => $value],
+            'abc`def`'
+        );
+
+        $this->assertStringContainsString("; found literal \"{$found}\"", $e->getMessage());
+    }
+
+    public static function literalValueProvider(): array
+    {
+        return [
+            ['def', 'def'],
+            [[1, 2], '[1,2]'],
+            [['a' => 1], '{"a":1}'],
+            [true, 'true'],
+            [false, 'false'],
+            [null, 'null'],
+        ];
+    }
+
     public function testDefaultsMissingTokenKeysToEndOfExpression(): void
     {
         $e = new SyntaxErrorException(['comma' => true], ['type' => 'eof'], 'abc');

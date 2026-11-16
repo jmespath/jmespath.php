@@ -27,11 +27,16 @@ class SyntaxErrorException extends \InvalidArgumentException
 
     private function createTokenMessage(array $token, array $valid)
     {
+        $value = $token['value'];
+        if ($token['type'] === Lexer::T_LITERAL && !is_string($value) && !is_numeric($value)) {
+            $value = json_encode($value);
+        }
+
         return sprintf(
             'Expected one of the following: %s; found %s "%s"',
             implode(', ', array_keys($valid)),
             $token['type'],
-            $token['value']
+            $value
         );
     }
 }
