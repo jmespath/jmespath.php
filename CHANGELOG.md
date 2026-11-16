@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.10.0 - Upcoming
+
+* Fixed the compiled runtime to evaluate sub-expressions when the left side is null.
+
 ## 2.9.3 - Upcoming
 
 * Fixed merge() to error on scalar and null arguments instead of triggering PHP errors.
