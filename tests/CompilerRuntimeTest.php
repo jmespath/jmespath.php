@@ -30,7 +30,7 @@ class CompilerRuntimeTest extends TestCase
     {
         $this->assertSame(
             'jmespath_' . md5(
-                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':5:foo.bar'
+                'jmespath:' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ':6:foo.bar'
             ),
             CompilerRuntime::functionName('foo.bar')
         );
@@ -140,6 +140,22 @@ class CompilerRuntimeTest extends TestCase
 
                 // Multi-select lists already ended projections; pin the symmetry.
                 $this->assertSame(['Bob'], $runtime('people[*].[name][0]', $data));
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
+    public function testRuntimesEvaluateSubexpressionsOfNull(): void
+    {
+        $dir = $this->createTempDir();
+        $data = ['items' => [['a' => 1], ['a' => null], ['b' => 2]]];
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $this->assertSame('null', $runtime('missing.type(@)', $data));
+                $this->assertSame('fallback', $runtime("missing.not_null(@, 'fallback')", $data));
+                $this->assertSame(['number', 'null', 'null'], $runtime('items[*].a.type(@)', $data));
             }
         } finally {
             $this->removeTempDir($dir);

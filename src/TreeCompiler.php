@@ -142,11 +142,7 @@ class TreeCompiler
     {
         return $this
             ->dispatch($node['children'][0])
-            ->write('if ($value !== null) {')
-                ->indent()
-                ->dispatch($node['children'][1])
-                ->outdent()
-            ->write('}');
+            ->dispatch($node['children'][1]);
     }
 
     private function visit_field(array $node)
