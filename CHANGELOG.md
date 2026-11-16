@@ -4,6 +4,7 @@
 
 * Fixed the compiled runtime to evaluate sub-expressions when the left side is null.
 * Fixed the ordering operators to return null instead of false for non-numbers.
+* Fixed aggregate and sort functions to error on an invalid first or only element.
 
 ## 2.9.3 - 2026-11-16
 
