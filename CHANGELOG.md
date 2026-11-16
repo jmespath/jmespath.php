@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.9.3 - Upcoming
+## 2.9.3 - 2026-11-16
 
 * Fixed merge() to error on scalar and null arguments instead of triggering PHP errors.
 * Fixed merge() to accept stdClass objects.
