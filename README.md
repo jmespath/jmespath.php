@@ -86,6 +86,11 @@ $runtime('foo.bar', ['foo' => ['bar' => 'baz']]);
 // > 'baz'
 ```
 
+The cache directory holds PHP files that are executed when loaded, so it must
+not be writable by untrusted users. When no directory is provided, a private
+per-user directory inside the system temp directory is used, except on
+Windows, where the system temp directory itself is used.
+
 ##### Environment Variables
 
 You can utilize the CompilerRuntime in `JmesPath\search()` by setting the
