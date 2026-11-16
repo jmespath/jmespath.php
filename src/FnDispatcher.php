@@ -330,7 +330,7 @@ class FnDispatcher
 
         $arrays = [];
         foreach ($args as $index => $arg) {
-            $this->validateType("merge:{$index}", $arg, ['array', 'object']);
+            $this->validateType("merge:{$index}", $arg, ['object']);
             $arrays[] = (array) $arg;
         }
 

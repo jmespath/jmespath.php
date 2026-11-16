@@ -32,7 +32,7 @@ class FnDispatcherTest extends TestCase
     {
         $fn = new FnDispatcher();
 
-        $this->assertSame([0 => 'a', 'b' => 2], $fn('merge', [[0 => 'a', 'b' => 1], ['b' => 2]]));
+        $this->assertSame([0 => 'a', 'b' => 2], $fn('merge', [(object) ['0' => 'a', 'b' => 1], ['b' => 2]]));
     }
 
     /**
@@ -50,8 +50,9 @@ class FnDispatcherTest extends TestCase
     public static function invalidMergeArgumentsProvider(): array
     {
         return [
-            [[1], 'Argument 0 of merge must be one of the following types: array, object. number found'],
-            [[['x' => 1], null], 'Argument 1 of merge must be one of the following types: array, object. null found'],
+            [[1], 'Argument 0 of merge must be one of the following types: object. number found'],
+            [[[1, 2], [3]], 'Argument 0 of merge must be one of the following types: object. array found'],
+            [[['x' => 1], null], 'Argument 1 of merge must be one of the following types: object. null found'],
         ];
     }
 
