@@ -328,7 +328,13 @@ class FnDispatcher
             );
         }
 
-        return call_user_func_array('array_replace', $args);
+        $arrays = [];
+        foreach ($args as $index => $arg) {
+            $this->validateType("merge:{$index}", $arg, ['array', 'object']);
+            $arrays[] = (array) $arg;
+        }
+
+        return call_user_func_array('array_replace', $arrays);
     }
 
     private function fn_to_array(array $args)
