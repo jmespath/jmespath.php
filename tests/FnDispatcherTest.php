@@ -20,6 +20,41 @@ class FnDispatcherTest extends TestCase
         $this->assertEquals('"foo"', $fn('to_string', [new _TestJsonStringClass()]));
     }
 
+    public function testMergeAcceptsStdClassObjects(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertSame(['a' => 1, 'b' => 2], $fn('merge', [(object) ['a' => 1], ['b' => 2]]));
+        $this->assertSame(['a' => 2], $fn('merge', [['a' => 1], (object) ['a' => 2]]));
+    }
+
+    public function testMergeAcceptsObjectsWithNumericKeys(): void
+    {
+        $fn = new FnDispatcher();
+
+        $this->assertSame([0 => 'a', 'b' => 2], $fn('merge', [[0 => 'a', 'b' => 1], ['b' => 2]]));
+    }
+
+    /**
+     * @dataProvider invalidMergeArgumentsProvider
+     */
+    public function testMergeRejectsInvalidArguments(array $args, string $msg): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage($msg);
+
+        $fn = new FnDispatcher();
+        $fn('merge', $args);
+    }
+
+    public static function invalidMergeArgumentsProvider(): array
+    {
+        return [
+            [[1], 'Argument 0 of merge must be one of the following types: array, object. number found'],
+            [[['x' => 1], null], 'Argument 1 of merge must be one of the following types: array, object. null found'],
+        ];
+    }
+
     public function testMapRequiresArraySecondArgument(): void
     {
         $this->expectException(\RuntimeException::class);

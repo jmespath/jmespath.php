@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.9.3 - Upcoming
+
+* Fixed merge() to error on scalar and null arguments instead of triggering PHP errors.
+* Fixed merge() to accept stdClass objects.
+
 ## 2.9.2 - 2026-07-06
 
 * Pass explicit trim characters ahead of the PHP 8.6 trim default change.
