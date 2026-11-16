@@ -3,6 +3,7 @@
 ## 2.10.0 - Upcoming
 
 * Fixed the compiled runtime to evaluate sub-expressions when the left side is null.
+* Fixed the ordering operators to return null instead of false for non-numbers.
 
 ## 2.9.3 - Upcoming
 

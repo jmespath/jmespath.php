@@ -82,9 +82,9 @@ class ComplianceTest extends TestCase
             }
         }
 
-        $this->assertEquals(
-            $this->convertAssoc($result),
-            $this->convertAssoc($evalResult),
+        $this->assertSame(
+            $this->normalize($result),
+            $this->normalize($evalResult),
             $failure
         );
     }
@@ -127,12 +127,16 @@ class ComplianceTest extends TestCase
         return $cases;
     }
 
-    private function convertAssoc($data)
+    private function normalize($data)
     {
         if ($data instanceof \stdClass) {
-            return $this->convertAssoc((array) $data);
+            return $this->normalize((array) $data);
         } elseif (is_array($data)) {
-            return array_map([$this, 'convertAssoc'], $data);
+            $data = array_map([$this, 'normalize'], $data);
+            ksort($data, SORT_STRING);
+            return $data;
+        } elseif (is_int($data)) {
+            return (float) $data;
         } else {
             return $data;
         }
