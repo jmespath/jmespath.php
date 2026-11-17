@@ -2,6 +2,7 @@
 
 ## 2.10.0 - Upcoming
 
+* Added PHP 8.6 support.
 * Fixed the compiled runtime to evaluate sub-expressions when the left side is null.
 * Fixed the ordering operators to return null instead of false for non-numbers.
 * Fixed aggregate and sort functions to error on an invalid first or only element.
