@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.10.0 - Upcoming
+## 2.10.0 - 2026-11-17
 
 * Added PHP 8.6 support.
 * Added support for JEP-18 lexical scoping with let expressions.
