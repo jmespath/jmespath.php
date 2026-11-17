@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.9.4 - Upcoming
+## 2.9.4 - 2026-11-17
 
 * Fixed the compiled runtime to use a private default cache directory, preventing local code execution.
 
