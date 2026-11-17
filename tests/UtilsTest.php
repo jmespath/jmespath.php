@@ -19,6 +19,7 @@ class UtilsTest extends TestCase
             [[], 'array'],
             [[1, 2], 'array'],
             [['a' => 1], 'object'],
+            [['a' => 1, 0 => 2], 'object'],
             [new \stdClass(), 'object'],
             [function () {}, 'expression'],
             [new \ArrayObject(), 'array'],
@@ -80,6 +81,7 @@ class UtilsTest extends TestCase
             [[], true],
             [[1, 2], true],
             [['a' => 1], false],
+            [['a' => 1, 0 => 2], false],
             [new _TestClass(), false],
             [new \ArrayObject(['a' => 'b']), false],
             [new \ArrayObject([1]), true],
@@ -101,6 +103,7 @@ class UtilsTest extends TestCase
             [[], true],
             [[1, 2], false],
             [['a' => 1], true],
+            [['a' => 1, 0 => 2], true],
             [new _TestClass(), false],
             [new \ArrayObject(['a' => 'b']), true],
             [new \ArrayObject([1]), false],
@@ -114,6 +117,16 @@ class UtilsTest extends TestCase
     public function testChecksIfObject($given, $result): void
     {
         $this->assertSame($result, Utils::isObject($given));
+    }
+
+    public function testTypeChecksIgnoreInternalPointer(): void
+    {
+        $list = [1, 2];
+        end($list);
+
+        $this->assertSame('array', Utils::type($list));
+        $this->assertTrue(Utils::isArray($list));
+        $this->assertFalse(Utils::isObject($list));
     }
 
     public static function isTruthyProvider(): array

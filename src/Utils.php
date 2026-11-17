@@ -46,8 +46,7 @@ class Utils
             if (empty($arg)) {
                 return 'array';
             }
-            reset($arg);
-            return key($arg) === 0 ? 'array' : 'object';
+            return self::firstKey($arg) === 0 ? 'array' : 'object';
         } elseif ($arg instanceof \stdClass) {
             return 'object';
         } elseif ($arg instanceof \Closure) {
@@ -83,7 +82,7 @@ class Utils
     public static function isObject($value)
     {
         if (is_array($value)) {
-            return !$value || array_keys($value)[0] !== 0;
+            return !$value || self::firstKey($value) !== 0;
         }
 
         // Handle array-like values. Must be empty or offset 0 does not exist
@@ -102,13 +101,22 @@ class Utils
     public static function isArray($value)
     {
         if (is_array($value)) {
-            return !$value || array_keys($value)[0] === 0;
+            return !$value || self::firstKey($value) === 0;
         }
 
         // Handle array-like values. Must be empty or offset 0 exists.
         return $value instanceof \Countable && $value instanceof \ArrayAccess
             ? count($value) == 0 || $value->offsetExists(0)
             : false;
+    }
+
+    private static function firstKey(array $array)
+    {
+        foreach ($array as $key => $value) {
+            return $key;
+        }
+
+        return null;
     }
 
     /**
