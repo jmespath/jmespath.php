@@ -22,6 +22,7 @@ class Parser
         T::T_EOF               => 0,
         T::T_QUOTED_IDENTIFIER => 0,
         T::T_IDENTIFIER        => 0,
+        T::T_VARIABLE          => 0,
         T::T_UNKNOWN           => 0,
         T::T_LITERAL           => 0,
         T::T_RBRACKET          => 0,
@@ -32,6 +33,7 @@ class Parser
         T::T_CURRENT           => 0,
         T::T_EXPREF            => 0,
         T::T_COLON             => 0,
+        T::T_ASSIGN            => 0,
         T::T_PIPE              => 1,
         T::T_OR                => 2,
         T::T_AND               => 3,
@@ -106,6 +108,10 @@ class Parser
 
     private function nud_identifier()
     {
+        if ($this->isLet()) {
+            return $this->parseLet();
+        }
+
         $token = $this->token;
         $this->next();
         return ['type' => 'field', 'value' => $token['value']];
@@ -117,6 +123,13 @@ class Parser
         $this->next();
         $this->assertNotToken(T::T_LPAREN);
         return ['type' => 'field', 'value' => $token['value']];
+    }
+
+    private function nud_variable()
+    {
+        $token = $this->token;
+        $this->next();
+        return ['type' => 'variable', 'value' => $token['value']];
     }
 
     private function nud_current()
@@ -357,6 +370,8 @@ class Parser
             // Like the multi-select list above, a multi-select hash ends any
             // projection: tokens that follow apply to the projected list.
             return $this->nud_lbrace();
+        } elseif ($this->isLet()) {
+            throw $this->syntax('A let expression is not allowed after a dot');
         }
 
         return $this->expr($bp);
@@ -373,6 +388,39 @@ class Parser
             'type'     => 'key_val_pair',
             'value'    => $key,
             'children' => [$this->expr()]
+        ];
+    }
+
+    private function parseLet()
+    {
+        static $validVariable = [T::T_VARIABLE => true];
+        static $validAssign = [T::T_ASSIGN => true];
+        $bindings = [];
+
+        do {
+            $this->next($validVariable);
+            $name = $this->token['value'];
+            $this->next($validAssign);
+            $this->next();
+            $bindings[] = [
+                'type'     => 'variable_binding',
+                'value'    => $name,
+                'children' => [$this->expr()]
+            ];
+        } while ($this->token['type'] == T::T_COMMA);
+
+        if ($this->token['type'] !== T::T_IDENTIFIER || $this->token['value'] !== 'in') {
+            throw $this->syntax('Expected "in" after the let bindings');
+        }
+
+        $this->next();
+
+        return [
+            'type'     => 'let',
+            'children' => [
+                ['type' => 'bindings', 'children' => $bindings],
+                $this->expr()
+            ]
         ];
     }
 
@@ -474,6 +522,14 @@ class Parser
     private function syntax($msg)
     {
         return new SyntaxErrorException($msg, $this->token, $this->expression);
+    }
+
+    private function isLet()
+    {
+        // "let" is only a keyword before a variable; elsewhere it is a field.
+        return $this->token['type'] === T::T_IDENTIFIER
+            && $this->token['value'] === 'let'
+            && $this->lookahead() === T::T_VARIABLE;
     }
 
     private function lookahead()

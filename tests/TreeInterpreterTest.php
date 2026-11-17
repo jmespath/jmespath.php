@@ -38,6 +38,27 @@ class TreeInterpreterTest extends TestCase
         $this->assertSame([1, 2, 3], $t->visit($this->fromlessProjection(), [1, 2, 3]));
     }
 
+    public function testBindsVariablesInScope(): void
+    {
+        $t = new TreeInterpreter();
+        $node = ['type' => 'variable', 'value' => 'foo'];
+
+        $this->assertSame('bar', $t->withScope(['foo' => 'bar'])->visit($node, []));
+        $this->assertNull($t->withScope(['foo' => null])->visit($node, []));
+    }
+
+    public function testBindsVariablesOnACopy(): void
+    {
+        $t = new TreeInterpreter();
+        $node = ['type' => 'variable', 'value' => 'foo'];
+        $t->withScope(['foo' => 'bar']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Undefined variable: $foo');
+
+        $t->visit($node, []);
+    }
+
     public function testWorksWithArrayObjectAsObject(): void
     {
         $runtime = new AstRuntime();

@@ -33,9 +33,16 @@ class LexerTest extends TestCase
             [']', 'rbracket'],
             [':', 'colon'],
             [',', 'comma'],
+            ['=', 'assign'],
+            ['==', 'comparator'],
             ['||', 'or'],
             ['*', 'star'],
             ['foo', 'identifier'],
+            ['$foo', 'variable'],
+            ['$_', 'variable'],
+            ['$', 'unknown'],
+            ['$1', 'unknown'],
+            ['$ foo', 'unknown'],
             ['"foo"', 'quoted_identifier'],
             ['`true`', 'literal'],
             ['`false`', 'literal'],
@@ -77,6 +84,20 @@ class LexerTest extends TestCase
         $this->assertEquals(1.2, $tokens[2]['value']);
         $this->assertEquals(-1.02E-9, $tokens[4]['value']);
         $this->assertEquals(120, $tokens[6]['value']);
+    }
+
+    public function testTokenizesVariables(): void
+    {
+        $l = new Lexer();
+        $tokens = $l->tokenize('let $foo_1 = $Bar');
+        $this->assertSame('identifier', $tokens[0]['type']);
+        $this->assertSame('variable', $tokens[1]['type']);
+        $this->assertSame('foo_1', $tokens[1]['value']);
+        $this->assertSame(4, $tokens[1]['pos']);
+        $this->assertSame('assign', $tokens[2]['type']);
+        $this->assertSame('variable', $tokens[3]['type']);
+        $this->assertSame('Bar', $tokens[3]['value']);
+        $this->assertSame(13, $tokens[3]['pos']);
     }
 
     public function testCanWorkWithElidedJsonLiterals(): void
