@@ -10,6 +10,7 @@ class Lexer
     const T_STAR = 'star';
     const T_COMMA = 'comma';
     const T_COLON = 'colon';
+    const T_ASSIGN = 'assign';
     const T_CURRENT = 'current';
     const T_EXPREF = 'expref';
     const T_LPAREN = 'lparen';
@@ -20,6 +21,7 @@ class Lexer
     const T_RBRACKET = 'rbracket';
     const T_FLATTEN = 'flatten';
     const T_IDENTIFIER = 'identifier';
+    const T_VARIABLE = 'variable';
     const T_NUMBER = 'number';
     const T_QUOTED_IDENTIFIER = 'quoted_identifier';
     const T_UNKNOWN = 'unknown';
@@ -46,6 +48,7 @@ class Lexer
     const STATE_EQ = 11;
     const STATE_NOT = 12;
     const STATE_AND = 13;
+    const STATE_VARIABLE = 14;
 
     /** @var array We know what token we are consuming based on each char */
     private static $transitionTable = [
@@ -56,6 +59,7 @@ class Lexer
         '['  => self::STATE_LBRACKET,
         '|'  => self::STATE_PIPE,
         '&'  => self::STATE_AND,
+        '$'  => self::STATE_VARIABLE,
         '`'  => self::STATE_JSON_LITERAL,
         '"'  => self::STATE_QUOTED_STRING,
         "'"  => self::STATE_STRING_LITERAL,
@@ -235,6 +239,24 @@ class Lexer
                     'pos'   => $start
                 ];
 
+            } elseif ($state === self::STATE_VARIABLE) {
+
+                // Consume variable references
+                $start = key($chars);
+                $buffer = '';
+                $current = next($chars);
+                if ($current !== false && !isset($this->numbers[$current])) {
+                    while ($current !== false && isset($this->validIdentifier[$current])) {
+                        $buffer .= $current;
+                        $current = next($chars);
+                    }
+                }
+                $tokens[] = [
+                    'type'  => $buffer === '' ? self::T_UNKNOWN : self::T_VARIABLE,
+                    'value' => $buffer === '' ? '$' : $buffer,
+                    'pos'   => $start
+                ];
+
             } elseif ($state === self::STATE_WHITESPACE) {
 
                 // Skip whitespace
@@ -317,8 +339,8 @@ class Lexer
 
             } elseif ($state === self::STATE_EQ) {
 
-                // Consume equals
-                $tokens[] = $this->matchOr($chars, '=', '=', self::T_COMPARATOR, self::T_UNKNOWN);
+                // Consume "==" and "="
+                $tokens[] = $this->matchOr($chars, '=', '=', self::T_COMPARATOR, self::T_ASSIGN);
 
             } elseif ($state == self::STATE_AND) {
 

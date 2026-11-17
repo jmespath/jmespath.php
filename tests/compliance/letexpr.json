@@ -1,0 +1,604 @@
+[{
+  "comment": "Basic expressions",
+  "given": {"foo": {"bar": "baz"}},
+  "cases": [
+    {
+      "expression": "let $foo = foo in $foo",
+      "result": {"bar": "baz"}
+    },
+    {
+      "expression": "let $foo = foo.bar in $foo",
+      "result": "baz"
+    },
+    {
+      "expression": "let $foo = foo.bar in [$foo, $foo]",
+      "result": ["baz", "baz"]
+    },
+    {
+      "comment": "Multiple assignments",
+      "expression": "let $foo = 'foo', $bar = 'bar' in [$foo, $bar]",
+      "result": ["foo", "bar"]
+    }
+  ]
+}, {
+  "comment": "Nested expressions",
+  "given": {"a": "topval", "b": [{"a": "inner1"}, {"a": "inner2"}]},
+  "cases": [
+    {
+      "expression": "let $a = a in b[*].[a, $a, let $a = 'shadow' in $a]",
+      "result": [["inner1", "topval", "shadow"], ["inner2", "topval", "shadow"]]
+    },
+    {
+      "comment": "Bindings only visible within expression clause",
+      "expression": "let $a = 'top-a' in let $a = 'in-a', $b = $a in $b",
+      "result": "top-a"
+    },
+    {
+      "comment": "Outer binding is visible again after the inner expression",
+      "expression": "let $a = a in [let $a = 'shadow' in $a, $a]",
+      "result": ["shadow", "topval"]
+    },
+    {
+      "expression": "[let $a = 'first' in $a, let $a = 'second' in $a]",
+      "result": ["first", "second"]
+    },
+    {
+      "expression": "let $a = a in let $b = $a in [$a, $b]",
+      "result": ["topval", "topval"]
+    },
+    {
+      "comment": "Let expression as a binding",
+      "expression": "let $a = let $b = a in $b in $a",
+      "result": "topval"
+    },
+    {
+      "comment": "Current node is restored after a let expression in a binding",
+      "expression": "let $a = b[0] | let $b = a in $b in [$a, a]",
+      "result": ["inner1", "topval"]
+    }
+  ]
+}, {
+  "comment": "Let as valid identifiers",
+  "given": {"let": {"let": "let-val", "in": "in-val"}},
+  "cases": [
+    {
+      "expression": "let $let = let in {let: let, in: $let}",
+      "result": {
+        "let": {"let": "let-val", "in": "in-val"},
+        "in": {"let": "let-val", "in": "in-val"}
+      }
+    },
+    {
+      "expression": "let $let = 'let' in { let: let, in: $let }",
+      "result": {"let": {"let": "let-val", "in": "in-val"}, "in": "let"}
+    },
+    {
+      "expression": "let $let = 'let' in { let: 'let', in: $let }",
+      "result": {"let": "let", "in": "let"}
+    },
+    {
+      "expression": "let",
+      "result": {"let": "let-val", "in": "in-val"}
+    },
+    {
+      "expression": "let.let",
+      "result": "let-val"
+    },
+    {
+      "expression": "let.in",
+      "result": "in-val"
+    },
+    {
+      "expression": "let | in",
+      "result": "in-val"
+    },
+    {
+      "expression": "[let.let, let.in]",
+      "result": ["let-val", "in-val"]
+    },
+    {
+      "expression": "let $in = let.in in $in",
+      "result": "in-val"
+    },
+    {
+      "expression": "let $a = let in $a.in",
+      "result": "in-val"
+    },
+    {
+      "expression": "let in",
+      "error": "syntax"
+    },
+    {
+      "expression": "let(@)",
+      "error": "unknown-function"
+    }
+  ]
+}, {
+  "comment": "Projections stop",
+  "given": {"foo": [[0, 1], [2, 3], [4, 5]]},
+  "cases": [
+    {
+      "comment": "Projection is stopped when bound to variable",
+      "expression": "let $foo = foo[*] in $foo[0]",
+      "result": [0, 1]
+    },
+    {
+      "expression": "let $foo = foo[*] in $foo[*][0]",
+      "result": [0, 2, 4]
+    }
+  ]
+}, {
+  "comment": "Examples from Motivation section",
+  "given": [
+    {
+      "home_state": "WA",
+      "states": [
+        {"name": "WA", "cities": ["Seattle", "Bellevue", "Olympia"]},
+        {"name": "CA", "cities": ["Los Angeles", "San Francisco"]},
+        {"name": "NY", "cities": ["New York City", "Albany"]}
+      ]
+    },
+    {
+      "home_state": "NY",
+      "states": [
+        {"name": "WA", "cities": ["Seattle", "Bellevue", "Olympia"]},
+        {"name": "CA", "cities": ["Los Angeles", "San Francisco"]},
+        {"name": "NY", "cities": ["New York City", "Albany"]}
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "expression": "[*].[let $home_state = home_state in states[? name == $home_state].cities[]][]",
+      "result": [["Seattle", "Bellevue", "Olympia"], ["New York City", "Albany"]]
+    }
+  ]
+}, {
+  "given": {
+    "imageDetails": [
+      {
+        "repositoryName": "org/first-repo",
+        "imageTags": ["latest", "v1.0", "v1.2"],
+        "imageDigest": "sha256:abcd"
+      },
+      {
+        "repositoryName": "org/second-repo",
+        "imageTags": ["v2.0", "v2.2"],
+        "imageDigest": "sha256:efgh"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "expression": "imageDetails[].[\n  let $repo = repositoryName,\n      $digest = imageDigest\n  in\n    imageTags[].[@, $digest, $repo]\n][][]\n",
+      "result": [
+        ["latest", "sha256:abcd", "org/first-repo"],
+        ["v1.0", "sha256:abcd", "org/first-repo"],
+        ["v1.2", "sha256:abcd", "org/first-repo"],
+        ["v2.0", "sha256:efgh", "org/second-repo"],
+        ["v2.2", "sha256:efgh", "org/second-repo"]
+      ]
+    }
+  ]
+}, {
+  "comment": "Variables on the left of other expressions",
+  "given": {
+    "obj": {"x": 1, "y": 2},
+    "list": [[1, 2], [3], [4, 5, 6]],
+    "items": [{"id": 2, "name": "b"}, {"id": 1, "name": "a"}]
+  },
+  "cases": [
+    {
+      "expression": "let $v = obj in $v.x",
+      "result": 1
+    },
+    {
+      "expression": "let $v = obj in $v.*",
+      "result": [1, 2]
+    },
+    {
+      "expression": "let $v = list in $v[0]",
+      "result": [1, 2]
+    },
+    {
+      "expression": "let $v = list in $v[-1]",
+      "result": [4, 5, 6]
+    },
+    {
+      "expression": "let $v = list in $v[1:]",
+      "result": [[3], [4, 5, 6]]
+    },
+    {
+      "expression": "let $v = list in $v[]",
+      "result": [1, 2, 3, 4, 5, 6]
+    },
+    {
+      "expression": "let $v = list in $v[*][0]",
+      "result": [1, 3, 4]
+    },
+    {
+      "expression": "let $v = items in $v[?id == `1`].name",
+      "result": ["a"]
+    },
+    {
+      "expression": "let $v = items in $v | [0].name",
+      "result": "b"
+    },
+    {
+      "expression": "let $v = items in length($v)",
+      "result": 2
+    },
+    {
+      "expression": "let $v = items[0].id, $w = items[1].id in $v > $w",
+      "result": true
+    },
+    {
+      "expression": "let $v = missing in !$v",
+      "result": true
+    },
+    {
+      "expression": "let $v = @ in items[*].[name, $v.obj.x]",
+      "result": [["b", 1], ["a", 1]]
+    }
+  ]
+}, {
+  "comment": "Extent of the binding expressions",
+  "given": {"foo": "F", "bar": "B", "list": [1, 2, 3], "two": 2},
+  "cases": [
+    {
+      "expression": "let $a = list | [0] in $a",
+      "result": 1
+    },
+    {
+      "expression": "let $a = missing || foo, $b = foo && bar in [$a, $b]",
+      "result": ["F", "B"]
+    },
+    {
+      "expression": "let $a = two == `2` in $a",
+      "result": true
+    }
+  ]
+}, {
+  "comment": "Extent of the expression clause",
+  "given": {"foo": "F", "bar": "B", "list": [1, 2, 3], "two": 2},
+  "cases": [
+    {
+      "comment": "Variables are visible on the right of a pipe",
+      "expression": "let $a = foo in bar | $a",
+      "result": "F"
+    },
+    {
+      "expression": "let $a = foo in bar | [@, $a]",
+      "result": ["B", "F"]
+    },
+    {
+      "expression": "let $a = two in list[*] | [?@ == $a]",
+      "result": [2]
+    },
+    {
+      "expression": "let $a = foo in $a || bar",
+      "result": "F"
+    },
+    {
+      "expression": "let $a = missing in $a || bar",
+      "result": "B"
+    },
+    {
+      "expression": "missing || let $a = foo in $a",
+      "result": "F"
+    },
+    {
+      "expression": "foo && let $a = bar in $a",
+      "result": "B"
+    },
+    {
+      "expression": "foo == let $a = foo in $a",
+      "result": true
+    },
+    {
+      "expression": "!let $a = missing in $a",
+      "result": true
+    },
+    {
+      "expression": "[let $a = foo in $a, bar]",
+      "result": ["F", "B"]
+    },
+    {
+      "expression": "{a: let $a = foo in $a, b: bar}",
+      "result": {"a": "F", "b": "B"}
+    },
+    {
+      "expression": "length(let $a = list in $a)",
+      "result": 3
+    },
+    {
+      "expression": "list[?let $a = @ in $a > `1`]",
+      "result": [2, 3]
+    },
+    {
+      "expression": "(let $a = foo in $a)",
+      "result": "F"
+    },
+    {
+      "expression": "(let $a = @ in $a).bar",
+      "result": "B"
+    }
+  ]
+}, {
+  "comment": "Expression references",
+  "given": {"owner": "ann", "items": [{"id": 2, "name": "b"}, {"id": 1, "name": "a"}]},
+  "cases": [
+    {
+      "expression": "let $o = owner in map(&[name, $o], items)",
+      "result": [["b", "ann"], ["a", "ann"]]
+    },
+    {
+      "expression": "let $o = owner in sort_by(items, &join('-', [$o, name]))[*].id",
+      "result": [1, 2]
+    },
+    {
+      "comment": "Expression reference that does not use the variables in scope",
+      "expression": "let $o = owner in sort_by(items, &id)[*].name",
+      "result": ["a", "b"]
+    },
+    {
+      "expression": "items[*].[let $i = @ in map(&[@, $i.name], `[1]`)]",
+      "result": [[[[1, "b"]]], [[[1, "a"]]]]
+    },
+    {
+      "expression": "let $o = owner in let $o = 'bob' in map(&$o, items)",
+      "result": ["bob", "bob"]
+    },
+    {
+      "comment": "Let expression inside an expression reference",
+      "expression": "map(&(let $n = name in [$n, id]), items)",
+      "result": [["b", 2], ["a", 1]]
+    },
+    {
+      "comment": "Expression references keep the scope they were created in",
+      "expression": "map(let $o = owner in &[name, $o], items)",
+      "result": [["b", "ann"], ["a", "ann"]]
+    },
+    {
+      "expression": "let $f = &$o in let $o = 'bob' in map($f, items)",
+      "error": "undefined-variable"
+    },
+    {
+      "expression": "map(&map(f, `[0]`), items[*].{f: let $i = id in &$i})",
+      "result": [[2], [1]]
+    },
+    {
+      "expression": "map(&$noexist, items)",
+      "error": "undefined-variable"
+    },
+    {
+      "comment": "Undefined variables are only an error when evaluated",
+      "expression": "map(&$noexist, `[]`)",
+      "result": []
+    }
+  ]
+}, {
+  "comment": "Current node is null",
+  "given": null,
+  "cases": [
+    {
+      "expression": "let $a = 'x' in $a",
+      "result": "x"
+    },
+    {
+      "expression": "let $a = @ in $a",
+      "result": null
+    },
+    {
+      "expression": "let $a = 'x' in @ || $a",
+      "result": "x"
+    },
+    {
+      "expression": "let $a = 'x' in [$a]",
+      "result": null
+    }
+  ]
+}, {
+  "given": {"foo": 1},
+  "cases": [
+    {
+      "expression": "missing | let $a = 'x' in $a",
+      "result": "x"
+    },
+    {
+      "expression": "let $a = missing in $a",
+      "result": null
+    },
+    {
+      "expression": "let $a = missing in [$a]",
+      "result": [null]
+    },
+    {
+      "expression": "let $a = `null` in $a == `null`",
+      "result": true
+    }
+  ]
+}, {
+  "comment": "Undefined variables",
+  "given": {"list": [1], "empty": []},
+  "cases": [
+    {
+      "expression": "$noexist",
+      "error": "undefined-variable"
+    },
+    {
+      "comment": "Reference out of scope variable",
+      "expression": "[let $scope = 'foo' in [$scope], $scope]",
+      "error": "undefined-variable"
+    },
+    {
+      "comment": "Bindings are not visible to their own expression",
+      "expression": "let $a = $a in $a",
+      "error": "undefined-variable"
+    },
+    {
+      "comment": "Bindings are not visible to each other",
+      "expression": "let $a = 'x', $b = $a in $b",
+      "error": "undefined-variable"
+    },
+    {
+      "comment": "Variable names are case sensitive",
+      "expression": "let $A = 'x' in $a",
+      "error": "undefined-variable"
+    },
+    {
+      "expression": "list[*].[$noexist]",
+      "error": "undefined-variable"
+    },
+    {
+      "comment": "Undefined variables are only an error when evaluated",
+      "expression": "empty[*].[$noexist]",
+      "result": []
+    },
+    {
+      "expression": "empty[?$noexist]",
+      "result": []
+    },
+    {
+      "expression": "'x' || $noexist",
+      "result": "x"
+    },
+    {
+      "expression": "`false` && $noexist",
+      "result": false
+    }
+  ]
+}, {
+  "comment": "Syntax errors",
+  "given": {"foo": {"let": 1}},
+  "cases": [
+    {
+      "comment": "Can't use var ref in RHS of subexpression",
+      "expression": "foo.$bar",
+      "error": "syntax"
+    },
+    {
+      "expression": "foo.*.$bar",
+      "error": "syntax"
+    },
+    {
+      "comment": "Can't use let expression in RHS of subexpression",
+      "expression": "foo.let $a = 'x' in $a",
+      "error": "syntax"
+    },
+    {
+      "comment": "Only let starts a let expression",
+      "expression": "foo $a = 'x' in $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "foo $bar",
+      "error": "syntax"
+    },
+    {
+      "expression": "$foo $bar",
+      "error": "syntax"
+    },
+    {
+      "expression": "foo$bar",
+      "error": "syntax"
+    },
+    {
+      "expression": "{$a: foo}",
+      "error": "syntax"
+    },
+    {
+      "expression": "$a(@)",
+      "error": "syntax"
+    },
+    {
+      "comment": "Missing in",
+      "expression": "let $a = foo",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a = foo bar $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a = foo \"in\" $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a = foo ) $a",
+      "error": "syntax"
+    },
+    {
+      "comment": "Missing expression",
+      "expression": "let $a = foo in",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a = in $a",
+      "error": "syntax"
+    },
+    {
+      "comment": "Invalid bindings",
+      "expression": "let $a = foo,",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a = foo, in $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a, $b = foo in $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a foo in $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $a == foo in $a",
+      "error": "syntax"
+    },
+    {
+      "expression": "let = foo in $a",
+      "error": "syntax"
+    },
+    {
+      "comment": "Invalid variable names",
+      "expression": "$",
+      "error": "syntax"
+    },
+    {
+      "expression": "$ a",
+      "error": "syntax"
+    },
+    {
+      "expression": "$1",
+      "error": "syntax"
+    },
+    {
+      "expression": "$$a",
+      "error": "syntax"
+    },
+    {
+      "expression": "$\"a\"",
+      "error": "syntax"
+    },
+    {
+      "expression": "let $ = foo in @",
+      "error": "syntax"
+    },
+    {
+      "comment": "Assignment outside of a let expression",
+      "expression": "$a = foo",
+      "error": "syntax"
+    },
+    {
+      "expression": "foo = bar",
+      "error": "syntax"
+    },
+    {
+      "expression": "foo[?let = `1`]",
+      "error": "syntax"
+    }
+  ]
+}]

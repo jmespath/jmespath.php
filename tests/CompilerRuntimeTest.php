@@ -304,6 +304,27 @@ class CompilerRuntimeTest extends TestCase
         }
     }
 
+    public function testRuntimesReportUndefinedVariables(): void
+    {
+        $dir = $this->createTempDir();
+
+        try {
+            foreach ([new AstRuntime(), new CompilerRuntime($dir)] as $runtime) {
+                $message = null;
+
+                try {
+                    $runtime('[let $foo = @ in $foo, $foo]', []);
+                } catch (\RuntimeException $e) {
+                    $message = $e->getMessage();
+                }
+
+                $this->assertSame('Undefined variable: $foo', $message);
+            }
+        } finally {
+            $this->removeTempDir($dir);
+        }
+    }
+
     public function testCompiledRuntimeSortsNumerically(): void
     {
         $dir = $this->createTempDir();

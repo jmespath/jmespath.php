@@ -9,6 +9,7 @@ class TreeCompiler
     private $indentation;
     private $source;
     private $vars;
+    private $scope;
 
     /**
      * @param array  $ast    AST to compile.
@@ -19,7 +20,7 @@ class TreeCompiler
      */
     public function visit(array $ast, $fnName, $expr)
     {
-        $this->vars = [];
+        $this->vars = $this->scope = [];
         $this->source = $this->indentation = '';
         $this->write("<?php\n")
             ->write('use JmesPath\\TreeInterpreter as Ti;')
@@ -203,6 +204,29 @@ class TreeCompiler
             ->dispatch($node['children'][1]);
     }
 
+    private function visit_let(array $node)
+    {
+        $value = $this->makeVar('beforeLet');
+        $scope = $this->scope;
+        $bound = [];
+        $this->write('%s = $value;', $value);
+
+        foreach ($node['children'][0]['children'] as $binding) {
+            $var = $this->makeVar('let');
+            $this->dispatch($binding['children'][0])
+                ->write('%s = $value;', $var)
+                ->write('$value = %s;', $value);
+            $bound[$binding['value']] = $var;
+        }
+
+        // Bindings are only visible to the body, not to each other.
+        $this->scope = $bound + $scope;
+        $this->dispatch($node['children'][1]);
+        $this->scope = $scope;
+
+        return $this;
+    }
+
     private function visit_multi_select_list(array $node)
     {
         return $this->visit_multi_select_hash($node);
@@ -274,12 +298,36 @@ class TreeCompiler
         return $this->write('// Visiting current node (no-op)');
     }
 
+    private function visit_variable(array $node)
+    {
+        if (isset($this->scope[$node['value']])) {
+            return $this->write('$value = %s;', $this->scope[$node['value']]);
+        }
+
+        return $this->write(
+            'throw new \\RuntimeException(%s);',
+            var_export('Undefined variable: $' . $node['value'], true)
+        );
+    }
+
     private function visit_expref(array $node)
     {
         $child = var_export($node['children'][0], true);
-        return $this->write('$value = function ($value) use ($interpreter) {')
+        $interpreter = '$interpreter';
+
+        if ($this->scope) {
+            $bindings = [];
+            foreach ($this->scope as $name => $var) {
+                $bindings[] = var_export($name, true) . ' => ' . $var;
+            }
+            $scoped = $this->makeVar('scoped');
+            $this->write('%s = $interpreter->withScope([%s]);', $scoped, implode(', ', $bindings));
+            $interpreter = $scoped;
+        }
+
+        return $this->write('$value = function ($value) use (%s) {', $interpreter)
             ->indent()
-            ->write('return $interpreter->visit(%s, $value);', $child)
+            ->write('return %s->visit(%s, $value);', $interpreter, $child)
             ->outdent()
         ->write('};');
     }

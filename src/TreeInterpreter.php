@@ -9,6 +9,9 @@ class TreeInterpreter
     /** @var callable */
     private $fnDispatcher;
 
+    /** @var array Variables in scope, keyed by name */
+    private $scope = [];
+
     /**
      * @param callable|null $fnDispatcher Function dispatching function that accepts
      *                                    a function name argument and an array of
@@ -30,6 +33,22 @@ class TreeInterpreter
     public function visit(array $node, $data)
     {
         return $this->dispatch($node, $data);
+    }
+
+    /**
+     * Returns a copy of the interpreter that has the given variables in scope.
+     *
+     * @param array $scope Variables to bind, keyed by name
+     *
+     * @return static
+     */
+    public function withScope(array $scope)
+    {
+        // Bind on a copy so that expression references keep their variables.
+        $interpreter = clone $this;
+        $interpreter->scope = $scope + $this->scope;
+
+        return $interpreter;
     }
 
     /**
@@ -123,6 +142,12 @@ class TreeInterpreter
             case 'current':
                 return $value;
 
+            case 'variable':
+                if (!array_key_exists($node['value'], $this->scope)) {
+                    throw new \RuntimeException('Undefined variable: $' . $node['value']);
+                }
+                return $this->scope[$node['value']];
+
             case 'or':
                 $result = $this->dispatch($node['children'][0], $value);
                 return Utils::isTruthy($result)
@@ -145,6 +170,17 @@ class TreeInterpreter
                     $node['children'][1],
                     $this->dispatch($node['children'][0], $value)
                 );
+
+            case 'let':
+                $bound = [];
+                foreach ($node['children'][0]['children'] as $binding) {
+                    $bound[$binding['value']] = $this->dispatch(
+                        $binding['children'][0],
+                        $value
+                    );
+                }
+
+                return $this->withScope($bound)->dispatch($node['children'][1], $value);
 
             case 'multi_select_list':
                 if ($value === null) {

@@ -43,6 +43,34 @@ class TreeCompilerTest extends TestCase
         );
     }
 
+    public function testEscapesVariableNames(): void
+    {
+        $compiler = new TreeCompiler();
+        $name = '\' . $shouldNotBeCode . \'';
+        $variable = ['type' => 'variable', 'value' => $name];
+        $let = [
+            'type'     => 'let',
+            'children' => [
+                [
+                    'type'     => 'bindings',
+                    'children' => [
+                        ['type' => 'variable_binding', 'value' => $name, 'children' => [['type' => 'current']]],
+                    ],
+                ],
+                ['type' => 'expref', 'children' => [$variable]],
+            ],
+        ];
+
+        $this->assertStringContainsString(
+            'throw new \\RuntimeException(\'Undefined variable: $\\\' . $shouldNotBeCode . \\\'\');',
+            $compiler->visit($variable, 'testing', 'example')
+        );
+        $this->assertStringContainsString(
+            '$interpreter->withScope([\'\\\' . $shouldNotBeCode . \\\'\' => ',
+            $compiler->visit($let, 'testing', 'example')
+        );
+    }
+
     public function testEscapesFunctionName(): void
     {
         $compiler = new TreeCompiler();
