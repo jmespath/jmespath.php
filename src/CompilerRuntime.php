@@ -20,6 +20,7 @@ class CompilerRuntime
     private $compiler;
     private $cacheDir;
     private $interpreter;
+    private $tempDir;
 
     /**
      * @param string|null $dir Directory used to store compiled PHP files.
@@ -30,7 +31,11 @@ class CompilerRuntime
     {
         $this->parser = $parser ?: new Parser();
         $this->compiler = new TreeCompiler();
-        $dir = $dir ?: sys_get_temp_dir();
+
+        if (!$dir) {
+            $dir = self::defaultCacheDir();
+            $this->tempDir = realpath(sys_get_temp_dir());
+        }
 
         if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
             throw new \RuntimeException("Unable to create cache directory: $dir");
@@ -57,6 +62,11 @@ class CompilerRuntime
         $functionName = self::functionName($expression);
 
         if (!function_exists($functionName)) {
+            if ($this->tempDir) {
+                // A long-lived process can outlive the directory it checked.
+                $this->cacheDir = self::defaultCacheDir($this->tempDir);
+            }
+
             $filename = "{$this->cacheDir}/{$functionName}.php";
             if (!file_exists($filename)) {
                 $this->compile($filename, $expression, $functionName);
@@ -78,10 +88,64 @@ class CompilerRuntime
         );
     }
 
+    /**
+     * @internal Shared with Env so the default location cannot drift.
+     */
+    public static function defaultCacheDir($temp = null)
+    {
+        $dir = $temp ?: sys_get_temp_dir();
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            return $dir;
+        }
+
+        $uid = self::effectiveUserId();
+        $dir = rtrim($dir, '/') . "/jmespath-{$uid}";
+
+        clearstatcache(true, $dir);
+
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0700, true);
+        }
+
+        // A single lstat() so the type, owner and mode describe the same file.
+        $stat = @lstat($dir);
+
+        if (!$stat
+            || ($stat['mode'] & 0170000) !== 0040000
+            || $stat['uid'] !== $uid
+            || ($stat['mode'] & 0077) !== 0
+        ) {
+            throw new \RuntimeException(
+                "Unable to use private cache directory: {$dir}"
+            );
+        }
+
+        return $dir;
+    }
+
     /** @internal */
     public function getCacheDir()
     {
         return $this->cacheDir;
+    }
+
+    private static function effectiveUserId()
+    {
+        if (function_exists('posix_geteuid')) {
+            return posix_geteuid();
+        }
+
+        $file = tmpfile();
+
+        if (!$file) {
+            throw new \RuntimeException('Unable to determine the current user');
+        }
+
+        $uid = fstat($file)['uid'];
+        fclose($file);
+
+        return $uid;
     }
 
     private function compile($filename, $expression, $functionName)
