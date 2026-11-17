@@ -282,6 +282,52 @@ class FnDispatcherTest extends TestCase
     }
 
     /**
+     * @dataProvider invalidFirstElementProvider
+     */
+    public function testValidatesFirstElement(string $fnName, array $args, string $message): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage($message);
+
+        $fn = new FnDispatcher();
+        $fn($fnName, $args);
+    }
+
+    public static function invalidFirstElementProvider(): array
+    {
+        $expr = function ($item) { return $item['k']; };
+
+        return [
+            ['avg', [[true]], 'Argument 0 of avg encountered a type error in sequence'],
+            ['avg', [['a', 1, 2]], 'Argument 0 of avg encountered a type error in sequence'],
+            ['join', ['|', [1]], 'Argument 0 of join encountered a type error in sequence'],
+            ['join', ['|', [null]], 'Argument 0 of join encountered a type error in sequence'],
+            ['max', [[true]], 'Argument 0 of max encountered a type error in sequence'],
+            ['max_by', [[['k' => true]], $expr], 'argument 1 of max_by must be one of the following types: number, string. boolean found'],
+            ['min', [[[1]]], 'Argument 0 of min encountered a type error in sequence'],
+            ['min_by', [[['k' => true]], $expr], 'argument 1 of min_by must be one of the following types: number, string. boolean found'],
+            ['sum', [['a']], 'Argument 0 of sum encountered a type error in sequence'],
+            ['sum', [['a', 1, 2]], 'Argument 0 of sum encountered a type error in sequence'],
+            ['sort', [[true]], 'Argument 0 of sort encountered a type error in sequence'],
+            ['sort_by', [[['k' => true]], $expr], 'Argument 0 of sort_by encountered a type error in sequence'],
+        ];
+    }
+
+    public function testAcceptsValidSingleElement(): void
+    {
+        $fn = new FnDispatcher();
+        $expr = function ($item) { return $item['k']; };
+
+        $this->assertSame(1.5, $fn('avg', [[1.5]]));
+        $this->assertSame('a', $fn('join', ['|', ['a']]));
+        $this->assertSame(['k' => 1], $fn('max_by', [[['k' => 1]], $expr]));
+        $this->assertSame(['k' => 1], $fn('min_by', [[['k' => 1]], $expr]));
+        $this->assertSame(1.5, $fn('sum', [[1.5]]));
+        $this->assertSame(['a'], $fn('sort', [['a']]));
+        $this->assertSame([['k' => 1]], $fn('sort_by', [[['k' => 1]], $expr]));
+    }
+
+    /**
      * @dataProvider toNumberProvider
      */
     public function testToNumberParsesJsonNumberStrings($input, $expected): void

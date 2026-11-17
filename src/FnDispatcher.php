@@ -136,16 +136,12 @@ class FnDispatcher
         $expr = $this->wrapExpression('max_by:1', $args[1], ['number', 'string']);
         $carryKey = null;
         $fn = function ($carry, $item, $index) use ($expr, &$carryKey) {
-            if (!$index) {
-                return $item;
-            }
-            if ($index === 1) {
-                $carryKey = $expr($carry);
-            }
             $itemKey = $expr($item);
-            $this->validateSeq('max_by:0', ['number', 'string'], $carryKey, $itemKey);
-            if (self::compareValues($carryKey, $itemKey) >= 0) {
-                return $carry;
+            if ($index) {
+                $this->validateSeq('max_by:0', ['number', 'string'], $carryKey, $itemKey);
+                if (self::compareValues($carryKey, $itemKey) >= 0) {
+                    return $carry;
+                }
             }
             $carryKey = $itemKey;
             return $item;
@@ -168,16 +164,12 @@ class FnDispatcher
         $expr = $this->wrapExpression('min_by:1', $args[1], ['number', 'string']);
         $carryKey = null;
         $fn = function ($carry, $item, $index) use ($expr, &$carryKey) {
-            if (!$index) {
-                return $item;
-            }
-            if ($index === 1) {
-                $carryKey = $expr($carry);
-            }
             $itemKey = $expr($item);
-            $this->validateSeq('min_by:0', ['number', 'string'], $carryKey, $itemKey);
-            if (self::compareValues($carryKey, $itemKey) <= 0) {
-                return $carry;
+            if ($index) {
+                $this->validateSeq('min_by:0', ['number', 'string'], $carryKey, $itemKey);
+                if (self::compareValues($carryKey, $itemKey) <= 0) {
+                    return $carry;
+                }
             }
             $carryKey = $itemKey;
             return $item;
@@ -210,6 +202,9 @@ class FnDispatcher
     {
         $this->validate('sort', $args, [['array']]);
         $valid = ['string', 'number'];
+        if (count($args[0]) === 1) {
+            $this->validateSeq('sort:0', $valid, $args[0][0], $args[0][0]);
+        }
         return Utils::stableSort($args[0], function ($a, $b) use ($valid) {
             $this->validateSeq('sort:0', $valid, $a, $b);
             return self::compareValues($a, $b);
@@ -221,6 +216,10 @@ class FnDispatcher
         $this->validate('sort_by', $args, [['array'], ['expression']]);
         $expr = $args[1];
         $valid = ['string', 'number'];
+        if (count($args[0]) === 1) {
+            $key = $expr($args[0][0]);
+            $this->validateSeq('sort_by:0', $valid, $key, $key);
+        }
         return Utils::stableSort(
             $args[0],
             function ($a, $b) use ($expr, $valid) {
@@ -459,9 +458,7 @@ class FnDispatcher
         return array_reduce(
             $values,
             function ($carry, $item) use ($from, $types, $reduce, &$i) {
-                if (++$i > 0) {
-                    $this->validateSeq($from, $types, $carry, $item);
-                }
+                $this->validateSeq($from, $types, ++$i > 0 ? $carry : $item, $item);
                 return $reduce($carry, $item, $i);
             }
         );
