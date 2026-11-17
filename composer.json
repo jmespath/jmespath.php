@@ -21,7 +21,7 @@
     },
     "require-dev": {
         "composer/xdebug-handler": "^3.0.3",
-        "phpunit/phpunit": "^8.5.52"
+        "phpunit/phpunit": "^8.5.57"
     },
     "autoload": {
         "psr-4": {
