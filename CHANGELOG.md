@@ -7,6 +7,10 @@
 * Fixed aggregate and sort functions to error on an invalid first or only element.
 * Improved the performance of type checks on large arrays.
 
+## 2.9.4 - 2026-11-17
+
+* Fixed the compiled runtime to use a private default cache directory, preventing local code execution.
+
 ## 2.9.3 - 2026-11-16
 
 * Fixed merge() to error on scalar and null arguments instead of triggering PHP errors.

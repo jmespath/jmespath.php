@@ -50,7 +50,7 @@ final class Env
 
     /**
      * Delete all previously compiled JMESPath files from the JP_COMPILE_DIR
-     * directory or sys_get_temp_dir().
+     * directory or the default cache directory.
      *
      * @return int Returns the number of deleted files.
      */
@@ -59,7 +59,11 @@ final class Env
         $total = 0;
         $compileDir = self::getEnvVariable(self::COMPILE_DIR);
         if ($compileDir === 'on' || !$compileDir) {
-            $compileDir = sys_get_temp_dir();
+            try {
+                $compileDir = CompilerRuntime::defaultCacheDir();
+            } catch (\RuntimeException $e) {
+                return $total;
+            }
         }
 
         foreach (glob("{$compileDir}/jmespath_*.php") as $file) {

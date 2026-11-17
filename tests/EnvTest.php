@@ -22,8 +22,8 @@ class EnvTest extends TestCase
 
     public function testCleansCompileDir(): void
     {
-        $dir = sys_get_temp_dir();
-        $runtime = new CompilerRuntime($dir);
+        $runtime = new CompilerRuntime();
+        $dir = $runtime->getCacheDir();
         $runtime('@ | @ | @[0][0][0]', []);
         $this->assertNotEmpty(glob($dir . '/jmespath_*.php'));
         $this->assertGreaterThan(0, Env::cleanCompileDir());
@@ -37,8 +37,8 @@ class EnvTest extends TestCase
         $_SERVER[Env::COMPILE_DIR] = 'on';
 
         $expr = 'env' . bin2hex(random_bytes(12));
-        $filename = sys_get_temp_dir() . '/' . CompilerRuntime::functionName($expr) . '.php';
-        $runtime = new CompilerRuntime(sys_get_temp_dir());
+        $runtime = new CompilerRuntime();
+        $filename = $runtime->getCacheDir() . '/' . CompilerRuntime::functionName($expr) . '.php';
 
         try {
             $this->assertSame(1, $runtime($expr, [$expr => 1]));

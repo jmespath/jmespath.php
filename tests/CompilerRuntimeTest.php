@@ -36,6 +36,128 @@ class CompilerRuntimeTest extends TestCase
         );
     }
 
+    /**
+     * @requires function posix_geteuid
+     */
+    public function testDefaultCacheDirIsPrivateToCurrentUser(): void
+    {
+        $temp = $this->createTempDir();
+        $dir = $temp . '/jmespath-' . posix_geteuid();
+
+        try {
+            $this->assertSame($dir, $this->runInTempDir($temp, 'echo (new JmesPath\CompilerRuntime())->getCacheDir();'));
+            $this->assertSame(posix_geteuid(), fileowner($dir));
+            $this->assertSame(0700, fileperms($dir) & 0777);
+        } finally {
+            $this->removeTempDir($dir);
+            $this->removeTempDir($temp);
+        }
+    }
+
+    /**
+     * @requires function posix_geteuid
+     */
+    public function testDefaultCacheDirIgnoresFilesInSystemTempDir(): void
+    {
+        $temp = $this->createTempDir();
+        $name = CompilerRuntime::functionName('foo');
+        file_put_contents($temp . '/' . $name . '.php', "<?php function {$name}() { return 'planted'; }");
+
+        try {
+            $this->assertSame('123', $this->runInTempDir($temp, 'echo (new JmesPath\CompilerRuntime())("foo", ["foo" => 123]);'));
+        } finally {
+            $this->removeTempDir($temp . '/jmespath-' . posix_geteuid());
+            $this->removeTempDir($temp);
+        }
+    }
+
+    /**
+     * @requires function posix_geteuid
+     */
+    public function testRejectsDefaultCacheDirAccessibleByOthers(): void
+    {
+        $temp = $this->createTempDir();
+        $dir = $temp . '/jmespath-' . posix_geteuid();
+        mkdir($dir);
+        chmod($dir, 0755);
+
+        try {
+            $this->assertSame(
+                "Unable to use private cache directory: {$dir}",
+                $this->runInTempDir($temp, 'new JmesPath\CompilerRuntime();')
+            );
+        } finally {
+            $this->removeTempDir($dir);
+            $this->removeTempDir($temp);
+        }
+    }
+
+    /**
+     * @requires function posix_geteuid
+     */
+    public function testRejectsSymlinkedDefaultCacheDir(): void
+    {
+        $temp = $this->createTempDir();
+        $dir = $temp . '/jmespath-' . posix_geteuid();
+        $target = $this->createTempDir();
+        chmod($target, 0700);
+        symlink($target, $dir);
+
+        try {
+            $this->assertSame(
+                "Unable to use private cache directory: {$dir}",
+                $this->runInTempDir($temp, 'new JmesPath\CompilerRuntime();')
+            );
+        } finally {
+            unlink($dir);
+            $this->removeTempDir($target);
+            $this->removeTempDir($temp);
+        }
+    }
+
+    /**
+     * @requires function posix_geteuid
+     */
+    public function testChecksDefaultCacheDirAgainBeforeLoading(): void
+    {
+        $temp = $this->createTempDir();
+        $dir = $temp . '/jmespath-' . posix_geteuid();
+
+        try {
+            $this->runInTempDir($temp, '(new JmesPath\CompilerRuntime())("foo", []);');
+            $this->assertSame(
+                "Unable to use private cache directory: {$dir}",
+                $this->runInTempDir(
+                    $temp,
+                    '$runtime = new JmesPath\CompilerRuntime(); chmod($runtime->getCacheDir(), 0755); $runtime("foo", []);'
+                )
+            );
+        } finally {
+            $this->removeTempDir($dir);
+            $this->removeTempDir($temp);
+        }
+    }
+
+    /**
+     * @requires function posix_geteuid
+     */
+    public function testKeepsDefaultCacheDirWhenWorkingDirectoryChanges(): void
+    {
+        $temp = $this->createTempDir();
+        $dir = $temp . '/jmespath-' . posix_geteuid();
+        $code = sprintf(
+            'chdir(%s); $runtime = new JmesPath\CompilerRuntime(); chdir("/"); $runtime("foo", []); echo $runtime->getCacheDir();',
+            var_export($temp, true)
+        );
+
+        try {
+            $this->assertSame($dir, $this->runInTempDir('.', $code));
+        } finally {
+            $this->removeTempDir($dir);
+            $this->removeTempDir($temp);
+        }
+    }
+
     public function testRuntimesUseJmesPathTruthinessForEmptyObjects(): void
     {
         $dir = $this->createTempDir();
@@ -226,6 +348,23 @@ class CompilerRuntimeTest extends TestCase
         } finally {
             $this->removeTempDir($dir);
         }
+    }
+
+    private function runInTempDir($temp, $code)
+    {
+        $command = sprintf(
+            '%s -d sys_temp_dir=%s -r %s 2>&1',
+            escapeshellarg(PHP_BINARY),
+            escapeshellarg($temp),
+            escapeshellarg(sprintf(
+                'require %s; try { %s } catch (RuntimeException $e) { echo $e->getMessage(); }',
+                var_export(__DIR__ . '/../vendor/autoload.php', true),
+                $code
+            ))
+        );
+        exec($command, $output);
+
+        return implode("\n", $output);
     }
 
     private function createTempDir()

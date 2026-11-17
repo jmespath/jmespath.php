@@ -57,7 +57,7 @@ function runCase($given, $expression, $name)
             $runtime = \JmesPath\Env::createRuntime();
             // Delete compiled scripts if not caching.
             if ($runtime instanceof \JmesPath\CompilerRuntime) {
-                array_map('unlink', glob(sys_get_temp_dir() . '/jmespath_*.php'));
+                array_map('unlink', glob($runtime->getCacheDir() . '/jmespath_*.php'));
             }
         }
     }

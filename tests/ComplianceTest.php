@@ -12,11 +12,8 @@ class ComplianceTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        self::$path = sys_get_temp_dir() . '/jmespath-compliance-compiled';
-        if (!is_dir(self::$path)) {
-            mkdir(self::$path, 0777, true);
-        }
-        array_map('unlink', glob(self::$path . '/jmespath_*.php') ?: []);
+        self::$path = sys_get_temp_dir() . '/jmespath-compliance-' . bin2hex(random_bytes(12));
+        mkdir(self::$path);
     }
 
     public static function tearDownAfterClass(): void
